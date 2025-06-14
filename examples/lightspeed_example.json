@@ -1,0 +1,66 @@
+[
+    {
+        "id": 460475155,
+        "course_id": 525,
+        "start_time": "06:00",
+        "date": "2025-06-18",
+        "event_id": null,
+        "hole": 1,
+        "round": 1,
+        "format": "normal",
+        "departure": null,
+        "restrictions": [],
+        "out_of_capacity": false,
+        "frozen": false,
+        "green_fees": [
+            {
+                "player_type_id": 2897,
+                "green_fee": 92.0,
+                "half_cart": 25.0,
+                "one_person_cart": null,
+                "subtotal": 92.0,
+                "teetime_id": 460475155,
+                "affiliation_type_id": 2897,
+                "price": 92.0,
+                "one_person_cart_price": null,
+                "half_cart_price": 25.0
+            },
+            {
+                "player_type_id": 2897,
+                "green_fee": 92.0,
+                "half_cart": 25.0,
+                "one_person_cart": null,
+                "subtotal": 92.0,
+                "teetime_id": 460475155,
+                "affiliation_type_id": 2897,
+                "price": 92.0,
+                "one_person_cart_price": null,
+                "half_cart_price": 25.0
+            },
+            {
+                "player_type_id": 2897,
+                "green_fee": 92.0,
+                "half_cart": 25.0,
+                "one_person_cart": null,
+                "subtotal": 92.0,
+                "teetime_id": 460475155,
+                "affiliation_type_id": 2897,
+                "price": 92.0,
+                "one_person_cart_price": null,
+                "half_cart_price": 25.0
+            },
+            {
+                "player_type_id": 2897,
+                "green_fee": 92.0,
+                "half_cart": 25.0,
+                "one_person_cart": null,
+                "subtotal": 92.0,
+                "teetime_id": 460475155,
+                "affiliation_type_id": 2897,
+                "price": 92.0,
+                "one_person_cart_price": null,
+                "half_cart_price": 25.0
+            }
+        ]
+    }
+]

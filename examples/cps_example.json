@@ -1,0 +1,66 @@
+[
+    {
+    "teeSheetId": 1109097,
+    "startTime": "2025-06-13T19:48:00",
+    "courseTimeId": 41052,
+    "startingTee": 1,
+    "crossOverTeeSheetId": 0,
+    "is18HoleOnly": true,
+    "participants": 4,
+    "courseId": 2,
+    "courseDate": "2025-06-13T00:00:00",
+    "defaultRateCode": "FADT",
+    "defaultBookingRate": {
+        "rateCode": "FADT",
+        "bookingRateType": 4,
+        "bookingRateTypeName": "MemberRate"
+    },
+    "teeTypeId": 1,
+    "holes": 18,
+    "defaultHoles": 0,
+    "siteId": 3,
+    "courseName": "Fraserview Golf Course",
+    "courseNameIncludeCrossOver": "Fraserview Golf Course",
+    "shItemPrices": [
+        {
+            "itemGuid": "078d954c-8763-4696-aaab-5fd800cbe1ac",
+            "shItemCode": "GreenFee18",
+            "itemCode": "FGFA012",
+            "price": 35.7500000000,
+            "displayPrice": 35.7500000000,
+            "taxInclusivePrice": 37.5375,
+            "taxCode": "GST",
+            "itemDesc": "FAdult WE F9 S",
+            "classCode": "R",
+            "rateCode": "FADT",
+            "currentPrice": 35.7500000000,
+            "priceType": 1,
+            "priceTypeName": "ClassPrice",
+            "storeId": 4
+        }
+    ],
+    "shItemPricesGroup": [],
+    "holesDisplay": "18",
+    "playersDisplay": "2 - 4 GOLFERS",
+    "minPlayer": 2,
+    "maxPlayer": 4,
+    "availableParticipantNo": [
+        1,
+        2,
+        3,
+        4
+    ],
+    "summaryDetail": {},
+    "playersRateCode": [],
+    "isNotAllowSingleBooking": true,
+    "playerNames": [],
+    "blockTexts": [],
+    "allowSpecialTeetimeClassCodes": [],
+    "isContain18HoleItems": true,
+    "isDisabled9Hole": true,
+    "bookingNotes": [],
+    "defaultClassCode": "A5",
+    "storeId": 4,
+    "teeSuffix": " "
+}
+]
