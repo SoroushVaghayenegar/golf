@@ -6,13 +6,30 @@ export interface TeeTime {
     course_name: string;
     holes: number;
     price: number;
+    city: string;
 }
 
 interface TeeTimeFilters {
     date: string;  // Format: YYYY-MM-DD
     numOfPlayers: number;
     holes: number;
+    cities?: string[];  // Optional array of city names
 }
+
+export const cities = [
+    "Vancouver",
+    "Burnaby",
+    "Surrey",
+    "North Vancouver",
+    "Langley",
+    "Pitt Meadows",
+    "Coquitlam",
+    "Richmond",
+    "Port Coquitlam",
+    "Squamish"
+] as const;
+
+export type City = typeof cities[number];
 
 export const fetchTeeTimes = async (filters: TeeTimeFilters): Promise<TeeTime[]> => {
     try {
@@ -21,6 +38,12 @@ export const fetchTeeTimes = async (filters: TeeTimeFilters): Promise<TeeTime[]>
         url.searchParams.append('date', filters.date);
         url.searchParams.append('numOfPlayers', filters.numOfPlayers.toString());
         url.searchParams.append('holes', filters.holes.toString());
+        
+        // Add cities parameter if provided
+        if (filters.cities && filters.cities.length > 0) {
+            console.log(filters.cities.join(','))
+            url.searchParams.append('cities', filters.cities.join(','));
+        }
         
         const response = await fetch(url.toString());
         
@@ -40,5 +63,6 @@ export const fetchTeeTimes = async (filters: TeeTimeFilters): Promise<TeeTime[]>
 // const teeTimes = await fetchTeeTimes({
 //     date: '2025-06-14',
 //     numOfPlayers: 2,
-//     holes: 18
+//     holes: 18,
+//     cities: ['San Francisco', 'Oakland']
 // }); 

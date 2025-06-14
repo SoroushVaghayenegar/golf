@@ -1,6 +1,7 @@
 import asyncio
 import aiohttp
 from datetime import datetime, date
+from utils import course_name_to_city
 from tee_time import TeeTime
 from typing import List
 
@@ -9,24 +10,27 @@ class Chronogolf:
     def __init__(self):
         self.courses = self.courses()
 
-    def fetch_tee_times(self, search_date: date, player_count: int, holes_count: int) -> List[TeeTime]:
-        return asyncio.run(self.fetch_tee_times_async(search_date, player_count, holes_count))
+    def fetch_tee_times(self, search_date: date, player_count: int, holes_count: int, cities: List[str]) -> List[TeeTime]:
+        return asyncio.run(self.fetch_tee_times_async(search_date, player_count, holes_count, cities))
     
-    async def fetch_tee_times_async(self, search_date: date, player_count: int, holes_count: int) -> List[TeeTime]:
+    async def fetch_tee_times_async(self, search_date: date, player_count: int, holes_count: int, cities: List[str]) -> List[TeeTime]:
         async with aiohttp.ClientSession() as session:
-            tasks = [self.course_tee_times(session, course, search_date, player_count, holes_count) for course in self.courses]
+            tasks = [self.course_tee_times(session, course, search_date, player_count, holes_count, cities) for course in self.courses]
             results = await asyncio.gather(*tasks)
         
         # Flatten the list of lists
         return [tee_time for sublist in results for tee_time in sublist]
 
-    async def course_tee_times(self, session: aiohttp.ClientSession, course: dict, search_date, player_count, holes_count) -> List[TeeTime]:
+    async def course_tee_times(self, session: aiohttp.ClientSession, course: dict, search_date, player_count, holes_count, cities: List[str]) -> List[TeeTime]:
         club_id = course["id"]
         course_id = course["course_id"]
-        club_name = course["name"]
+        course_name = course["name"]
         affiliation_type_id = course["affiliation_type_id"]
         course_holes = course["holes"]
-
+        city = course_name_to_city(course_name)
+        if city not in cities:
+            return []
+        
         if holes_count not in course_holes:
             return []
         
@@ -55,9 +59,10 @@ class Chronogolf:
                             start_date=start_datetime.date(),
                             start_time=start_datetime.time(),
                             players_available=len(tee_time_obj["green_fees"]),
-                            course_name=club_name,
+                            course_name=course_name,
                             holes=holes_count,
-                            price=float(tee_time_obj["green_fees"][0]["green_fee"])
+                            price=float(tee_time_obj["green_fees"][0]["green_fee"]),
+                            city=city
                         )
                         tee_times.append(tee_time)
                     except Exception as e:
@@ -65,7 +70,7 @@ class Chronogolf:
                         raise e
                 return tee_times
         except Exception as e:
-            print(f"Error fetching tee times for {club_name}: {e}")
+            print(f"Error fetching tee times for {course_name}: {e}")
             return []
         
     

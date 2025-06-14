@@ -2,15 +2,17 @@
 import { useState } from "react";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
-import { Listbox } from "@headlessui/react";
-import { ChevronDownIcon, UserGroupIcon, ClockIcon } from "@heroicons/react/24/outline";
-import { fetchTeeTimes, type TeeTime } from "../services/teeTimeService";
+import { Listbox, Switch } from "@headlessui/react";
+import { ChevronDownIcon, UserGroupIcon, ClockIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { fetchTeeTimes, type TeeTime, cities, type City } from "../services/teeTimeService";
 
 export default function Home() {
   // State for filters
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [numOfPlayers, setNumOfPlayers] = useState<number>(4);
   const [holes, setHoles] = useState(18);
+  const [citiesFilterEnabled, setCitiesFilterEnabled] = useState(false);
+  const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [teeTimes, setTeeTimes] = useState<TeeTime[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +31,8 @@ export default function Home() {
       const data = await fetchTeeTimes({
         date: formattedDate,
         numOfPlayers,
-        holes
+        holes,
+        ...(citiesFilterEnabled && selectedCities.length > 0 && { cities: selectedCities })
       });
       setTeeTimes(data);
     } catch (err) {
@@ -109,6 +112,72 @@ export default function Home() {
             </Listbox>
           </div>
 
+          {/* Cities Filter */}
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <MapPinIcon className="w-5 h-5" />
+                <span className="font-semibold">Filter by Cities</span>
+              </div>
+              <Switch
+                checked={citiesFilterEnabled}
+                onChange={setCitiesFilterEnabled}
+                className={`${
+                  citiesFilterEnabled ? 'bg-blue-500' : 'bg-slate-200'
+                } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
+              >
+                <span
+                  className={`${
+                    citiesFilterEnabled ? 'translate-x-6' : 'translate-x-1'
+                  } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                />
+              </Switch>
+            </div>
+
+            {citiesFilterEnabled && (
+              <div className="relative">
+                <Listbox value={selectedCities} onChange={setSelectedCities} multiple>
+                  <Listbox.Button className="w-full px-4 py-2 text-left bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <span>
+                      {selectedCities.length === 0
+                        ? 'Select cities'
+                        : `${selectedCities.length} cities selected`}
+                    </span>
+                    <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  </Listbox.Button>
+                  <Listbox.Options className="absolute z-10 w-full bottom-full mb-1 bg-white border border-slate-200 rounded-lg shadow-lg overflow-auto focus:outline-none max-h-60">
+                    {cities.map((city: City) => (
+                      <Listbox.Option
+                        key={city}
+                        value={city}
+                        className={({ active }) =>
+                          `px-4 py-2 cursor-pointer ${
+                            active ? 'bg-blue-50 text-blue-500' : 'text-slate-700'
+                          }`
+                        }
+                      >
+                        {({ selected }) => (
+                          <div className="flex items-center gap-2">
+                            <div className={`w-4 h-4 border rounded ${
+                              selected ? 'bg-blue-500 border-blue-500' : 'border-slate-300'
+                            } flex items-center justify-center`}>
+                              {selected && (
+                                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </div>
+                            {city}
+                          </div>
+                        )}
+                      </Listbox.Option>
+                    ))}
+                  </Listbox.Options>
+                </Listbox>
+              </div>
+            )}
+          </div>
+
           {/* Get Tee Times Button */}
           <button
             onClick={handleGetTeeTimes}
@@ -141,7 +210,10 @@ export default function Home() {
                 className="bg-white rounded-xl shadow p-4 hover:shadow-md transition-shadow"
               >
                 <div className="flex flex-col gap-3">
-                  <h3 className="text-lg font-semibold text-slate-900">{teeTime.course_name}</h3>
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">{teeTime.course_name}</h3>
+                    <p className="text-sm text-slate-500">{teeTime.city}</p>
+                  </div>
                   <div className="flex flex-col gap-1 text-slate-600">
                     <p className="text-lg font-medium">
                       {new Date(teeTime.start_datetime).toLocaleTimeString([], {

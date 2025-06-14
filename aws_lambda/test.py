@@ -1,11 +1,5 @@
-import sys
-
 from city import City
-sys.path.insert(0, "./python_libs")
-
-
 from datetime import datetime
-import json
 import asyncio
 from cpsgolf import CpsGolf
 from chronogolf import Chronogolf
@@ -23,16 +17,11 @@ async def fetch_all_tee_times(date, num_of_players, holes, cities):
     
     return cps_tee_times + chronogolf_tee_times
 
-def lambda_handler(event, context):
-    query_params = event.get("queryStringParameters", {})
-    date = query_params.get("date", datetime.now().strftime("%Y-%m-%d"))
-    num_of_players = query_params.get("numOfPlayers", "4")
-    holes = query_params.get("holes", "18")
-    cities = query_params.get("cities")
-    if cities:
-        cities = cities.split(",")
-    else:
-        cities = [city.value for city in City]
+def test():
+    date = datetime.now().strftime("%Y-%m-%d")
+    num_of_players = "4"
+    holes = "18"
+    cities = "Vancouver,Burnaby".split(",")
 
     #change date to date object
     date = datetime.strptime(date, "%Y-%m-%d")
@@ -47,10 +36,7 @@ def lambda_handler(event, context):
 
     tee_times_dict = [tee_time.to_dict() for tee_time in tee_times]
 
-    return {
-        "statusCode": 200,
-        "headers": {
-            "Content-Type": "application/json"
-        },
-        "body": json.dumps(tee_times_dict, indent=4)
-    }
+    print(tee_times_dict)
+
+if __name__ == "__main__":
+    test()

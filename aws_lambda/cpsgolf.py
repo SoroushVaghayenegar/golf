@@ -3,19 +3,20 @@ import aiohttp
 from datetime import datetime, date
 from tee_time import TeeTime
 from typing import List, Dict
+from utils import course_name_to_city
 
 class CpsGolf:
 
     def __init__(self):
         self.club_names = self.club_names()
 
-    def fetch_tee_times(self, search_date, player_count, holes_count) -> List[TeeTime]:
+    def fetch_tee_times(self, search_date, player_count, holes_count, cities: List[str]) -> List[TeeTime]:
         """
         Synchronous wrapper for the async implementation
         """
-        return asyncio.run(self.fetch_tee_times_async(search_date, player_count, holes_count))
+        return asyncio.run(self.fetch_tee_times_async(search_date, player_count, holes_count, cities))
 
-    async def fetch_tee_times_async(self, search_date: date, player_count: int, holes_count: int) -> List[TeeTime]:
+    async def fetch_tee_times_async(self, search_date: date, player_count: int, holes_count: int, cities: List[str]) -> List[TeeTime]:
         params = {
             "searchDate": search_date.strftime("%a %b %d %Y"),
             "holes": str(holes_count),
@@ -40,13 +41,13 @@ class CpsGolf:
         }
         
         async with aiohttp.ClientSession() as session:
-            tasks = [self.club_tee_times(session, club_name, params, headers) for club_name in self.club_names]
+            tasks = [self.club_tee_times(session, club_name, params, headers, cities) for club_name in self.club_names]
             results = await asyncio.gather(*tasks)
             
         # Flatten the list of lists
         return [tee_time for sublist in results for tee_time in sublist]
     
-    async def club_tee_times(self, session: aiohttp.ClientSession, club_name: str, params: Dict, headers: Dict) -> List[TeeTime]:
+    async def club_tee_times(self, session: aiohttp.ClientSession, club_name: str, params: Dict, headers: Dict, cities: List[str]) -> List[TeeTime]:
         url = f"https://{club_name}.cps.golf/onlineres/onlineapi/api/v1/onlinereservation/TeeTimes"
         try:
             async with session.get(url, params=params, headers=headers) as response:
@@ -59,15 +60,20 @@ class CpsGolf:
                     
                 tee_times = []
                 for tee_time_obj in tee_time_list:
+                    course_name = tee_time_obj.get("courseName").strip()
+                    city = course_name_to_city(course_name)
+                    if city not in cities:
+                        continue
                     start_datetime = datetime.strptime(tee_time_obj["startTime"], "%Y-%m-%dT%H:%M:%S")
                     
                     tee_time = TeeTime(
                         start_date=start_datetime.date(),
                         start_time=start_datetime.time(),
                         players_available=len(tee_time_obj["availableParticipantNo"]),
-                        course_name=tee_time_obj.get("courseName", ""),
+                        course_name=tee_time_obj.get("courseName"),
                         holes=tee_time_obj.get("holes"),
-                        price=float(tee_time_obj["shItemPrices"][0]["price"])
+                        price=float(tee_time_obj["shItemPrices"][0]["price"]),
+                        city=city
                     )
                     tee_times.append(tee_time)
                 return tee_times
