@@ -7,6 +7,7 @@ export interface TeeTime {
     holes: number;
     price: number;
     city: string;
+    booking_link: string | null;
 }
 
 interface TeeTimeFilters {

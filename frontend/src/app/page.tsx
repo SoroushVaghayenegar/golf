@@ -450,6 +450,18 @@ export default function Home() {
                       ${Number(teeTime.price).toFixed(2)}
                     </p>
                   </div>
+                  {teeTime.booking_link && (
+                    <div className="mt-2">
+                      <a
+                        href={teeTime.booking_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-colors text-center block"
+                      >
+                        Book
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
