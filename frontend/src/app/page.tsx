@@ -123,7 +123,7 @@ export default function Home() {
         {/* Settings Section - Fixed on left for desktop, top for mobile */}
         <section className="w-full lg:w-80 flex-shrink-0 bg-white rounded-xl shadow p-4 flex flex-col gap-3 lg:h-fit lg:sticky lg:top-4">
           <div className="flex flex-col items-center gap-1">
-            <div className="text-sm text-slate-500">
+            <div className="text-sm text-green-600">
               Vancouver Time: {getCurrentVancouverTime()}
             </div>
             
