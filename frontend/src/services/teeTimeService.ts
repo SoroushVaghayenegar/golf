@@ -13,7 +13,6 @@ interface TeeTimeFilters {
     date: string;  // Format: YYYY-MM-DD
     numOfPlayers: number;
     holes: number;
-    cities?: string[];  // Optional array of city names
 }
 
 export const cities = [
@@ -39,12 +38,6 @@ export const fetchTeeTimes = async (filters: TeeTimeFilters): Promise<TeeTime[]>
         url.searchParams.append('numOfPlayers', filters.numOfPlayers.toString());
         url.searchParams.append('holes', filters.holes.toString());
         
-        // Add cities parameter if provided
-        if (filters.cities && filters.cities.length > 0) {
-            console.log(filters.cities.join(','))
-            url.searchParams.append('cities', filters.cities.join(','));
-        }
-        
         const response = await fetch(url.toString());
         
         if (!response.ok) {
@@ -58,11 +51,3 @@ export const fetchTeeTimes = async (filters: TeeTimeFilters): Promise<TeeTime[]>
         throw error;
     }
 };
-
-// Example usage:
-// const teeTimes = await fetchTeeTimes({
-//     date: '2025-06-14',
-//     numOfPlayers: 2,
-//     holes: 18,
-//     cities: ['San Francisco', 'Oakland']
-// }); 

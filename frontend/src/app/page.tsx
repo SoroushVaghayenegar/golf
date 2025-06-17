@@ -4,18 +4,76 @@ import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 import { Listbox, Switch } from "@headlessui/react";
 import { ChevronDownIcon, UserGroupIcon, ClockIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { Range } from "react-range";
 import { fetchTeeTimes, type TeeTime, cities, type City } from "../services/teeTimeService";
 
 export default function Home() {
   // State for filters
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [fetchedDate, setFetchedDate] = useState<Date | undefined>(new Date());
   const [numOfPlayers, setNumOfPlayers] = useState<number>(4);
   const [holes, setHoles] = useState(18);
+  const [timeRange, setTimeRange] = useState<number[]>([5, 22]); // 5am to 10pm
   const [citiesFilterEnabled, setCitiesFilterEnabled] = useState(false);
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [teeTimes, setTeeTimes] = useState<TeeTime[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Get today's date for comparison
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Function to check if a date is in the past
+  const isPastDate = (date: Date) => {
+    const compareDate = new Date(date);
+    compareDate.setHours(0, 0, 0, 0);
+    return compareDate < today;
+  };
+
+  // Function to check if today should be disabled (after 10pm)
+  const isTodayDisabled = () => {
+    const now = new Date();
+    return now.getHours() >= 22; // 10pm or later
+  };
+
+  // Function to get the minimum selectable date
+  const getMinSelectableDate = () => {
+    if (isTodayDisabled()) {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+      return tomorrow;
+    }
+    return new Date();
+  };
+
+  // Function to check if a date should be disabled
+  const isDateDisabled = (date: Date) => {
+    const compareDate = new Date(date);
+    compareDate.setHours(0, 0, 0, 0);
+    
+    // Disable past dates
+    if (compareDate < today) {
+      return true;
+    }
+    
+    // Disable today if it's after 10pm
+    if (compareDate.getTime() === today.getTime() && isTodayDisabled()) {
+      return true;
+    }
+    
+    return false;
+  };
+
+
+  // Function to format hour for display
+  const formatHour = (hour: number) => {
+    if (hour === 0) return '12 AM';
+    if (hour < 12) return `${hour} AM`;
+    if (hour === 12) return '12 PM';
+    return `${hour - 12} PM`;
+  };
 
   // Function to fetch tee times
   const handleGetTeeTimes = async () => {
@@ -27,14 +85,20 @@ export default function Home() {
     setLoading(true);
     setError(null);
     try {
-      const formattedDate = selectedDate.toISOString().split('T')[0]; // YYYY-MM-DD
+      console.log('Selected date:', selectedDate);
+      
+      const year = selectedDate.getFullYear();
+      const month = selectedDate.getMonth() + 1;
+      const day = selectedDate.getDate();
+      const formattedDate = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+      console.log(formattedDate)
       const data = await fetchTeeTimes({
-        date: formattedDate,
+        date: formattedDate, // YYYY-MM-DD
         numOfPlayers,
-        holes,
-        ...(citiesFilterEnabled && selectedCities.length > 0 && { cities: selectedCities })
+        holes
       });
       setTeeTimes(data);
+      setFetchedDate(selectedDate);
     } catch (err) {
       setError('Failed to fetch tee times. Please try again.');
       console.error(err);
@@ -43,73 +107,174 @@ export default function Home() {
     }
   };
 
+  const filteredTeeTimes = (teeTimes: TeeTime[]) => {
+    let filtered = teeTimes;
+    
+    // Filter by time range
+    filtered = filtered.filter(teeTime => {
+      const dateString = teeTime.start_datetime.replace('T', ' ');
+      const teeTimeDateTime = new Date(dateString);
+      const teeTimeHour = teeTimeDateTime.getHours();
+      return teeTimeHour >= timeRange[0] && teeTimeHour <= timeRange[1];
+    });
+    
+    // Filter by cities if enabled
+    if (citiesFilterEnabled && selectedCities.length > 0) {
+      filtered = filtered.filter(teeTime => selectedCities.includes(teeTime.city));
+    }
+    
+    // If date is today, filter out tee times that are earlier than now
+    if (fetchedDate) {
+      const today = new Date();
+      const isToday = fetchedDate.toDateString() === today.toDateString();
+      
+      if (isToday) {
+        const now = new Date();
+        filtered = filtered.filter(teeTime => {
+          const dateString = teeTime.start_datetime.replace('T', ' ');
+          const teeTimeDateTime = new Date(dateString);
+          console.log(teeTimeDateTime, now)
+          return teeTimeDateTime >= now;
+        });
+      }
+    }
+    
+    return filtered;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-100 p-4 sm:p-10 flex font-[family-name:var(--font-geist-sans)]">
       <main className="w-full flex flex-col lg:flex-row gap-8 lg:h-[calc(100vh-5rem)]">
         {/* Settings Section - Fixed on left for desktop, top for mobile */}
         <section className="w-full lg:w-80 flex-shrink-0 bg-white rounded-xl shadow p-4 flex flex-col gap-6 lg:h-fit lg:sticky lg:top-4">
           <div className="flex flex-col items-center gap-2">
-            <span className="font-semibold text-lg flex items-center gap-2"><ClockIcon className="w-5 h-5" />Date</span>
+            
             <div className="rounded-lg border border-slate-200 bg-slate-50">
               <DayPicker
                 mode="single"
                 selected={selectedDate}
                 onSelect={setSelectedDate}
-                fromDate={new Date()}
+                fromDate={getMinSelectableDate()}
+                disabled={isDateDisabled}
                 className="!p-0"
+                modifiers={{
+                  past: (date) => isPastDate(date),
+                  today: (date) => isDateDisabled(date)
+                }}
+                modifiersStyles={{
+                  past: { color: '#9ca3af' , opacity: 0.5}
+                }}
               />
             </div>
           </div>
 
-          {/* Players Selector */}
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <UserGroupIcon className="w-5 h-5" />
-              <span className="font-semibold">Players</span>
+          {/* Players and Holes Row */}
+          <div className="flex gap-4">
+            {/* Players Selector */}
+            <div className="flex-1 flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <UserGroupIcon className="w-5 h-5" />
+                <span className="font-semibold">Players</span>
+              </div>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4].map((num) => (
+                  <button
+                    key={num}
+                    onClick={() => setNumOfPlayers(num)}
+                    className={`px-4 py-2 rounded-lg border transition-colors ${
+                      numOfPlayers === num
+                        ? 'bg-blue-500 text-white border-blue-500'
+                        : 'bg-white hover:bg-blue-50 border-slate-200'
+                    }`}
+                  >
+                    {num}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="flex gap-2">
-              {[1, 2, 3, 4].map((num) => (
-                <button
-                  key={num}
-                  onClick={() => setNumOfPlayers(num)}
-                  className={`px-4 py-2 rounded-lg border transition-colors ${
-                    numOfPlayers === num
-                      ? 'bg-blue-500 text-white border-blue-500'
-                      : 'bg-white hover:bg-blue-50 border-slate-200'
-                  }`}
-                >
-                  {num}
-                </button>
-              ))}
+
+            {/* Holes Dropdown */}
+            <div className="flex-1 flex flex-col gap-2">
+              <span className="font-semibold">Holes</span>
+              <Listbox value={holes} onChange={setHoles}>
+                <div className="relative">
+                  <Listbox.Button className="w-full px-4 py-2 text-left bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <span>{holes}</span>
+                    <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  </Listbox.Button>
+                  <Listbox.Options className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg focus:outline-none">
+                    {[18, 9].map((option) => (
+                      <Listbox.Option
+                        key={option}
+                        value={option}
+                        className={({ active }) =>
+                          `px-4 py-2 cursor-pointer ${
+                            active ? 'bg-blue-50 text-blue-500' : 'text-slate-700'
+                          }`
+                        }
+                      >
+                        {option} Holes
+                      </Listbox.Option>
+                    ))}
+                  </Listbox.Options>
+                </div>
+              </Listbox>
             </div>
           </div>
 
-          {/* Holes Dropdown */}
-          <div className="flex flex-col gap-2">
-            <span className="font-semibold">Holes</span>
-            <Listbox value={holes} onChange={setHoles}>
-              <div className="relative">
-                <Listbox.Button className="w-full px-4 py-2 text-left bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <span>{holes} Holes</span>
-                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                </Listbox.Button>
-                <Listbox.Options className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg focus:outline-none">
-                  {[18, 9].map((option) => (
-                    <Listbox.Option
-                      key={option}
-                      value={option}
-                      className={({ active }) =>
-                        `px-4 py-2 cursor-pointer ${
-                          active ? 'bg-blue-50 text-blue-500' : 'text-slate-700'
-                        }`
-                      }
+          {/* Time Range Filter */}
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-2">
+              <ClockIcon className="w-5 h-5" />
+              <span className="font-semibold">Time Range</span>
+            </div>
+            <div className="px-2">
+              <Range
+                step={1}
+                min={5}
+                max={22}
+                values={timeRange}
+                onChange={(values) => setTimeRange(values)}
+                renderTrack={({ props, children }) => (
+                  <div
+                    {...props}
+                    className="w-full h-2 bg-slate-200 rounded-full"
+                    style={{
+                      ...props.style,
+                    }}
+                  >
+                    <div
+                      className="h-2 bg-blue-500 rounded-full"
+                      style={{
+                        width: `${((timeRange[1] - timeRange[0]) / (22 - 5)) * 100}%`,
+                        left: `${((timeRange[0] - 5) / (22 - 5)) * 100}%`,
+                        position: 'relative'
+                      }}
+                    />
+                    {children}
+                  </div>
+                )}
+                renderThumb={({ props }) => {
+                  const { key, ...otherProps } = props;
+                  return (
+                    <div
+                      key={key}
+                      {...otherProps}
+                      className="w-6 h-6 bg-blue-500 rounded-full shadow-lg flex items-center justify-center cursor-pointer"
+                      style={{
+                        ...otherProps.style,
+                      }}
                     >
-                      {option} Holes
-                    </Listbox.Option>
-                  ))}
-                </Listbox.Options>
+                      <div className="w-2 h-2 bg-white rounded-full" />
+                    </div>
+                  );
+                }}
+              />
+              <div className="flex justify-between mt-2 text-sm text-slate-600">
+                <span>{formatHour(timeRange[0])}</span>
+                <span>{formatHour(timeRange[1])}</span>
               </div>
-            </Listbox>
+            </div>
           </div>
 
           {/* Cities Filter */}
@@ -200,11 +365,11 @@ export default function Home() {
           {error && (
             <div className="text-center py-8 text-red-500">{error}</div>
           )}
-          {!loading && !error && teeTimes.length === 0 && (
+          {!loading && !error && filteredTeeTimes(teeTimes).length === 0 && (
             <div className="text-center py-8 text-slate-600">No tee times available for the selected criteria.</div>
           )}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {!loading && !error && teeTimes.map((teeTime, index) => (
+            {!loading && !error && filteredTeeTimes(teeTimes).map((teeTime, index) => (
               <div
                 key={index}
                 className="bg-white rounded-xl shadow p-4 hover:shadow-md transition-shadow"
@@ -224,7 +389,7 @@ export default function Home() {
                     <p>{teeTime.holes} holes</p>
                     <p>{teeTime.players_available} spots available</p>
                     <p className="text-xl font-bold text-blue-600 mt-1">
-                      ${teeTime.price}
+                      ${Number(teeTime.price).toFixed(2)}
                     </p>
                   </div>
                 </div>
