@@ -121,8 +121,8 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-100 p-4 sm:p-10 flex font-[family-name:var(--font-geist-sans)]">
       <main className="w-full flex flex-col lg:flex-row gap-8 lg:h-[calc(100vh-5rem)]">
         {/* Settings Section - Fixed on left for desktop, top for mobile */}
-        <section className="w-full lg:w-80 flex-shrink-0 bg-white rounded-xl shadow p-4 flex flex-col gap-6 lg:h-fit lg:sticky lg:top-4">
-          <div className="flex flex-col items-center gap-2">
+        <section className="w-full lg:w-80 flex-shrink-0 bg-white rounded-xl shadow p-4 flex flex-col gap-3 lg:h-fit lg:sticky lg:top-4">
+          <div className="flex flex-col items-center gap-1">
             <div className="text-sm text-slate-500">
               Vancouver Time: {getCurrentVancouverTime()}
             </div>
@@ -146,14 +146,14 @@ export default function Home() {
           </div>
 
           {/* Players and Holes Row */}
-          <div className="flex gap-4">
+          <div className="flex gap-6">
             {/* Players Selector */}
-            <div className="flex-1 flex flex-col gap-2">
-              <div className="flex items-center gap-2">
+            <div className="flex-1 flex flex-col gap-1">
+              <div className="flex items-center gap-1">
                 <UserGroupIcon className="w-5 h-5" />
                 <span className="font-semibold">Players</span>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-1">
                 {[1, 2, 3, 4].map((num) => (
                   <button
                     key={num}
@@ -171,7 +171,7 @@ export default function Home() {
             </div>
 
             {/* Holes Dropdown */}
-            <div className="flex-1 flex flex-col gap-2">
+            <div className="flex-1 flex flex-col gap-1">
               <span className="font-semibold">Holes</span>
               <Listbox value={holes} onChange={setHoles}>
                 <div className="relative">
@@ -200,8 +200,8 @@ export default function Home() {
           </div>
 
           {/* Time Range Filter */}
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-1">
               <ClockIcon className="w-5 h-5" />
               <span className="font-semibold">Time Range</span>
             </div>
@@ -255,9 +255,9 @@ export default function Home() {
           </div>
 
           {/* Cities Filter */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 <MapPinIcon className="w-5 h-5" />
                 <span className="font-semibold">Filter by Cities</span>
               </div>
