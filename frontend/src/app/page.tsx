@@ -3,7 +3,7 @@ import { useState } from "react";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 import { Listbox, Switch } from "@headlessui/react";
-import { ChevronDownIcon, UserGroupIcon, ClockIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { ChevronDownIcon, UserGroupIcon, ClockIcon, MapPinIcon, ArrowUpIcon, ArrowDownIcon } from "@heroicons/react/24/outline";
 import { Range } from "react-range";
 import { fetchTeeTimes, type TeeTime, cities, type City } from "../services/teeTimeService";
 import { 
@@ -26,6 +26,7 @@ export default function Home() {
   const [timeRange, setTimeRange] = useState<number[]>([5, 22]); // 5am to 10pm
   const [citiesFilterEnabled, setCitiesFilterEnabled] = useState(false);
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<'startTime' | 'priceAsc' | 'priceDesc'>('startTime');
   const [teeTimes, setTeeTimes] = useState<TeeTime[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,6 +97,22 @@ export default function Home() {
         });
       }
     }
+    
+    // Sort tee times
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'startTime':
+          const timeA = parseDateTimeInVancouver(a.start_datetime);
+          const timeB = parseDateTimeInVancouver(b.start_datetime);
+          return timeA.getTime() - timeB.getTime();
+        case 'priceAsc':
+          return Number(a.price) - Number(b.price);
+        case 'priceDesc':
+          return Number(b.price) - Number(a.price);
+        default:
+          return 0;
+      }
+    });
     
     return filtered;
   };
@@ -301,6 +318,86 @@ export default function Home() {
                 </Listbox>
               </div>
             )}
+          </div>
+
+          {/* Sort By */}
+          <div className="flex flex-col gap-2">
+            <span className="font-semibold">Sort By</span>
+            <Listbox value={sortBy} onChange={setSortBy}>
+              <div className="relative">
+                <Listbox.Button className="w-full px-4 py-2 text-left bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <div className="flex items-center justify-between">
+                    <span>
+                      {sortBy === 'startTime' && 'Start Time'}
+                      {sortBy === 'priceAsc' && 'Price (Low to High)'}
+                      {sortBy === 'priceDesc' && 'Price (High to Low)'}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      {sortBy === 'startTime' && <ArrowUpIcon className="w-4 h-4" />}
+                      {sortBy === 'priceAsc' && <ArrowUpIcon className="w-4 h-4" />}
+                      {sortBy === 'priceDesc' && <ArrowDownIcon className="w-4 h-4" />}
+                      <ChevronDownIcon className="w-5 h-5 text-slate-400" />
+                    </div>
+                  </div>
+                </Listbox.Button>
+                <Listbox.Options className="absolute z-10 w-full bottom-full mb-1 bg-white border border-slate-200 rounded-lg shadow-lg overflow-auto focus:outline-none max-h-60">
+                  <Listbox.Option
+                    value="startTime"
+                    className={({ active }) =>
+                      `px-4 py-2 cursor-pointer flex items-center justify-between ${
+                        active ? 'bg-blue-50 text-blue-500' : 'text-slate-700'
+                      }`
+                    }
+                  >
+                    {({ selected }) => (
+                      <>
+                        <span>Start Time</span>
+                        <div className="flex items-center gap-1">
+                          <ArrowUpIcon className="w-4 h-4" />
+                          {selected && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
+                        </div>
+                      </>
+                    )}
+                  </Listbox.Option>
+                  <Listbox.Option
+                    value="priceAsc"
+                    className={({ active }) =>
+                      `px-4 py-2 cursor-pointer flex items-center justify-between ${
+                        active ? 'bg-blue-50 text-blue-500' : 'text-slate-700'
+                      }`
+                    }
+                  >
+                    {({ selected }) => (
+                      <>
+                        <span>Price (Low to High)</span>
+                        <div className="flex items-center gap-1">
+                          <ArrowUpIcon className="w-4 h-4" />
+                          {selected && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
+                        </div>
+                      </>
+                    )}
+                  </Listbox.Option>
+                  <Listbox.Option
+                    value="priceDesc"
+                    className={({ active }) =>
+                      `px-4 py-2 cursor-pointer flex items-center justify-between ${
+                        active ? 'bg-blue-50 text-blue-500' : 'text-slate-700'
+                      }`
+                    }
+                  >
+                    {({ selected }) => (
+                      <>
+                        <span>Price (High to Low)</span>
+                        <div className="flex items-center gap-1">
+                          <ArrowDownIcon className="w-4 h-4" />
+                          {selected && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
+                        </div>
+                      </>
+                    )}
+                  </Listbox.Option>
+                </Listbox.Options>
+              </div>
+            </Listbox>
           </div>
 
           {/* Get Tee Times Button */}
