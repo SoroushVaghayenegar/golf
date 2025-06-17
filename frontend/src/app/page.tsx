@@ -6,11 +6,21 @@ import { Listbox, Switch } from "@headlessui/react";
 import { ChevronDownIcon, UserGroupIcon, ClockIcon, MapPinIcon } from "@heroicons/react/24/outline";
 import { Range } from "react-range";
 import { fetchTeeTimes, type TeeTime, cities, type City } from "../services/teeTimeService";
+import { 
+  getVancouverToday, 
+  isPastDateInVancouver,
+  getMinSelectableDateInVancouver, 
+  isDateDisabledInVancouver, 
+  formatDateForAPI, 
+  parseDateTimeInVancouver,
+  getVancouverNow,
+  getCurrentVancouverTime
+} from "../services/timezoneService";
 
 export default function Home() {
   // State for filters
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [fetchedDate, setFetchedDate] = useState<Date | undefined>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(getVancouverToday());
+  const [fetchedDate, setFetchedDate] = useState<Date | undefined>(getVancouverToday());
   const [numOfPlayers, setNumOfPlayers] = useState<number>(4);
   const [holes, setHoles] = useState(18);
   const [timeRange, setTimeRange] = useState<number[]>([5, 22]); // 5am to 10pm
@@ -19,53 +29,6 @@ export default function Home() {
   const [teeTimes, setTeeTimes] = useState<TeeTime[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Get today's date for comparison
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  // Function to check if a date is in the past
-  const isPastDate = (date: Date) => {
-    const compareDate = new Date(date);
-    compareDate.setHours(0, 0, 0, 0);
-    return compareDate < today;
-  };
-
-  // Function to check if today should be disabled (after 10pm)
-  const isTodayDisabled = () => {
-    const now = new Date();
-    return now.getHours() >= 22; // 10pm or later
-  };
-
-  // Function to get the minimum selectable date
-  const getMinSelectableDate = () => {
-    if (isTodayDisabled()) {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(0, 0, 0, 0);
-      return tomorrow;
-    }
-    return new Date();
-  };
-
-  // Function to check if a date should be disabled
-  const isDateDisabled = (date: Date) => {
-    const compareDate = new Date(date);
-    compareDate.setHours(0, 0, 0, 0);
-    
-    // Disable past dates
-    if (compareDate < today) {
-      return true;
-    }
-    
-    // Disable today if it's after 10pm
-    if (compareDate.getTime() === today.getTime() && isTodayDisabled()) {
-      return true;
-    }
-    
-    return false;
-  };
-
 
   // Function to format hour for display
   const formatHour = (hour: number) => {
@@ -87,10 +50,7 @@ export default function Home() {
     try {
       console.log('Selected date:', selectedDate);
       
-      const year = selectedDate.getFullYear();
-      const month = selectedDate.getMonth() + 1;
-      const day = selectedDate.getDate();
-      const formattedDate = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+      const formattedDate = formatDateForAPI(selectedDate);
       console.log(formattedDate)
       const data = await fetchTeeTimes({
         date: formattedDate, // YYYY-MM-DD
@@ -112,8 +72,7 @@ export default function Home() {
     
     // Filter by time range
     filtered = filtered.filter(teeTime => {
-      const dateString = teeTime.start_datetime.replace('T', ' ');
-      const teeTimeDateTime = new Date(dateString);
+      const teeTimeDateTime = parseDateTimeInVancouver(teeTime.start_datetime);
       const teeTimeHour = teeTimeDateTime.getHours();
       return teeTimeHour >= timeRange[0] && teeTimeHour <= timeRange[1];
     });
@@ -125,16 +84,15 @@ export default function Home() {
     
     // If date is today, filter out tee times that are earlier than now
     if (fetchedDate) {
-      const today = new Date();
-      const isToday = fetchedDate.toDateString() === today.toDateString();
+      const vancouverToday = getVancouverToday();
+      const isToday = fetchedDate.toDateString() === vancouverToday.toDateString();
       
       if (isToday) {
-        const now = new Date();
+        const vancouverNow = getVancouverNow();
         filtered = filtered.filter(teeTime => {
-          const dateString = teeTime.start_datetime.replace('T', ' ');
-          const teeTimeDateTime = new Date(dateString);
-          console.log(teeTimeDateTime, now)
-          return teeTimeDateTime >= now;
+          const teeTimeDateTime = parseDateTimeInVancouver(teeTime.start_datetime);
+          console.log(teeTimeDateTime, vancouverNow)
+          return teeTimeDateTime >= vancouverNow;
         });
       }
     }
@@ -148,21 +106,23 @@ export default function Home() {
         {/* Settings Section - Fixed on left for desktop, top for mobile */}
         <section className="w-full lg:w-80 flex-shrink-0 bg-white rounded-xl shadow p-4 flex flex-col gap-6 lg:h-fit lg:sticky lg:top-4">
           <div className="flex flex-col items-center gap-2">
+            <div className="text-sm text-slate-500">
+              Vancouver Time: {getCurrentVancouverTime()}
+            </div>
             
             <div className="rounded-lg border border-slate-200 bg-slate-50">
               <DayPicker
                 mode="single"
                 selected={selectedDate}
                 onSelect={setSelectedDate}
-                fromDate={getMinSelectableDate()}
-                disabled={isDateDisabled}
+                fromDate={getMinSelectableDateInVancouver()}
+                disabled={isDateDisabledInVancouver}
                 className="!p-0"
                 modifiers={{
-                  past: (date) => isPastDate(date),
-                  today: (date) => isDateDisabled(date)
+                  past: (date) => isPastDateInVancouver(date)
                 }}
                 modifiersStyles={{
-                  past: { color: '#9ca3af' , opacity: 0.5}
+                  past: { color: '#9ca3af', opacity: 0.5 }
                 }}
               />
             </div>
@@ -381,9 +341,10 @@ export default function Home() {
                   </div>
                   <div className="flex flex-col gap-1 text-slate-600">
                     <p className="text-lg font-medium">
-                      {new Date(teeTime.start_datetime).toLocaleTimeString([], {
+                      {parseDateTimeInVancouver(teeTime.start_datetime).toLocaleTimeString([], {
                         hour: 'numeric',
                         minute: '2-digit',
+                        timeZone: 'America/Vancouver'
                       })}
                     </p>
                     <p>{teeTime.holes} holes</p>
