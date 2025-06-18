@@ -73,7 +73,8 @@ class CpsGolf:
                         course_name=tee_time_obj.get("courseName"),
                         holes=tee_time_obj.get("holes"),
                         price=float(tee_time_obj["shItemPrices"][0]["price"]),
-                        city=city
+                        city=city,
+                        booking_link=f"https://{club_name}.cps.golf"
                     )
                     tee_times.append(tee_time)
                 return tee_times

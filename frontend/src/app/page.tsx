@@ -456,9 +456,13 @@ export default function Home() {
                         href={teeTime.booking_link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-full px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-colors text-center block"
+                        className={`w-full px-4 py-2 font-semibold rounded-lg transition-colors text-center block ${
+                          teeTime.booking_link.includes('cps')
+                            ? 'bg-black hover:bg-gray-800 text-white'
+                            : 'bg-green-500 hover:bg-green-600 text-white'
+                        }`}
                       >
-                        Book
+                        {teeTime.booking_link.includes('cps') ? 'Take me to website' : 'Book'}
                       </a>
                     </div>
                   )}
