@@ -3,7 +3,7 @@ import { useState } from "react";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 import { Listbox, Switch } from "@headlessui/react";
-import { ChevronDownIcon, UserGroupIcon, ClockIcon, MapPinIcon, ArrowUpIcon, ArrowDownIcon } from "@heroicons/react/24/outline";
+import { ChevronDownIcon, UserGroupIcon, ClockIcon, MapPinIcon, ArrowUpIcon, ArrowDownIcon, StarIcon } from "@heroicons/react/24/outline";
 import { Range } from "react-range";
 import { fetchTeeTimes, type TeeTime, cities, type City } from "../services/teeTimeService";
 import { 
@@ -16,6 +16,35 @@ import {
   getVancouverNow,
   getCurrentVancouverTime
 } from "../services/timezoneService";
+
+// Rating component
+const Rating = ({ rating }: { rating: number | null }) => {
+  if (rating === null) return null;
+  
+  const fullStars = Math.floor(rating);
+  const hasHalfStar = rating % 1 !== 0;
+  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+  
+  return (
+    <div className="flex items-center gap-1">
+      {[...Array(fullStars)].map((_, i) => (
+        <StarIcon key={`full-${i}`} className="w-4 h-4 text-yellow-400 fill-current" />
+      ))}
+      {hasHalfStar && (
+        <div className="relative w-4 h-4">
+          <StarIcon className="w-4 h-4 text-gray-300" />
+          <div className="absolute inset-0 overflow-hidden" style={{ width: '50%' }}>
+            <StarIcon className="w-4 h-4 text-yellow-400 fill-current" />
+          </div>
+        </div>
+      )}
+      {[...Array(emptyStars)].map((_, i) => (
+        <StarIcon key={`empty-${i}`} className="w-4 h-4 text-gray-300" />
+      ))}
+      <span className="text-sm text-slate-600 ml-1">({rating.toFixed(1)})</span>
+    </div>
+  );
+};
 
 export default function Home() {
   // State for filters
@@ -435,6 +464,7 @@ export default function Home() {
                   <div>
                     <h3 className="text-lg font-semibold text-slate-900">{teeTime.course_name}</h3>
                     <p className="text-sm text-slate-500">{teeTime.city}</p>
+                    <Rating rating={teeTime.rating} />
                   </div>
                   <div className="flex flex-col gap-1 text-slate-600">
                     <p className="text-lg font-medium">

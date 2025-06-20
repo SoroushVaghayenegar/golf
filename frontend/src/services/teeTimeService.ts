@@ -8,6 +8,7 @@ export interface TeeTime {
     price: number;
     city: string;
     booking_link: string | null;
+    rating: number | null;
 }
 
 interface TeeTimeFilters {
