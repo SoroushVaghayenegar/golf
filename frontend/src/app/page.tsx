@@ -55,7 +55,7 @@ export default function Home() {
   const [timeRange, setTimeRange] = useState<number[]>([5, 22]); // 5am to 10pm
   const [citiesFilterEnabled, setCitiesFilterEnabled] = useState(false);
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState<'startTime' | 'priceAsc' | 'priceDesc'>('startTime');
+  const [sortBy, setSortBy] = useState<'startTime' | 'priceAsc' | 'priceDesc' | 'rating'>('startTime');
   const [teeTimes, setTeeTimes] = useState<TeeTime[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -138,6 +138,10 @@ export default function Home() {
           return Number(a.price) - Number(b.price);
         case 'priceDesc':
           return Number(b.price) - Number(a.price);
+        case 'rating':
+          const ratingA = a.rating ?? 0;
+          const ratingB = b.rating ?? 0;
+          return ratingB - ratingA;
         default:
           return 0;
       }
@@ -360,11 +364,13 @@ export default function Home() {
                       {sortBy === 'startTime' && 'Start Time'}
                       {sortBy === 'priceAsc' && 'Price (Low to High)'}
                       {sortBy === 'priceDesc' && 'Price (High to Low)'}
+                      {sortBy === 'rating' && 'Rating'}
                     </span>
                     <div className="flex items-center gap-1">
                       {sortBy === 'startTime' && <ArrowUpIcon className="w-4 h-4" />}
                       {sortBy === 'priceAsc' && <ArrowUpIcon className="w-4 h-4" />}
                       {sortBy === 'priceDesc' && <ArrowDownIcon className="w-4 h-4" />}
+                      {sortBy === 'rating' && <ArrowUpIcon className="w-4 h-4" />}
                       <ChevronDownIcon className="w-5 h-5 text-slate-400" />
                     </div>
                   </div>
@@ -419,6 +425,24 @@ export default function Home() {
                         <span>Price (High to Low)</span>
                         <div className="flex items-center gap-1">
                           <ArrowDownIcon className="w-4 h-4" />
+                          {selected && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
+                        </div>
+                      </>
+                    )}
+                  </Listbox.Option>
+                  <Listbox.Option
+                    value="rating"
+                    className={({ active }) =>
+                      `px-4 py-2 cursor-pointer flex items-center justify-between ${
+                        active ? 'bg-blue-50 text-blue-500' : 'text-slate-700'
+                      }`
+                    }
+                  >
+                    {({ selected }) => (
+                      <>
+                        <span>Rating</span>
+                        <div className="flex items-center gap-1">
+                          <ArrowUpIcon className="w-4 h-4" />
                           {selected && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
                         </div>
                       </>
