@@ -21,7 +21,7 @@ def test():
     date = datetime.now().strftime("%Y-%m-%d")
     num_of_players = "4"
     holes = "18"
-    cities = "Vancouver,Burnaby".split(",")
+    cities = None
 
     #change date to date object
     date = datetime.strptime(date, "%Y-%m-%d")

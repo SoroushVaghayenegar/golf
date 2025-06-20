@@ -1,6 +1,5 @@
 import sys
 
-from city import City
 sys.path.insert(0, "./python_libs")
 
 
@@ -31,8 +30,6 @@ def lambda_handler(event, context):
     cities = query_params.get("cities")
     if cities:
         cities = cities.split(",")
-    else:
-        cities = [city.value for city in City]
 
     #change date to date object
     date = datetime.strptime(date, "%Y-%m-%d")

@@ -26,14 +26,15 @@ pip install -r requirements.txt -t $TEMP_DIR/
 # Create zip file
 echo "🗜️ Creating deployment package..."
 cd $TEMP_DIR
-zip -r ../$ZIP_FILE . -x "*.pyc" -x "__pycache__/*" -x "*.DS_Store"
+zip -r ../$ZIP_FILE . -x "*.pyc" -x "__pycache__/*" -x "*.DS_Store" -x "test.py"
 cd ..
 
 # Upload to AWS Lambda
 echo "☁️ Uploading to AWS Lambda..."
 aws lambda update-function-code \
     --function-name $LAMBDA_FUNCTION_NAME \
-    --zip-file fileb://$ZIP_FILE
+    --zip-file fileb://$ZIP_FILE \
+    --no-cli-pager > /dev/null 2>&1
 
 # Cleanup
 echo "🧹 Cleaning up..."

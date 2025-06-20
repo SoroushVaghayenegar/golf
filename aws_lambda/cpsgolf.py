@@ -3,20 +3,21 @@ import aiohttp
 from datetime import datetime, date
 from tee_time import TeeTime
 from typing import List, Dict
-from utils import course_name_to_city
+from supabase_client import Supabase
 
 class CpsGolf:
 
     def __init__(self):
-        self.club_names = self.club_names()
+        self.supabase = Supabase()
+        self.clubs = self.supabase.fetch_cps_courses().data
 
-    def fetch_tee_times(self, search_date, player_count, holes_count, cities: List[str]) -> List[TeeTime]:
+    def fetch_tee_times(self, search_date, player_count, holes_count, cities: List[str] = None) -> List[TeeTime]:
         """
         Synchronous wrapper for the async implementation
         """
         return asyncio.run(self.fetch_tee_times_async(search_date, player_count, holes_count, cities))
 
-    async def fetch_tee_times_async(self, search_date: date, player_count: int, holes_count: int, cities: List[str]) -> List[TeeTime]:
+    async def fetch_tee_times_async(self, search_date: date, player_count: int, holes_count: int, cities: List[str] = None) -> List[TeeTime]:
         params = {
             "searchDate": search_date.strftime("%a %b %d %Y"),
             "holes": str(holes_count),
@@ -40,56 +41,60 @@ class CpsGolf:
             "x-componentid": "1"
         }
         
+        
         async with aiohttp.ClientSession() as session:
-            tasks = [self.club_tee_times(session, club_name, params, headers, cities) for club_name in self.club_names]
+            tasks = [self.club_tee_times(session, club, params, headers, cities) for club in self.clubs]
             results = await asyncio.gather(*tasks)
             
         # Flatten the list of lists
         return [tee_time for sublist in results for tee_time in sublist]
     
-    async def club_tee_times(self, session: aiohttp.ClientSession, club_name: str, params: Dict, headers: Dict, cities: List[str]) -> List[TeeTime]:
-        url = f"https://{club_name}.cps.golf/onlineres/onlineapi/api/v1/onlinereservation/TeeTimes"
-        try:
-            async with session.get(url, params=params, headers=headers) as response:
-                response.raise_for_status()
-                tee_time_list = await response.json()
-                
-                # Check if response indicates no tee times available
-                if isinstance(tee_time_list, dict) and tee_time_list.get("messageKey") == "NO_TEETIMES":
-                    return []
-                    
-                tee_times = []
-                for tee_time_obj in tee_time_list:
-                    course_name = tee_time_obj.get("courseName").strip()
-                    city = course_name_to_city(course_name)
-                    if city not in cities:
-                        continue
-                    start_datetime = datetime.strptime(tee_time_obj["startTime"], "%Y-%m-%dT%H:%M:%S")
-                    
-                    tee_time = TeeTime(
-                        start_date=start_datetime.date(),
-                        start_time=start_datetime.time(),
-                        players_available=len(tee_time_obj["availableParticipantNo"]),
-                        course_name=tee_time_obj.get("courseName"),
-                        holes=tee_time_obj.get("holes"),
-                        price=float(tee_time_obj["shItemPrices"][0]["price"]),
-                        city=city,
-                        booking_link=f"https://{club_name}.cps.golf"
-                    )
-                    tee_times.append(tee_time)
-                return tee_times
-                
-        except Exception as e:
-            print(f"Error fetching tee times for {club_name}: {e}")
-            return []
     
-    def club_names(self):
-        return [
-            "golfvancouver",
-            "golfburnaby",
-            "northview",
-            "westcoastgolfgroup",
-            "fortlangley",
-            "redwoodsbc",
-            "morgancreekbc"
-        ]
+    async def club_tee_times(self, session: aiohttp.ClientSession, club: dict, params: Dict, headers: Dict, cities: List[str] = None) -> List[TeeTime]:
+        club_name = club["club_name"]
+        course_name = club["course_name"]
+        city = club["city"]
+        
+        url = f"https://{club_name}.cps.golf/onlineres/onlineapi/api/v1/onlinereservation/TeeTimes"
+        
+        for attempt in range(3):
+            try:
+                async with session.get(url, params=params, headers=headers) as response:
+                    response.raise_for_status()
+                    tee_time_list = await response.json()
+                    
+                    # Check if response indicates no tee times available
+                    if isinstance(tee_time_list, dict) and tee_time_list.get("messageKey") == "NO_TEETIMES":
+                        return []
+                        
+                    tee_times = []
+                    for tee_time_obj in tee_time_list:
+                        if tee_time_obj["courseName"] != course_name:
+                            continue
+                        if cities and city not in cities:
+                            continue
+                        start_datetime = datetime.strptime(tee_time_obj["startTime"], "%Y-%m-%dT%H:%M:%S")
+                        
+                        tee_time = TeeTime(
+                            start_date=start_datetime.date(),
+                            start_time=start_datetime.time(),
+                            players_available=len(tee_time_obj["availableParticipantNo"]),
+                            course_name=course_name,
+                            holes=tee_time_obj.get("holes"),
+                            price=float(tee_time_obj["shItemPrices"][0]["price"]),
+                            city=city,
+                            booking_link=f"https://{club_name}.cps.golf",
+                            club_name=club_name
+                        )
+                        tee_times.append(tee_time)
+                    return tee_times
+                    
+            except Exception as e:
+                print(f"Error fetching tee times for {club_name} (attempt {attempt + 1}/3): {e}")
+                if attempt < 2:  # Don't wait after the last attempt
+                    await asyncio.sleep(1)
+                else:
+                    print(f"Failed to fetch tee times for {club_name} after 3 attempts")
+        
+        return []
+        
