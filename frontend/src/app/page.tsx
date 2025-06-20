@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 import { Listbox, Switch } from "@headlessui/react";
@@ -16,6 +16,7 @@ import {
   getVancouverNow,
   getCurrentVancouverTime
 } from "../services/timezoneService";
+import { SubscriptionSignup } from "@/components/SubscriptionSignup";
 
 // Rating component
 const Rating = ({ rating }: { rating: number | null }) => {
@@ -59,6 +60,74 @@ export default function Home() {
   const [teeTimes, setTeeTimes] = useState<TeeTime[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Subscription component state
+  const [showSubscription, setShowSubscription] = useState(false);
+  const [subscriptionShown, setSubscriptionShown] = useState(false);
+  const [subscriptionDismissed, setSubscriptionDismissed] = useState(false);
+  const resultsSectionRef = useRef<HTMLElement>(null);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
+
+  // Check localStorage on component mount
+  useEffect(() => {
+    const dismissed = localStorage.getItem('subscription-dismissed') === 'true';
+    setSubscriptionDismissed(dismissed);
+  }, []);
+
+  // Scroll detection for subscription component
+  useEffect(() => {
+    if (!teeTimes.length || subscriptionShown || subscriptionDismissed) return;
+
+    const handleScroll = () => {
+      if (isMobile) {
+        // On mobile, check if page has scrolled down significantly
+        const scrollY = window.scrollY;
+        const windowHeight = window.innerHeight;
+        
+        if (scrollY > windowHeight * 0.3) { // Show after 30% of viewport height
+          setShowSubscription(true);
+          setSubscriptionShown(true);
+        }
+      } else {
+        // On desktop, check if results section has scrolled
+        const resultsSection = resultsSectionRef.current;
+        if (resultsSection) {
+          const scrollTop = resultsSection.scrollTop;
+          const clientHeight = resultsSection.clientHeight;
+          
+          if (scrollTop > clientHeight * 0.3) { // Show after 30% of results section height
+            setShowSubscription(true);
+            setSubscriptionShown(true);
+          }
+        }
+      }
+    };
+
+    const resultsSection = resultsSectionRef.current;
+    if (isMobile) {
+      window.addEventListener('scroll', handleScroll);
+    } else {
+      if (resultsSection) {
+        resultsSection.addEventListener('scroll', handleScroll);
+      }
+    }
+
+    return () => {
+      if (isMobile) {
+        window.removeEventListener('scroll', handleScroll);
+      } else {
+        if (resultsSection) {
+          resultsSection.removeEventListener('scroll', handleScroll);
+        }
+      }
+    };
+  }, [teeTimes.length, subscriptionShown, subscriptionDismissed, isMobile]);
+
+  // Reset subscription state when new search is performed
+  useEffect(() => {
+    setShowSubscription(false);
+    setSubscriptionShown(false);
+  }, [fetchedDate]);
 
   // Function to format hour for display
   const formatHour = (hour: number) => {
@@ -66,6 +135,13 @@ export default function Home() {
     if (hour < 12) return `${hour} AM`;
     if (hour === 12) return '12 PM';
     return `${hour - 12} PM`;
+  };
+
+  // Handle subscription dismissal
+  const handleSubscriptionDismiss = () => {
+    setSubscriptionDismissed(true);
+    setShowSubscription(false);
+    setSubscriptionShown(true);
   };
 
   // Function to fetch tee times
@@ -468,7 +544,7 @@ export default function Home() {
         </section>
 
         {/* Tee Times Results Section - Scrollable */}
-        <section className="flex-1 flex flex-col gap-4 lg:overflow-y-auto">
+        <section ref={resultsSectionRef} className="flex-1 flex flex-col gap-4 lg:overflow-y-auto">
           {loading && (
             <div className="text-center py-8 text-slate-600">Loading tee times...</div>
           )}
@@ -524,6 +600,21 @@ export default function Home() {
               </div>
             ))}
           </div>
+          
+          {/* Subscription Component with Fade-in Animation */}
+          {showSubscription && (
+            <div className={`transition-all duration-1000 ease-out ${
+              showSubscription ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            }`}>
+              <div className="bg-white rounded-xl shadow-lg p-6 border border-slate-200">
+                <SubscriptionSignup 
+                  isOpen={showSubscription} 
+                  onOpenChange={setShowSubscription}
+                  onDismiss={handleSubscriptionDismiss}
+                />
+              </div>
+            </div>
+          )}
         </section>
       </main>
     </div>
