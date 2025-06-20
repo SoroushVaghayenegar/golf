@@ -29,6 +29,9 @@ class Chronogolf:
         affiliation_type_id = course["affiliation_type_id"]
         course_holes = course["holes"]
         city = course["city"]
+        rating = course["rating"]
+        cart_girl_hotness = course["cart_girl_hotness"]
+        
         if cities and city not in cities:
             return []
         
@@ -66,7 +69,9 @@ class Chronogolf:
                                 holes=holes_count,
                                 price=float(tee_time_obj["green_fees"][0]["green_fee"]),
                                 city=city,
-                                booking_link=self.course_booking_link(course["club_link_name"], course_id, holes_count, search_date, affiliation_type_id, player_count, tee_time_id)
+                                booking_link=self.course_booking_link(course["club_link_name"], course_id, holes_count, search_date, affiliation_type_id, player_count, tee_time_id),
+                                rating=rating,
+                                cart_girl_hotness=cart_girl_hotness
                             )
                             tee_times.append(tee_time)
                         except Exception as e:

@@ -54,6 +54,8 @@ class CpsGolf:
         club_name = club["club_name"]
         course_name = club["course_name"]
         city = club["city"]
+        rating = club["rating"]
+        cart_girl_hotness = club["cart_girl_hotness"]
         
         url = f"https://{club_name}.cps.golf/onlineres/onlineapi/api/v1/onlinereservation/TeeTimes"
         
@@ -84,7 +86,9 @@ class CpsGolf:
                             price=float(tee_time_obj["shItemPrices"][0]["price"]),
                             city=city,
                             booking_link=f"https://{club_name}.cps.golf",
-                            club_name=club_name
+                            club_name=club_name,
+                            rating=rating,
+                            cart_girl_hotness=cart_girl_hotness
                         )
                         tee_times.append(tee_time)
                     return tee_times

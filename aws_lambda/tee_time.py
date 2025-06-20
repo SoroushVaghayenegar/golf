@@ -12,8 +12,10 @@ class TeeTime:
     city: str
     booking_link: str
     club_name: str
+    rating: float
+    cart_girl_hotness: float
 
-    def __init__(self, start_date: date, start_time: time, players_available: int, course_name: str, holes: int, price: float, city: str, booking_link: str = None, club_name: str = None):
+    def __init__(self, start_date: date, start_time: time, players_available: int, course_name: str, holes: int, price: float, city: str, booking_link: str = None, club_name: str = None, rating: float = None, cart_girl_hotness: float = None):
         self.start_date = start_date
         self.start_time = start_time
         self.start_datetime = datetime.combine(start_date, start_time)
@@ -24,6 +26,8 @@ class TeeTime:
         self.city = city
         self.booking_link = booking_link
         self.club_name = club_name
+        self.rating = rating
+        self.cart_girl_hotness = cart_girl_hotness
     
     def to_dict(self):
         return {
@@ -36,5 +40,7 @@ class TeeTime:
             "price": self.price,
             "city": self.city,
             "booking_link": self.booking_link,
-            "club_name": self.club_name
+            "club_name": self.club_name,
+            "rating": self.rating,
+            "cart_girl_hotness": self.cart_girl_hotness
         }
