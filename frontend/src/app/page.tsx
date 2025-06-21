@@ -95,7 +95,7 @@ export default function Home() {
           const scrollTop = resultsSection.scrollTop;
           const clientHeight = resultsSection.clientHeight;
           
-          if (scrollTop > clientHeight * 0.3) { // Show after 30% of results section height
+          if (scrollTop > clientHeight * 0.5) { // Show after 50% of results section height
             setShowSubscription(true);
             setSubscriptionShown(true);
           }
@@ -551,6 +551,8 @@ export default function Home() {
                 autoPlay 
                 loop 
                 muted 
+                playsInline
+                webkit-playsinline="true"
                 className={`${isMobile ? 'w-full h-full' : 'mx-auto max-w-md'}`}
                 style={isMobile ? {maxHeight: '300px'} : { maxHeight: '600px' }}
               >
@@ -615,7 +617,7 @@ export default function Home() {
           
           {/* Subscription Component with Fade-in Animation */}
           {showSubscription && (
-            <div className={`transition-all duration-1000 ease-out ${
+            <div className={`transition-all duration-1000 ease-in-out ${
               showSubscription ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             }`}>
               <div className="bg-white rounded-xl shadow-lg p-6 border border-slate-200">
