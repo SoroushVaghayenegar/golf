@@ -546,7 +546,19 @@ export default function Home() {
         {/* Tee Times Results Section - Scrollable */}
         <section ref={resultsSectionRef} className="flex-1 flex flex-col gap-4 lg:overflow-y-auto">
           {loading && (
-            <div className="text-center py-8 text-slate-600">Loading tee times...</div>
+            <div className={`text-center py-8 ${isMobile ? 'fixed inset-0 bg-white z-50 flex flex-col items-center justify-center' : ''}`}>
+              <video 
+                autoPlay 
+                loop 
+                muted 
+                className={`${isMobile ? 'w-full h-full' : 'mx-auto max-w-md'}`}
+                style={isMobile ? {maxHeight: '300px'} : { maxHeight: '600px' }}
+              >
+                <source src="/loading-video.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+              {<p className="text-slate-600 mt-4">Loading tee times...</p>}
+            </div>
           )}
           {error && (
             <div className="text-center py-8 text-red-500">{error}</div>
