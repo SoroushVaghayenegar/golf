@@ -78,15 +78,21 @@ export default function Home() {
   useEffect(() => {
     if (!teeTimes.length || subscriptionShown || subscriptionDismissed) return;
 
+    let scrollTimeout: NodeJS.Timeout;
+
     const handleScroll = () => {
       if (isMobile) {
         // On mobile, check if page has scrolled down significantly
         const scrollY = window.scrollY;
         const windowHeight = window.innerHeight;
         
-        if (scrollY > windowHeight * 0.3) { // Show after 30% of viewport height
-          setShowSubscription(true);
-          setSubscriptionShown(true);
+        if (scrollY > windowHeight * 0.6) { // Show after 60% of viewport height (increased from 30%)
+          // Add a small delay to prevent immediate triggering
+          clearTimeout(scrollTimeout);
+          scrollTimeout = setTimeout(() => {
+            setShowSubscription(true);
+            setSubscriptionShown(true);
+          }, 500); // 500ms delay
         }
       } else {
         // On desktop, check if results section has scrolled
@@ -113,6 +119,7 @@ export default function Home() {
     }
 
     return () => {
+      clearTimeout(scrollTimeout);
       if (isMobile) {
         window.removeEventListener('scroll', handleScroll);
       } else {
