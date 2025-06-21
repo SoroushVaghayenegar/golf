@@ -81,7 +81,7 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss }: Subscrip
   }
 
   const handleNoThanks = () => {
-    localStorage.setItem('subscription-dismissed', 'true')
+    sessionStorage.setItem('subscription-dismissed', 'true')
     if (onDismiss) {
       onDismiss()
     }
@@ -105,8 +105,8 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss }: Subscrip
         broadcast_day_list: emailDays,
       })
       
-      // Set localStorage to dismiss the subscription dialog
-      localStorage.setItem('subscription-dismissed', 'true')
+      // Set sessionStorage to dismiss the subscription dialog
+      sessionStorage.setItem('subscription-dismissed', 'true')
       
       // Close the dialog on success
       onOpenChange(false)

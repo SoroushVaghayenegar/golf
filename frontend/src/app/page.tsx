@@ -68,9 +68,9 @@ export default function Home() {
   const resultsSectionRef = useRef<HTMLElement>(null);
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
 
-  // Check localStorage on component mount
+  // Check sessionStorage on component mount
   useEffect(() => {
-    const dismissed = localStorage.getItem('subscription-dismissed') === 'true';
+    const dismissed = sessionStorage.getItem('subscription-dismissed') === 'true';
     setSubscriptionDismissed(dismissed);
   }, []);
 
