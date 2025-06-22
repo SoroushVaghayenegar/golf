@@ -1,0 +1,4 @@
+boto3
+pytz
+requests
+python-dotenv

@@ -28,7 +28,7 @@ interface SubscriptionSignupProps {
 
 export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss }: SubscriptionSignupProps) {
   const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-  const cities = ["Pitt Meadows", "Langley", "Coquitlam", "Richmond", "Surrey", "Furry Creek", "Vancouver", "Burnaby"]
+  const cities = ["Pitt Meadows", "Langley", "Coquitlam", "Richmond", "Surrey", "Squamish", "Vancouver", "Burnaby"]
   
   const [golfDays, setGolfDays] = useState<string[]>([])
   const [timeFrom, setTimeFrom] = useState("05:00")
