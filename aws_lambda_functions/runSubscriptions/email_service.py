@@ -2,6 +2,9 @@ import boto3
 from email_template import generate_email_html, generate_email_text
 
 def send_email(email: str, tee_times: list[dict]):
+    if len(tee_times) == 0:
+        return
+    
     # Sort tee_times by datetime
     tee_times.sort(key=lambda x: x['start_datetime'])
     ses = boto3.client('ses', region_name='us-west-2')

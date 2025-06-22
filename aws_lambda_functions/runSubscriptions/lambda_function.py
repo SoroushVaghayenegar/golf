@@ -99,6 +99,15 @@ def lambda_handler(event, context):
     # get list of tee_times_subscriptions that have the same day of week as the current day of week
     subscriptions_for_broadcast_today = [subscription for subscription in subscriptions if day_of_week in subscription.broadcast_days]
 
+    if len(subscriptions_for_broadcast_today) == 0:
+        return {
+            "statusCode": 200,
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "body": "No subscriptions to broadcast"
+        }
+    
     # get a set of days for subscriptions
     tee_time_days = set()
     for subscription in subscriptions_for_broadcast_today:
