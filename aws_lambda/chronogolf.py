@@ -26,6 +26,7 @@ class Chronogolf:
         club_id = course["club_id"]
         course_id = course["course_id"]
         course_name = course["course_name"]
+        course_display_name = course["course_display_name"]
         affiliation_type_id = course["affiliation_type_id"]
         course_holes = course["holes"]
         city = course["city"]
@@ -65,7 +66,7 @@ class Chronogolf:
                                 start_date=start_datetime.date(),
                                 start_time=start_datetime.time(),
                                 players_available=len(tee_time_obj["green_fees"]),
-                                course_name=course_name,
+                                course_name=course_display_name,
                                 holes=holes_count,
                                 price=float(tee_time_obj["green_fees"][0]["green_fee"]),
                                 city=city,

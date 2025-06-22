@@ -53,6 +53,7 @@ class CpsGolf:
     async def club_tee_times(self, session: aiohttp.ClientSession, club: dict, params: Dict, headers: Dict, cities: List[str] = None) -> List[TeeTime]:
         club_name = club["club_name"]
         course_name = club["course_name"]
+        course_display_name = club["course_display_name"]
         city = club["city"]
         rating = club["rating"]
         cart_girl_hotness = club["cart_girl_hotness"]
@@ -71,7 +72,7 @@ class CpsGolf:
                         
                     tee_times = []
                     for tee_time_obj in tee_time_list:
-                        if tee_time_obj["courseName"] != course_name:
+                        if tee_time_obj["courseName"].strip() != course_name.strip():
                             continue
                         if cities and city not in cities:
                             continue
@@ -81,7 +82,7 @@ class CpsGolf:
                             start_date=start_datetime.date(),
                             start_time=start_datetime.time(),
                             players_available=len(tee_time_obj["availableParticipantNo"]),
-                            course_name=course_name,
+                            course_name=course_display_name,
                             holes=tee_time_obj.get("holes"),
                             price=float(tee_time_obj["shItemPrices"][0]["price"]),
                             city=city,
