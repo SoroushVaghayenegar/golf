@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tee Time Finder",
-  description: "Find tee times for your next golf game",
+  title: "Vancouver Tee Times",
+  description: "Find tee times for your next golf game in Vancouver",
 };
 
 export default function RootLayout({
