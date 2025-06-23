@@ -11,12 +11,17 @@ class Chronogolf:
         self.supabase = Supabase()
         self.courses = self.supabase.fetch_chronogolf_courses().data
 
-    def fetch_tee_times(self, search_date: date, player_count: int, holes_count: int, cities: List[str] = None) -> List[TeeTime]:
-        return asyncio.run(self.fetch_tee_times_async(search_date, player_count, holes_count, cities))
+    def fetch_tee_times(self, search_dates: List[date], player_count: int, holes_count: int, cities: List[str] = None) -> List[TeeTime]:
+        return asyncio.run(self.fetch_tee_times_async(search_dates, player_count, holes_count, cities))
     
-    async def fetch_tee_times_async(self, search_date: date, player_count: int, holes_count: int, cities: List[str] = None) -> List[TeeTime]:
+    async def fetch_tee_times_async(self, search_dates: List[date], player_count: int, holes_count: int, cities: List[str] = None) -> List[TeeTime]:
         async with aiohttp.ClientSession() as session:
-            tasks = [self.course_tee_times(session, course, search_date, player_count, holes_count, cities) for course in self.courses]
+            # Create tasks for each course and date combination
+            tasks = []
+            for search_date in search_dates:
+                for course in self.courses:
+                    tasks.append(self.course_tee_times(session, course, search_date, player_count, holes_count, cities))
+            
             results = await asyncio.gather(*tasks)
         
         # Flatten the list of lists

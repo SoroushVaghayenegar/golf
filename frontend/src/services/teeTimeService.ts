@@ -12,31 +12,18 @@ export interface TeeTime {
 }
 
 interface TeeTimeFilters {
-    date: string;  // Format: YYYY-MM-DD
+    dates: string[];  // Format: YYYY-MM-DD
     numOfPlayers: number;
     holes: number;
 }
 
-export const cities = [
-    "Vancouver",
-    "Burnaby",
-    "Surrey",
-    "North Vancouver",
-    "Langley",
-    "Pitt Meadows",
-    "Coquitlam",
-    "Richmond",
-    "Port Coquitlam",
-    "Squamish"
-] as const;
-
-export type City = typeof cities[number];
+// Cities are now fetched dynamically from the database via supabaseService
 
 export const fetchTeeTimes = async (filters: TeeTimeFilters): Promise<TeeTime[]> => {
     try {
         // Construct URL with query parameters
         const url = new URL('https://vndbaupvj666ku3bhellxf5akq0vzkje.lambda-url.us-west-2.on.aws/');
-        url.searchParams.append('date', filters.date);
+        url.searchParams.append('dates', filters.dates.join(','));
         url.searchParams.append('numOfPlayers', filters.numOfPlayers.toString());
         url.searchParams.append('holes', filters.holes.toString());
         

@@ -11,39 +11,43 @@ class CpsGolf:
         self.supabase = Supabase()
         self.clubs = self.supabase.fetch_cps_courses().data
 
-    def fetch_tee_times(self, search_date, player_count, holes_count, cities: List[str] = None) -> List[TeeTime]:
+    def fetch_tee_times(self, search_dates: List[date], player_count, holes_count, cities: List[str] = None) -> List[TeeTime]:
         """
         Synchronous wrapper for the async implementation
         """
-        return asyncio.run(self.fetch_tee_times_async(search_date, player_count, holes_count, cities))
+        return asyncio.run(self.fetch_tee_times_async(search_dates, player_count, holes_count, cities))
 
-    async def fetch_tee_times_async(self, search_date: date, player_count: int, holes_count: int, cities: List[str] = None) -> List[TeeTime]:
-        params = {
-            "searchDate": search_date.strftime("%a %b %d %Y"),
-            "holes": str(holes_count),
-            "numberOfPlayer": str(player_count),
-            "courseIds": "2,1,3",
-            "searchTimeType": "0",
-            "teeOffTimeMin": "0",
-            "teeOffTimeMax": "23",
-            "isChangeTeeOffTime": "true",
-            "teeSheetSearchView": "5",
-            "classCode": "R",
-            "defaultOnlineRate": "N",
-            "isUseCapacityPricing": "false",
-            "memberStoreId": "1",
-            "searchType": "1"
-        }
-        
+    async def fetch_tee_times_async(self, search_dates: List[date], player_count: int, holes_count: int, cities: List[str] = None) -> List[TeeTime]:
         headers = {
             "x-apikey": "8ea2914e-cac2-48a7-a3e5-e0f41350bf3a",
             "Content-Type": "application/json",
             "x-componentid": "1"
         }
         
-        
         async with aiohttp.ClientSession() as session:
-            tasks = [self.club_tee_times(session, club, params, headers, cities) for club in self.clubs]
+            # Create tasks for each club and date combination
+            tasks = []
+            for search_date in search_dates:
+                params = {
+                    "searchDate": search_date.strftime("%a %b %d %Y"),
+                    "holes": str(holes_count),
+                    "numberOfPlayer": str(player_count),
+                    "courseIds": "2,1,3",
+                    "searchTimeType": "0",
+                    "teeOffTimeMin": "0",
+                    "teeOffTimeMax": "23",
+                    "isChangeTeeOffTime": "true",
+                    "teeSheetSearchView": "5",
+                    "classCode": "R",
+                    "defaultOnlineRate": "N",
+                    "isUseCapacityPricing": "false",
+                    "memberStoreId": "1",
+                    "searchType": "1"
+                }
+                
+                for club in self.clubs:
+                    tasks.append(self.club_tee_times(session, club, params, headers, cities))
+            
             results = await asyncio.gather(*tasks)
             
         # Flatten the list of lists

@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { createSubscription } from "@/services/subscriptionService"
+import { createSubscription } from "@/services/supabaseService"
 
 interface SubscriptionSignupProps {
   isOpen: boolean

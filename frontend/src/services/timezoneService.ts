@@ -82,6 +82,10 @@ export function isDateDisabledInVancouver(date: Date): boolean {
   return false;
 }
 
+export function formatDatesForAPI(dates: Date[]): string {
+  return dates.map(formatDateForAPI).join(',');
+}
+
 /**
  * Format a date to YYYY-MM-DD string in Vancouver timezone
  */

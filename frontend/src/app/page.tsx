@@ -1,50 +1,119 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { DayPicker } from "react-day-picker";
-import "react-day-picker/dist/style.css";
-import { Listbox, Switch } from "@headlessui/react";
-import { ChevronDownIcon, UserGroupIcon, ClockIcon, MapPinIcon, ArrowUpIcon, ArrowDownIcon } from "@heroicons/react/24/outline";
+import { Calendar } from "@/components/ui/calendar";
+import { Listbox } from "@headlessui/react";
+import { ChevronDown, Users, Clock, School, LandPlot } from "lucide-react";
 import { Range } from "react-range";
-import { fetchTeeTimes, type TeeTime, cities, type City } from "../services/teeTimeService";
+import Select, { MultiValue, StylesConfig } from 'react-select';
+import { fetchTeeTimes, type TeeTime } from "../services/teeTimeService";
+import { fetchCities, fetchCourseDisplayNames } from "../services/supabaseService";
 import { 
   getVancouverToday, 
   isPastDateInVancouver,
   getMinSelectableDateInVancouver, 
   isDateDisabledInVancouver, 
-  formatDateForAPI, 
-  parseDateTimeInVancouver,
-  getVancouverNow,
+  formatDateForAPI,
   getCurrentVancouverTime
 } from "../services/timezoneService";
-import { SubscriptionSignup } from "@/components/SubscriptionSignup";
-import LottiePlayer from "@/components/LottiePlayer";
-import TeeTimeCard from "@/components/TeeTimeCard";
+import TeeTimeCards from "@/components/TeeTimeCards";
+
+interface SelectOption {
+  value: string;
+  label: string;
+}
 
 export default function Home() {
   // State for filters
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(getVancouverToday());
-  const [fetchedDate, setFetchedDate] = useState<Date | undefined>(getVancouverToday());
+  const [selectedDates, setSelectedDates] = useState<Date[] | undefined>(undefined);
+  const [fetchedDates, setFetchedDates] = useState<Date[] | undefined>(undefined);
   const [numOfPlayers, setNumOfPlayers] = useState<number>(4);
   const [holes, setHoles] = useState(18);
   const [timeRange, setTimeRange] = useState<number[]>([5, 22]); // 5am to 10pm
-  const [citiesFilterEnabled, setCitiesFilterEnabled] = useState(false);
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
+  const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'startTime' | 'priceAsc' | 'priceDesc' | 'rating'>('startTime');
   const [teeTimes, setTeeTimes] = useState<TeeTime[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cities, setCities] = useState<string[]>([]);
+  const [citiesLoading, setCitiesLoading] = useState(false);
+  const [courses, setCourses] = useState<string[]>([]);
+  const [coursesLoading, setCoursesLoading] = useState(false);
   
   // Subscription component state
   const [showSubscription, setShowSubscription] = useState(false);
   const [subscriptionShown, setSubscriptionShown] = useState(false);
   const [subscriptionDismissed, setSubscriptionDismissed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [currentTime, setCurrentTime] = useState<string>('');
+  const [isClient, setIsClient] = useState(false);
+  const [todayDate, setTodayDate] = useState<Date | null>(null);
   const resultsSectionRef = useRef<HTMLElement>(null);
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
 
-  // Check sessionStorage on component mount
+  // Check sessionStorage and set mobile state on component mount
   useEffect(() => {
+    // Mark as client-side rendered
+    setIsClient(true);
+    
     const dismissed = sessionStorage.getItem('subscription-dismissed') === 'true';
     setSubscriptionDismissed(dismissed);
+    
+    // Set mobile state after hydration
+    setIsMobile(window.innerWidth < 1024);
+    
+    // Set initial time
+    setCurrentTime(getCurrentVancouverTime());
+    
+    // Initialize dates after hydration
+    const today = getVancouverToday();
+    setTodayDate(today);
+    setSelectedDates([today]);
+    setFetchedDates([today]);
+    
+    // Handle window resize
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    
+    // Update time every minute
+    const updateTime = () => {
+      setCurrentTime(getCurrentVancouverTime());
+    };
+    
+    const timeInterval = setInterval(updateTime, 60000); // Update every minute
+    
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearInterval(timeInterval);
+    };
+  }, []);
+
+  // Fetch cities and courses on component mount
+  useEffect(() => {
+    const loadCitiesAndCourses = async () => {
+      setCitiesLoading(true);
+      setCoursesLoading(true);
+      try {
+        const [fetchedCities, fetchedCourses] = await Promise.all([
+          fetchCities(),
+          fetchCourseDisplayNames()
+        ]);
+        setCities(fetchedCities);
+        setCourses(fetchedCourses);
+      } catch (error) {
+        console.error('Failed to fetch cities or courses:', error);
+        // Fallback to empty arrays if fetch fails
+        setCities([]);
+        setCourses([]);
+      } finally {
+        setCitiesLoading(false);
+        setCoursesLoading(false);
+      }
+    };
+
+    loadCitiesAndCourses();
   }, []);
 
   // Scroll detection for subscription component
@@ -107,7 +176,7 @@ export default function Home() {
   useEffect(() => {
     setShowSubscription(false);
     setSubscriptionShown(false);
-  }, [fetchedDate]);
+  }, [fetchedDates]);
 
   // Function to format hour for display
   const formatHour = (hour: number) => {
@@ -126,25 +195,25 @@ export default function Home() {
 
   // Function to fetch tee times
   const handleGetTeeTimes = async () => {
-    if (!selectedDate) {
-      setError('Please select a date');
+    if (!selectedDates || selectedDates.length === 0) {
+      setError('Please select at least one date');
       return;
     }
     
     setLoading(true);
     setError(null);
     try {
-      console.log('Selected date:', selectedDate);
+      console.log('Selected dates:', selectedDates);
       
-      const formattedDate = formatDateForAPI(selectedDate);
-      console.log(formattedDate)
+      const formattedDates = selectedDates.map(date => formatDateForAPI(date));
+      console.log('Formatted dates:', formattedDates);
       const data = await fetchTeeTimes({
-        date: formattedDate, // YYYY-MM-DD
+        dates: formattedDates, // Array of YYYY-MM-DD strings
         numOfPlayers,
         holes
       });
       setTeeTimes(data);
-      setFetchedDate(selectedDate);
+      setFetchedDates(selectedDates);
     } catch (err) {
       setError('Failed to fetch tee times. Please try again.');
       console.error(err);
@@ -153,370 +222,270 @@ export default function Home() {
     }
   };
 
-  const filteredTeeTimes = (teeTimes: TeeTime[]) => {
-    let filtered = teeTimes;
-    
-    // Filter by time range
-    filtered = filtered.filter(teeTime => {
-      const teeTimeDateTime = parseDateTimeInVancouver(teeTime.start_datetime);
-      const teeTimeHour = teeTimeDateTime.getHours();
-      return teeTimeHour >= timeRange[0] && teeTimeHour <= timeRange[1];
-    });
-    
-    // Filter by cities if enabled
-    if (citiesFilterEnabled && selectedCities.length > 0) {
-      filtered = filtered.filter(teeTime => selectedCities.includes(teeTime.city));
-    }
-    
-    // If date is today, filter out tee times that are earlier than now
-    if (fetchedDate) {
-      const vancouverToday = getVancouverToday();
-      const isToday = fetchedDate.toDateString() === vancouverToday.toDateString();
-      
-      if (isToday) {
-        const vancouverNow = getVancouverNow();
-        filtered = filtered.filter(teeTime => {
-          const teeTimeDateTime = parseDateTimeInVancouver(teeTime.start_datetime);
-          console.log(teeTimeDateTime, vancouverNow)
-          return teeTimeDateTime >= vancouverNow;
-        });
+  // Convert cities and courses to react-select format
+  const cityOptions = cities.map(city => ({ value: city, label: city }));
+  const courseOptions = courses.map(course => ({ value: course, label: course }));
+
+  // Handle city selection changes
+  const handleCityChange = (selectedOptions: MultiValue<SelectOption>) => {
+    const values = selectedOptions ? selectedOptions.map((option) => option.value) : [];
+    setSelectedCities(values);
+  };
+
+  // Handle course selection changes
+  const handleCourseChange = (selectedOptions: MultiValue<SelectOption>) => {
+    const values = selectedOptions ? selectedOptions.map((option) => option.value) : [];
+    setSelectedCourses(values);
+  };
+
+  // Custom styles for React Select
+  const selectStyles: StylesConfig<SelectOption, true> = {
+    control: (provided) => ({
+      ...provided,
+      minHeight: '42px',
+      border: '1px solid #e2e8f0',
+      borderRadius: '8px',
+      fontSize: '14px',
+      fontWeight: '500',
+      '&:hover': {
+        borderColor: '#cbd5e0'
+      },
+      '&:focus-within': {
+        borderColor: '#3b82f6',
+        boxShadow: '0 0 0 2px rgba(59, 130, 246, 0.1)'
       }
-    }
-    
-    // Sort tee times
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case 'startTime':
-          const timeA = parseDateTimeInVancouver(a.start_datetime);
-          const timeB = parseDateTimeInVancouver(b.start_datetime);
-          return timeA.getTime() - timeB.getTime();
-        case 'priceAsc':
-          return Number(a.price) - Number(b.price);
-        case 'priceDesc':
-          return Number(b.price) - Number(a.price);
-        case 'rating':
-          const ratingA = a.rating ?? 0;
-          const ratingB = b.rating ?? 0;
-          return ratingB - ratingA;
-        default:
-          return 0;
+    }),
+    placeholder: (provided) => ({
+      ...provided,
+      color: '#64748b'
+    }),
+    multiValue: (provided) => ({
+      ...provided,
+      backgroundColor: '#3b82f6',
+      borderRadius: '4px'
+    }),
+    multiValueLabel: (provided) => ({
+      ...provided,
+      color: 'white',
+      fontSize: '12px'
+    }),
+    multiValueRemove: (provided) => ({
+      ...provided,
+      color: 'white',
+      '&:hover': {
+        backgroundColor: '#2563eb',
+        color: 'white'
       }
-    });
-    
-    return filtered;
+    })
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-100 p-4 sm:p-10 flex font-[family-name:var(--font-geist-sans)]">
-      <main className="w-full flex flex-col lg:flex-row gap-8 lg:h-[calc(100vh-5rem)]">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-100 p-4 sm:p-10 lg:p-0 font-[family-name:var(--font-geist-sans)]">
+      <main className="w-full flex flex-col lg:flex-row lg:h-screen gap-8 lg:gap-0">
         {/* Settings Section - Fixed on left for desktop, top for mobile */}
-        <section className="w-full lg:w-80 flex-shrink-0 bg-white rounded-xl shadow p-4 flex flex-col gap-3 lg:h-fit lg:sticky lg:top-4">
-          <div className="flex flex-col items-center gap-1">
-            <div className="text-sm text-slate-500">
-              Vancouver Time: {getCurrentVancouverTime()}
-            </div>
-            
-            <div className="rounded-lg border border-slate-200 bg-slate-50">
-              <DayPicker
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                fromDate={getMinSelectableDateInVancouver()}
-                disabled={isDateDisabledInVancouver}
-                className="!p-0"
-                modifiers={{
-                  past: (date) => isPastDateInVancouver(date)
-                }}
-                modifiersStyles={{
-                  past: { color: '#9ca3af', opacity: 0.5 }
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Players and Holes Row */}
-          <div className="flex gap-6">
-            {/* Players Selector */}
-            <div className="flex-1 flex flex-col gap-1">
-              <div className="flex items-center gap-1">
-                <UserGroupIcon className="w-5 h-5" />
-                <span className="font-semibold">Players</span>
+        <section className="w-full lg:w-80 flex-shrink-0 bg-white shadow p-6 flex flex-col gap-3 lg:gap-4 lg:h-screen lg:sticky lg:top-0 lg:mr-8 rounded-xl lg:rounded-none lg:rounded-r-xl lg:justify-between relative z-20">
+          {/* Filter Controls - Takes available space on desktop */}
+          <div className="flex flex-col gap-8 lg:gap-6 lg:flex-1">
+            <div className="flex flex-col items-center gap-3">
+              <div className="text-sm font-medium text-slate-600 tracking-wide">
+                Vancouver Time: {currentTime || 'Loading...'}
               </div>
-              <div className="flex gap-1">
-                {[1, 2, 3, 4].map((num) => (
-                  <button
-                    key={num}
-                    onClick={() => setNumOfPlayers(num)}
-                    className={`px-4 py-2 rounded-lg border transition-colors ${
-                      numOfPlayers === num
-                        ? 'bg-blue-500 text-white border-blue-500'
-                        : 'bg-white hover:bg-blue-50 border-slate-200'
-                    }`}
-                  >
-                    {num}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Holes Dropdown */}
-            <div className="flex-1 flex flex-col gap-1">
-              <span className="font-semibold">Holes</span>
-              <Listbox value={holes} onChange={setHoles}>
-                <div className="relative">
-                  <Listbox.Button className="w-full px-4 py-2 text-left bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <span>{holes}</span>
-                    <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  </Listbox.Button>
-                  <Listbox.Options className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg focus:outline-none">
-                    {[18, 9].map((option) => (
-                      <Listbox.Option
-                        key={option}
-                        value={option}
-                        className={({ active }) =>
-                          `px-4 py-2 cursor-pointer ${
-                            active ? 'bg-blue-50 text-blue-500' : 'text-slate-700'
-                          }`
-                        }
-                      >
-                        {option} Holes
-                      </Listbox.Option>
-                    ))}
-                  </Listbox.Options>
-                </div>
-              </Listbox>
-            </div>
-          </div>
-
-          {/* Time Range Filter */}
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-1">
-              <ClockIcon className="w-5 h-5" />
-              <span className="font-semibold">Time Range</span>
-            </div>
-            <div className="px-2">
-              <Range
-                step={1}
-                min={5}
-                max={22}
-                values={timeRange}
-                onChange={(values) => setTimeRange(values)}
-                renderTrack={({ props, children }) => (
-                  <div
-                    {...props}
-                    className="w-full h-2 bg-slate-200 rounded-full"
-                    style={{
-                      ...props.style,
+              
+              <div className="rounded-lg border shadow-sm">
+                {isClient ? (
+                  <Calendar
+                    mode="multiple"
+                    selected={selectedDates}
+                    onSelect={setSelectedDates}
+                    fromDate={getMinSelectableDateInVancouver()}
+                    disabled={isDateDisabledInVancouver}
+                    className="w-full"
+                    classNames={{
+                      root: "!w-full",
+                      table: "w-full border-collapse",
+                      day: "relative w-full h-full p-0 text-center group/day aspect-square select-none [&_button[data-selected-single=true]]:bg-blue-500 [&_button[data-selected-single=true]]:text-white [&_button:hover]:bg-blue-50 [&_button:hover]:text-blue-900",
+                      today: "bg-green-100 text-green-800 rounded-md [&_button]:bg-green-100 [&_button]:text-green-800 [&_button[data-selected-single=true]]:!bg-blue-500 [&_button[data-selected-single=true]]:!text-white"
                     }}
-                  >
-                    <div
-                      className="h-2 bg-blue-500 rounded-full"
-                      style={{
-                        width: `${((timeRange[1] - timeRange[0]) / (22 - 5)) * 100}%`,
-                        left: `${((timeRange[0] - 5) / (22 - 5)) * 100}%`,
-                        position: 'relative'
-                      }}
-                    />
-                    {children}
+                    modifiers={{
+                      past: (date: Date) => isPastDateInVancouver(date),
+                      today: (date: Date) => todayDate ? (date.toDateString() === todayDate.toDateString()) : false
+                    }}
+                    modifiersStyles={{
+                      past: { color: '#9ca3af', opacity: 0.5 }
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-64 flex items-center justify-center text-slate-500">
+                    Loading calendar...
                   </div>
                 )}
-                renderThumb={({ props }) => {
-                  const { key, ...otherProps } = props;
-                  return (
-                    <div
-                      key={key}
-                      {...otherProps}
-                      className="w-6 h-6 bg-blue-500 rounded-full shadow-lg flex items-center justify-center cursor-pointer"
-                      style={{
-                        ...otherProps.style,
-                      }}
+              </div>
+            </div>
+
+            {/* Players and Holes Row */}
+            <div className="flex gap-6">
+              {/* Players Selector */}
+              <div className="flex-1 flex flex-col gap-3">
+                <div className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-slate-600" />
+                  <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase">Players</span>
+                </div>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4].map((num) => (
+                    <button
+                      key={num}
+                      onClick={() => setNumOfPlayers(num)}
+                      className={`flex-1 px-3 py-2.5 rounded-lg border font-medium text-sm transition-all duration-200 ${
+                        numOfPlayers === num
+                          ? 'bg-blue-500 text-white border-blue-500 shadow-md'
+                          : 'bg-white hover:bg-blue-50 border-slate-200 text-slate-700 hover:border-blue-200'
+                      }`}
                     >
-                      <div className="w-2 h-2 bg-white rounded-full" />
-                    </div>
-                  );
-                }}
-              />
-              <div className="flex justify-between mt-2 text-sm text-slate-600">
-                <span>{formatHour(timeRange[0])}</span>
-                <span>{formatHour(timeRange[1])}</span>
+                      {num}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          </div>
 
-          {/* Cities Filter */}
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                <MapPinIcon className="w-5 h-5" />
-                <span className="font-semibold">Filter by Cities</span>
-              </div>
-              <Switch
-                checked={citiesFilterEnabled}
-                onChange={setCitiesFilterEnabled}
-                className={`${
-                  citiesFilterEnabled ? 'bg-blue-500' : 'bg-slate-200'
-                } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
-              >
-                <span
-                  className={`${
-                    citiesFilterEnabled ? 'translate-x-6' : 'translate-x-1'
-                  } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
-                />
-              </Switch>
-            </div>
-
-            {citiesFilterEnabled && (
-              <div className="relative">
-                <Listbox value={selectedCities} onChange={setSelectedCities} multiple>
-                  <Listbox.Button className="w-full px-4 py-2 text-left bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <span>
-                      {selectedCities.length === 0
-                        ? 'Select cities'
-                        : `${selectedCities.length} cities selected`}
-                    </span>
-                    <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  </Listbox.Button>
-                  <Listbox.Options className="absolute z-10 w-full bottom-full mb-1 bg-white border border-slate-200 rounded-lg shadow-lg overflow-auto focus:outline-none max-h-60">
-                    {cities.map((city: City) => (
-                      <Listbox.Option
-                        key={city}
-                        value={city}
-                        className={({ active }) =>
-                          `px-4 py-2 cursor-pointer ${
-                            active ? 'bg-blue-50 text-blue-500' : 'text-slate-700'
-                          }`
-                        }
-                      >
-                        {({ selected }) => (
-                          <div className="flex items-center gap-2">
-                            <div className={`w-4 h-4 border rounded ${
-                              selected ? 'bg-blue-500 border-blue-500' : 'border-slate-300'
-                            } flex items-center justify-center`}>
-                              {selected && (
-                                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                </svg>
-                              )}
-                            </div>
-                            {city}
-                          </div>
-                        )}
-                      </Listbox.Option>
-                    ))}
-                  </Listbox.Options>
+              {/* Holes Dropdown */}
+              <div className="flex-1 flex flex-col gap-3">
+                <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase">Holes</span>
+                <Listbox value={holes} onChange={setHoles}>
+                  <div className="relative">
+                    <Listbox.Button className="w-full px-4 py-2.5 text-left bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-blue-200 transition-colors font-medium text-slate-700">
+                      <span>{holes}</span>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    </Listbox.Button>
+                    <Listbox.Options className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg focus:outline-none">
+                      {[18, 9].map((option) => (
+                        <Listbox.Option
+                          key={option}
+                          value={option}
+                          className={({ active }) =>
+                            `px-4 py-2.5 cursor-pointer font-medium ${
+                              active ? 'bg-blue-50 text-blue-600' : 'text-slate-700'
+                            }`
+                          }
+                        >
+                          {option} Holes
+                        </Listbox.Option>
+                      ))}
+                    </Listbox.Options>
+                  </div>
                 </Listbox>
               </div>
-            )}
-          </div>
+            </div>
 
-          {/* Sort By */}
-          <div className="flex flex-col gap-2">
-            <span className="font-semibold">Sort By</span>
-            <Listbox value={sortBy} onChange={setSortBy}>
-              <div className="relative">
-                <Listbox.Button className="w-full px-4 py-2 text-left bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <div className="flex items-center justify-between">
-                    <span>
-                      {sortBy === 'startTime' && 'Start Time'}
-                      {sortBy === 'priceAsc' && 'Price (Low to High)'}
-                      {sortBy === 'priceDesc' && 'Price (High to Low)'}
-                      {sortBy === 'rating' && 'Rating'}
-                    </span>
-                    <div className="flex items-center gap-1">
-                      {sortBy === 'startTime' && <ArrowUpIcon className="w-4 h-4" />}
-                      {sortBy === 'priceAsc' && <ArrowUpIcon className="w-4 h-4" />}
-                      {sortBy === 'priceDesc' && <ArrowDownIcon className="w-4 h-4" />}
-                      {sortBy === 'rating' && <ArrowUpIcon className="w-4 h-4" />}
-                      <ChevronDownIcon className="w-5 h-5 text-slate-400" />
-                    </div>
-                  </div>
-                </Listbox.Button>
-                <Listbox.Options className="absolute z-10 w-full bottom-full mb-1 bg-white border border-slate-200 rounded-lg shadow-lg overflow-auto focus:outline-none max-h-60">
-                  <Listbox.Option
-                    value="startTime"
-                    className={({ active }) =>
-                      `px-4 py-2 cursor-pointer flex items-center justify-between ${
-                        active ? 'bg-blue-50 text-blue-500' : 'text-slate-700'
-                      }`
-                    }
-                  >
-                    {({ selected }) => (
-                      <>
-                        <span>Start Time</span>
-                        <div className="flex items-center gap-1">
-                          <ArrowUpIcon className="w-4 h-4" />
-                          {selected && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
-                        </div>
-                      </>
-                    )}
-                  </Listbox.Option>
-                  <Listbox.Option
-                    value="priceAsc"
-                    className={({ active }) =>
-                      `px-4 py-2 cursor-pointer flex items-center justify-between ${
-                        active ? 'bg-blue-50 text-blue-500' : 'text-slate-700'
-                      }`
-                    }
-                  >
-                    {({ selected }) => (
-                      <>
-                        <span>Price (Low to High)</span>
-                        <div className="flex items-center gap-1">
-                          <ArrowUpIcon className="w-4 h-4" />
-                          {selected && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
-                        </div>
-                      </>
-                    )}
-                  </Listbox.Option>
-                  <Listbox.Option
-                    value="priceDesc"
-                    className={({ active }) =>
-                      `px-4 py-2 cursor-pointer flex items-center justify-between ${
-                        active ? 'bg-blue-50 text-blue-500' : 'text-slate-700'
-                      }`
-                    }
-                  >
-                    {({ selected }) => (
-                      <>
-                        <span>Price (High to Low)</span>
-                        <div className="flex items-center gap-1">
-                          <ArrowDownIcon className="w-4 h-4" />
-                          {selected && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
-                        </div>
-                      </>
-                    )}
-                  </Listbox.Option>
-                  <Listbox.Option
-                    value="rating"
-                    className={({ active }) =>
-                      `px-4 py-2 cursor-pointer flex items-center justify-between ${
-                        active ? 'bg-blue-50 text-blue-500' : 'text-slate-700'
-                      }`
-                    }
-                  >
-                    {({ selected }) => (
-                      <>
-                        <span>Rating</span>
-                        <div className="flex items-center gap-1">
-                          <ArrowUpIcon className="w-4 h-4" />
-                          {selected && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
-                        </div>
-                      </>
-                    )}
-                  </Listbox.Option>
-                </Listbox.Options>
+            {/* Time Range Filter */}
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-slate-600" />
+                <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase">Time Range</span>
               </div>
-            </Listbox>
+              <div className="px-2">
+                <Range
+                  step={1}
+                  min={5}
+                  max={22}
+                  values={timeRange}
+                  onChange={(values) => setTimeRange(values)}
+                  renderTrack={({ props, children }) => (
+                    <div
+                      {...props}
+                      className="w-full h-2 bg-slate-200 rounded-full"
+                      style={{
+                        ...props.style,
+                      }}
+                    >
+                      <div
+                        className="h-2 bg-blue-500 rounded-full"
+                        style={{
+                          width: `${((timeRange[1] - timeRange[0]) / (22 - 5)) * 100}%`,
+                          left: `${((timeRange[0] - 5) / (22 - 5)) * 100}%`,
+                          position: 'relative'
+                        }}
+                      />
+                      {children}
+                    </div>
+                  )}
+                  renderThumb={({ props }) => {
+                    const { key, ...otherProps } = props;
+                    return (
+                      <div
+                        key={key}
+                        {...otherProps}
+                        className="w-6 h-6 bg-blue-500 rounded-full shadow-lg flex items-center justify-center cursor-pointer"
+                        style={{
+                          ...otherProps.style,
+                          transform: 'translateY(-50%)',
+                          top: '0%'
+                        }}
+                      >
+                        <div className="w-2 h-2 bg-white rounded-full" />
+                      </div>
+                    );
+                  }}
+                />
+                <div className="flex justify-between mt-3 text-sm font-medium text-slate-600">
+                  <span>{formatHour(timeRange[0])}</span>
+                  <span>{formatHour(timeRange[1])}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Cities Filter */}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <School className="w-5 h-5 text-slate-600" />
+                <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase">Cities</span>
+              </div>
+              <Select
+                isMulti
+                options={cityOptions}
+                value={cityOptions.filter(option => selectedCities.includes(option.value))}
+                onChange={handleCityChange}
+                placeholder="Filter by cities..."
+                isSearchable
+                isLoading={citiesLoading}
+                noOptionsMessage={() => citiesLoading ? "Loading cities..." : "No cities found"}
+                styles={selectStyles}
+                className="react-select-container"
+                classNamePrefix="react-select"
+                instanceId="cities-select"
+              />
+            </div>
+
+            {/* Courses Filter */}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <LandPlot className="w-5 h-5 text-slate-600" />
+                <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase">Courses</span>
+              </div>
+              <Select
+                isMulti
+                options={courseOptions}
+                value={courseOptions.filter(option => selectedCourses.includes(option.value))}
+                onChange={handleCourseChange}
+                placeholder="Filter by courses..."
+                isSearchable
+                isLoading={coursesLoading}
+                noOptionsMessage={() => coursesLoading ? "Loading courses..." : "No courses found"}
+                styles={selectStyles}
+                className="react-select-container"
+                classNamePrefix="react-select"
+                instanceId="courses-select"
+              />
+            </div>
           </div>
 
-          {/* Get Tee Times Button */}
+          {/* Get Tee Times Button - Pinned to bottom on desktop */}
           <button
             onClick={handleGetTeeTimes}
-            disabled={loading || !selectedDate}
-            className={`mt-2 px-6 py-3 rounded-lg font-semibold text-white transition-colors ${
-              loading || !selectedDate
+            disabled={loading || !selectedDates || selectedDates.length === 0}
+            className={`mt-8 lg:mt-0 px-6 py-3 rounded-lg font-semibold text-white transition-all duration-200 ${
+              loading || !selectedDates || selectedDates.length === 0
                 ? 'bg-slate-300 cursor-not-allowed'
-                : 'bg-blue-500 hover:bg-blue-600'
+                : 'bg-blue-500 hover:bg-blue-600 shadow-md hover:shadow-lg'
             }`}
           >
             {loading ? 'Searching...' : 'Get Tee Times'}
@@ -524,47 +493,31 @@ export default function Home() {
         </section>
 
         {/* Tee Times Results Section - Scrollable */}
-        <section ref={resultsSectionRef} className="flex-1 flex flex-col gap-4 lg:overflow-y-auto">
-          {loading && (
-            <div className={isMobile
-              ? 'fixed inset-0 bg-white z-50 flex flex-col items-center justify-center'
-              : 'flex-1 flex flex-col items-center justify-center'
-            }>
-              <LottiePlayer animationPath="/animations/loading-animation.json" /> 
-              <p className="text-slate-600 mt-4">Loading tee times...</p>
-            </div>
-          )}
-          {error && (
-            <div className="text-center py-8 text-red-500">{error}</div>
-          )}
-          {!loading && !error && filteredTeeTimes(teeTimes).length === 0 && (
-            <div className="text-center py-8 text-slate-600">No tee times available for the selected criteria.</div>
-          )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {!loading && !error && filteredTeeTimes(teeTimes).map((teeTime, index) => (
-              <TeeTimeCard
-                key={index}
-                teeTime={teeTime}
-                index={index}
-              />
-            ))}
+        {/* On mobile, only show results section if there are results, loading, or error */}
+        {/* On desktop, always show to display initial state */}
+        {(!isMobile || teeTimes.length > 0 || loading || !!error) && (
+          <div className="flex-1 lg:p-10 lg:pl-0 lg:pr-10 lg:py-10 px-4 sm:px-10 lg:px-0">
+            <TeeTimeCards
+              ref={resultsSectionRef}
+              teeTimes={teeTimes}
+              loading={loading}
+              error={error}
+              timeRange={timeRange}
+              citiesFilterEnabled={true}
+              selectedCities={selectedCities}
+              coursesFilterEnabled={true}
+              selectedCourses={selectedCourses}
+              fetchedDates={fetchedDates}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
+              showSubscription={showSubscription}
+              setShowSubscription={setShowSubscription}
+              handleSubscriptionDismiss={handleSubscriptionDismiss}
+              isMobile={isMobile}
+              hasSearched={teeTimes.length > 0 || loading || !!error}
+            />
           </div>
-          
-          {/* Subscription Component with Fade-in Animation */}
-          {showSubscription && (
-            <div className={`transition-all duration-1000 ease-in-out ${
-              showSubscription ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-            }`}>
-              <div className="bg-white rounded-xl shadow-lg p-6 border border-slate-200">
-                <SubscriptionSignup 
-                  isOpen={showSubscription} 
-                  onOpenChange={setShowSubscription}
-                  onDismiss={handleSubscriptionDismiss}
-                />
-              </div>
-            </div>
-          )}
-        </section>
+        )}
       </main>
     </div>
   );
