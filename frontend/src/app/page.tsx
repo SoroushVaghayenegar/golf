@@ -219,6 +219,25 @@ export default function Home() {
       console.error(err);
     } finally {
       setLoading(false);
+      
+      // Auto-scroll to results section after loading is complete
+      setTimeout(() => {
+        if (resultsSectionRef.current) {
+          if (isMobile) {
+            // On mobile, scroll the window to the results section
+            resultsSectionRef.current.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'start' 
+            });
+          } else {
+            // On desktop, scroll to top of the results section content
+            resultsSectionRef.current.scrollTo({ 
+              top: 0, 
+              behavior: 'smooth' 
+            });
+          }
+        }
+      }, 100); // Small delay to ensure DOM is updated
     }
   };
 
