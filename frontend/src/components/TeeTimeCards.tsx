@@ -1,5 +1,5 @@
 "use client";
-import { forwardRef } from "react";
+import { forwardRef, useRef, useImperativeHandle } from "react";
 import { Listbox } from "@headlessui/react";
 import { ChevronDown, ArrowUp, ArrowDown } from "lucide-react";
 import { type TeeTime } from "../services/teeTimeService";
@@ -37,7 +37,12 @@ interface TeeTimeCardsProps {
   hasSearched: boolean;
 }
 
-const TeeTimeCards = forwardRef<HTMLElement, TeeTimeCardsProps>(({
+export interface TeeTimeCardsRef {
+  scrollableElement: HTMLDivElement | null;
+  sectionElement: HTMLElement | null;
+}
+
+const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
   teeTimes,
   loading,
   error,
@@ -56,6 +61,15 @@ const TeeTimeCards = forwardRef<HTMLElement, TeeTimeCardsProps>(({
   hasSearched
 }, ref) => {
   
+  const sectionRef = useRef<HTMLElement>(null);
+  const scrollableRef = useRef<HTMLDivElement>(null);
+
+  // Expose both refs to parent component
+  useImperativeHandle(ref, () => ({
+    scrollableElement: scrollableRef.current,
+    sectionElement: sectionRef.current,
+  }), []);
+
   const filteredTeeTimes = (teeTimes: TeeTime[]) => {
     let filtered = teeTimes;
     
@@ -177,7 +191,7 @@ const TeeTimeCards = forwardRef<HTMLElement, TeeTimeCardsProps>(({
   };
 
   return (
-    <section ref={ref} className="flex-1 flex flex-col lg:h-full lg:overflow-hidden">
+    <section ref={sectionRef} className="flex-1 flex flex-col lg:h-full lg:overflow-hidden">
       {/* Sort By Component - Only show when there are results */}
       {!loading && !error && filteredTeeTimes(teeTimes).length > 0 && (
         <div className="bg-white rounded-lg shadow p-4 mb-4 flex-shrink-0">
@@ -283,7 +297,7 @@ const TeeTimeCards = forwardRef<HTMLElement, TeeTimeCardsProps>(({
       )}
 
       {/* Scrollable Results Container */}
-      <div className="flex-1 lg:overflow-y-auto lg:pr-2 space-y-4">
+      <div ref={scrollableRef} className="flex-1 lg:overflow-y-auto lg:pr-2 space-y-4">
         {loading && (
           <div className={isMobile
             ? 'fixed inset-0 bg-white z-50 flex flex-col items-center justify-center'

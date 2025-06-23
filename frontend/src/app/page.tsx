@@ -15,7 +15,7 @@ import {
   formatDateForAPI,
   getCurrentVancouverTime
 } from "../services/timezoneService";
-import TeeTimeCards from "@/components/TeeTimeCards";
+import TeeTimeCards, { TeeTimeCardsRef } from "@/components/TeeTimeCards";
 
 interface SelectOption {
   value: string;
@@ -48,7 +48,7 @@ export default function Home() {
   const [currentTime, setCurrentTime] = useState<string>('');
   const [isClient, setIsClient] = useState(false);
   const [todayDate, setTodayDate] = useState<Date | null>(null);
-  const resultsSectionRef = useRef<HTMLElement>(null);
+  const resultsSectionRef = useRef<TeeTimeCardsRef>(null);
 
   // Check sessionStorage and set mobile state on component mount
   useEffect(() => {
@@ -137,11 +137,11 @@ export default function Home() {
           }, 500); // 500ms delay
         }
       } else {
-        // On desktop, check if results section has scrolled
-        const resultsSection = resultsSectionRef.current;
-        if (resultsSection) {
-          const scrollTop = resultsSection.scrollTop;
-          const clientHeight = resultsSection.clientHeight;
+        // On desktop, check if scrollable div has scrolled
+        const scrollableElement = resultsSectionRef.current?.scrollableElement;
+        if (scrollableElement) {
+          const scrollTop = scrollableElement.scrollTop;
+          const clientHeight = scrollableElement.clientHeight;
           
           if (scrollTop > clientHeight * 0.5) { // Show after 50% of results section height
             setShowSubscription(true);
@@ -151,12 +151,12 @@ export default function Home() {
       }
     };
 
-    const resultsSection = resultsSectionRef.current;
     if (isMobile) {
       window.addEventListener('scroll', handleScroll);
     } else {
-      if (resultsSection) {
-        resultsSection.addEventListener('scroll', handleScroll);
+      const scrollableElement = resultsSectionRef.current?.scrollableElement;
+      if (scrollableElement) {
+        scrollableElement.addEventListener('scroll', handleScroll);
       }
     }
 
@@ -165,8 +165,9 @@ export default function Home() {
       if (isMobile) {
         window.removeEventListener('scroll', handleScroll);
       } else {
-        if (resultsSection) {
-          resultsSection.removeEventListener('scroll', handleScroll);
+        const scrollableElement = resultsSectionRef.current?.scrollableElement;
+        if (scrollableElement) {
+          scrollableElement.removeEventListener('scroll', handleScroll);
         }
       }
     };
@@ -222,16 +223,20 @@ export default function Home() {
       
       // Auto-scroll to results section after loading is complete
       setTimeout(() => {
-        if (resultsSectionRef.current) {
-          if (isMobile) {
-            // On mobile, scroll the window to the results section
-            resultsSectionRef.current.scrollIntoView({ 
+        if (isMobile) {
+          // On mobile, scroll the window to the results section
+          const sectionElement = resultsSectionRef.current?.sectionElement;
+          if (sectionElement) {
+            sectionElement.scrollIntoView({ 
               behavior: 'smooth', 
               block: 'start' 
             });
-          } else {
-            // On desktop, scroll to top of the results section content
-            resultsSectionRef.current.scrollTo({ 
+          }
+        } else {
+          // On desktop, scroll to top of the scrollable div
+          const scrollableElement = resultsSectionRef.current?.scrollableElement;
+          if (scrollableElement) {
+            scrollableElement.scrollTo({ 
               top: 0, 
               behavior: 'smooth' 
             });
@@ -296,6 +301,14 @@ export default function Home() {
         color: 'white'
       }
     })
+  };
+
+  // Common props for React Select to fix aria-activedescendant issue
+  const commonSelectProps = {
+    'aria-activedescendant': '',
+    inputProps: {
+      'aria-activedescendant': ''
+    }
   };
 
   return (
@@ -471,6 +484,7 @@ export default function Home() {
                 className="react-select-container"
                 classNamePrefix="react-select"
                 instanceId="cities-select"
+                {...commonSelectProps}
               />
             </div>
 
@@ -493,6 +507,7 @@ export default function Home() {
                 className="react-select-container"
                 classNamePrefix="react-select"
                 instanceId="courses-select"
+                {...commonSelectProps}
               />
             </div>
           </div>
