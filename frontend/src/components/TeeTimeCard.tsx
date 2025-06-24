@@ -1,6 +1,7 @@
 import { parseDateTimeInVancouver } from "../services/timezoneService";
 import { TeeTime } from "../services/teeTimeService";
 import { StarIcon } from "@heroicons/react/24/outline";
+import { Badge } from "./ui/badge";
 
 // Rating component
 const Rating = ({ rating }: { rating: number | null }) => {
@@ -58,9 +59,11 @@ export default function TeeTimeCard({ teeTime, index }: TeeTimeCardProps) {
           </p>
           <p>{teeTime.holes} holes</p>
           <p>{teeTime.players_available} spots available</p>
-          <p className="text-xl font-bold text-blue-600 mt-1">
-            ${Number(teeTime.price).toFixed(2)}
-          </p>
+          <div className="flex items-center justify-between mt-1">
+            <p className="text-xl font-bold text-blue-600">
+              ${Number(teeTime.price).toFixed(2)}
+            </p>
+          </div>
         </div>
         {teeTime.booking_link && (
           <div className="mt-2">
@@ -74,7 +77,7 @@ export default function TeeTimeCard({ teeTime, index }: TeeTimeCardProps) {
                   : 'bg-green-500 hover:bg-green-600 text-white'
               }`}
             >
-              {teeTime.booking_link.includes('cps') ? 'Take me to website' : 'Book'}
+              {teeTime.booking_link.includes('cps') ? 'Take me to course\'s website' : 'Book on ChronoGolf'}
             </a>
           </div>
         )}
