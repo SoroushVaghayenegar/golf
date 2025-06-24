@@ -89,9 +89,14 @@ class CpsGolf:
                         weather_hour_to_use = weather_hour_to_use % 24
                         weather_hour_to_use = weather_hour_to_use - 1 # if it's 0, use 23
                         
-                        weather_code = city_forecasts[city][start_date]['weather_codes'][weather_hour_to_use]
-                        temperature = city_forecasts[city][start_date]['temperatures'][weather_hour_to_use]
-                        precipitation_probability = city_forecasts[city][start_date]['precipitation_probabilities'][weather_hour_to_use]
+                        if city not in city_forecasts or start_date not in city_forecasts[city]:
+                            weather_code = None
+                            temperature = None
+                            precipitation_probability = None
+                        else:
+                            weather_code = city_forecasts[city][start_date]['weather_codes'][weather_hour_to_use]
+                            temperature = city_forecasts[city][start_date]['temperatures'][weather_hour_to_use]
+                            precipitation_probability = city_forecasts[city][start_date]['precipitation_probabilities'][weather_hour_to_use]
 
                         tee_time = TeeTime(
                             start_date=start_datetime.date(),
@@ -104,7 +109,10 @@ class CpsGolf:
                             booking_link=f"https://{club_name}.cps.golf",
                             club_name=club_name,
                             rating=rating,
-                            cart_girl_hotness=cart_girl_hotness
+                            cart_girl_hotness=cart_girl_hotness,
+                            temperature=temperature,
+                            precipitation_probability=precipitation_probability,
+                            weather_code=weather_code
                         )
                         tee_times.append(tee_time)
                     return tee_times

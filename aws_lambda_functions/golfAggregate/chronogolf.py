@@ -73,9 +73,15 @@ class Chronogolf:
                         weather_hour_to_use = weather_hour_to_use % 24
                         weather_hour_to_use = weather_hour_to_use - 1 # if it's 0, use 23
                         
-                        weather_code = city_forecasts[city][start_date]['weather_codes'][weather_hour_to_use]
-                        temperature = city_forecasts[city][start_date]['temperatures'][weather_hour_to_use]
-                        precipitation_probability = city_forecasts[city][start_date]['precipitation_probabilities'][weather_hour_to_use]
+                        # if city ot start_date is not found, then return null
+                        if city not in city_forecasts or start_date not in city_forecasts[city]:
+                            weather_code = None
+                            temperature = None
+                            precipitation_probability = None
+                        else:
+                            weather_code = city_forecasts[city][start_date]['weather_codes'][weather_hour_to_use]
+                            temperature = city_forecasts[city][start_date]['temperatures'][weather_hour_to_use]
+                            precipitation_probability = city_forecasts[city][start_date]['precipitation_probabilities'][weather_hour_to_use]
 
                         try:
                             tee_time = TeeTime(
