@@ -35,30 +35,9 @@ export const createSubscription = async (subscription: Subscription) => {
     }
 }
 
-export const fetchCities = async () => {
-    try {
-        const response = await fetch(`${supabaseUrl}/functions/v1/fetch-cities`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${supabaseAnonKey}`,
-                'Content-Type': 'application/json',
-            }
-        })
-        
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}))
-            throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
-        }
-        
-        const data = await response.json()
-        return data.sort((a: string, b: string) => a.localeCompare(b))
-    } catch (error) {
-        console.error('Error fetching cities:', error)
-        throw error
-    }
-}
 
-export const fetchCourseDisplayNames = async () => {
+
+export const fetchCourseDisplayNamesAndTheirCities = async () => {
     try {
         const response = await fetch(`${supabaseUrl}/functions/v1/fetch-course-display-names`, {
             method: 'GET',
@@ -74,7 +53,7 @@ export const fetchCourseDisplayNames = async () => {
         }
         
         const data = await response.json()
-        return data.sort((a: string, b: string) => a.localeCompare(b))
+        return data
     } catch (error) {
         console.error('Error fetching course display names:', error)
         throw error

@@ -6,7 +6,7 @@ import { ChevronDown, Users, Clock, School, LandPlot } from "lucide-react";
 import { Range } from "react-range";
 import Select, { MultiValue, StylesConfig } from 'react-select';
 import { fetchTeeTimes, type TeeTime } from "../services/teeTimeService";
-import { fetchCities, fetchCourseDisplayNames } from "../services/supabaseService";
+import { fetchCourseDisplayNamesAndTheirCities } from "../services/supabaseService";
 import { 
   getVancouverToday, 
   isPastDateInVancouver,
@@ -20,6 +20,8 @@ import TeeTimeCards, { TeeTimeCardsRef } from "@/components/TeeTimeCards";
 interface SelectOption {
   value: string;
   label: string;
+  isDisabled?: boolean;
+  city?: string;
 }
 
 export default function Home() {
@@ -39,6 +41,7 @@ export default function Home() {
   const [citiesLoading, setCitiesLoading] = useState(false);
   const [courses, setCourses] = useState<string[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(false);
+  const [courseCityMapping, setCourseCityMapping] = useState<Record<string, string>>({});
   
   // Subscription component state
   const [showSubscription, setShowSubscription] = useState(false);
@@ -96,15 +99,24 @@ export default function Home() {
       setCitiesLoading(true);
       setCoursesLoading(true);
       try {
-        const [fetchedCities, fetchedCourses] = await Promise.all([
-          fetchCities(),
-          fetchCourseDisplayNames()
-        ]);
-        setCities(fetchedCities);
-        setCourses(fetchedCourses);
+        const courseCityData = await fetchCourseDisplayNamesAndTheirCities();
+        
+        // Check if data is valid
+        if (!courseCityData || typeof courseCityData !== 'object') {
+          throw new Error('Invalid data format received from API');
+        }
+        
+        // Extract courses (keys) and cities (values)
+        const courseNames = Object.keys(courseCityData);
+        const cityNames = [...new Set(Object.values(courseCityData) as string[])].sort((a: string, b: string) => a.localeCompare(b));
+        
+        setCourseCityMapping(courseCityData);
+        setCourses(courseNames);
+        setCities(cityNames);
       } catch (error) {
         console.error('Failed to fetch cities or courses:', error);
         // Fallback to empty arrays if fetch fails
+        setCourseCityMapping({});
         setCities([]);
         setCourses([]);
       } finally {
@@ -247,19 +259,61 @@ export default function Home() {
   };
 
   // Convert cities and courses to react-select format
-  const cityOptions = cities.map(city => ({ value: city, label: city }));
-  const courseOptions = courses.map(course => ({ value: course, label: course }));
+  const cityOptions = cities.map(city => {
+    // Check if this city has any courses in the selected courses
+    const cityHasSelectedCourses = selectedCourses.length === 0 || selectedCourses.some(courseName => {
+      const courseCity = courseCityMapping[courseName];
+      return courseCity === city;
+    });
+    
+    return { 
+      value: city, 
+      label: city,
+      isDisabled: selectedCourses.length > 0 && !cityHasSelectedCourses
+    };
+  });
+  
+  const courseOptions = courses.map(course => {
+    const courseCity = courseCityMapping[course];
+    const isDisabled = selectedCities.length > 0 && !selectedCities.includes(courseCity);
+    return { 
+      value: course, 
+      label: course, 
+      isDisabled: isDisabled,
+      city: courseCity 
+    };
+  });
 
   // Handle city selection changes
   const handleCityChange = (selectedOptions: MultiValue<SelectOption>) => {
     const values = selectedOptions ? selectedOptions.map((option) => option.value) : [];
     setSelectedCities(values);
+    
+    // Remove selected courses that are not in the selected cities
+    if (values.length > 0) {
+      const filteredCourses = selectedCourses.filter(courseName => {
+        const courseCity = courseCityMapping[courseName];
+        return courseCity && values.includes(courseCity);
+      });
+      if (filteredCourses.length !== selectedCourses.length) {
+        setSelectedCourses(filteredCourses);
+      }
+    }
   };
 
   // Handle course selection changes
   const handleCourseChange = (selectedOptions: MultiValue<SelectOption>) => {
     const values = selectedOptions ? selectedOptions.map((option) => option.value) : [];
     setSelectedCourses(values);
+    
+    // Remove selected cities that don't have any of the selected courses
+    if (values.length > 0) {
+      const validCities = [...new Set(values.map(courseName => courseCityMapping[courseName]).filter(Boolean))];
+      const filteredCities = selectedCities.filter(cityName => validCities.includes(cityName));
+      if (filteredCities.length !== selectedCities.length) {
+        setSelectedCities(filteredCities);
+      }
+    }
   };
 
   // Custom styles for React Select
@@ -299,6 +353,26 @@ export default function Home() {
       '&:hover': {
         backgroundColor: '#2563eb',
         color: 'white'
+      }
+    }),
+    option: (provided, state) => ({
+      ...provided,
+      color: state.isDisabled ? '#9ca3af' : provided.color,
+      backgroundColor: state.isDisabled 
+        ? '#f9fafb' 
+        : state.isSelected 
+          ? '#3b82f6' 
+          : state.isFocused 
+            ? '#eff6ff' 
+            : 'white',
+      cursor: state.isDisabled ? 'not-allowed' : 'pointer',
+      opacity: state.isDisabled ? 0.6 : 1,
+      '&:hover': {
+        backgroundColor: state.isDisabled 
+          ? '#f9fafb' 
+          : state.isSelected 
+            ? '#3b82f6' 
+            : '#eff6ff'
       }
     })
   };
@@ -480,6 +554,8 @@ export default function Home() {
                 isSearchable
                 isLoading={citiesLoading}
                 noOptionsMessage={() => citiesLoading ? "Loading cities..." : "No cities found"}
+                isOptionDisabled={(option) => option.isDisabled || false}
+                menuPlacement="top"
                 styles={selectStyles}
                 className="react-select-container"
                 classNamePrefix="react-select"
@@ -503,6 +579,8 @@ export default function Home() {
                 isSearchable
                 isLoading={coursesLoading}
                 noOptionsMessage={() => coursesLoading ? "Loading courses..." : "No courses found"}
+                isOptionDisabled={(option) => option.isDisabled || false}
+                menuPlacement="top"
                 styles={selectStyles}
                 className="react-select-container"
                 classNamePrefix="react-select"
