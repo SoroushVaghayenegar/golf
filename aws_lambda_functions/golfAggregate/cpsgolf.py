@@ -81,7 +81,7 @@ class CpsGolf:
                         if cities and city not in cities:
                             continue
                         start_datetime = datetime.strptime(tee_time_obj["startTime"], "%Y-%m-%dT%H:%M:%S")
-                        start_date = start_datetime.date()
+                        start_date = str(start_datetime.date())
                         weather_hour_to_use = start_datetime.hour
                         if start_datetime.minute > 30:
                             weather_hour_to_use += 1 # if it's after 30 minutes of that hour, use the next hour
