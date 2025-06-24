@@ -1,7 +1,6 @@
 import { parseDateTimeInVancouver } from "../services/timezoneService";
 import { TeeTime } from "../services/teeTimeService";
 import { StarIcon } from "@heroicons/react/24/outline";
-import { Badge } from "./ui/badge";
 
 // Rating component
 const Rating = ({ rating }: { rating: number | null }) => {
