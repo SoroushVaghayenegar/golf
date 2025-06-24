@@ -9,6 +9,9 @@ export interface TeeTime {
     city: string;
     booking_link: string | null;
     rating: number | null;
+    temperature: number | null;
+    precipitation_probability: number | null;
+    weather_code: string | null;
 }
 
 interface TeeTimeFilters {

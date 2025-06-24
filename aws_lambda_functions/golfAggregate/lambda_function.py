@@ -8,14 +8,17 @@ import json
 import asyncio
 from cpsgolf import CpsGolf
 from chronogolf import Chronogolf
+from forecast import Forecast
 
 async def fetch_all_tee_times(dates, num_of_players, holes, cities):
     cps_golf = CpsGolf()
     chronogolf = Chronogolf()
+    forecast = Forecast()
+    city_forecasts = await forecast.get_organized_forecasts_by_city_and_date_async()
     
     # Run both fetches concurrently
-    cps_task = cps_golf.fetch_tee_times_async(dates, num_of_players, holes, cities)
-    chronogolf_task = chronogolf.fetch_tee_times_async(dates, num_of_players, holes, cities)
+    cps_task = cps_golf.fetch_tee_times_async(dates, num_of_players, holes, cities, city_forecasts)
+    chronogolf_task = chronogolf.fetch_tee_times_async(dates, num_of_players, holes, cities, city_forecasts)
     
     # Wait for both tasks to complete
     cps_tee_times, chronogolf_tee_times = await asyncio.gather(cps_task, chronogolf_task)

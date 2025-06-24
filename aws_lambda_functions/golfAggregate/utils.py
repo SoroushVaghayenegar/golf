@@ -30,3 +30,4 @@ course_to_city = {
 
 def course_name_to_city(course_name: str) -> City:
     return course_to_city[course_name].value
+

@@ -11,13 +11,13 @@ class CpsGolf:
         self.supabase = Supabase()
         self.clubs = self.supabase.fetch_cps_courses().data
 
-    def fetch_tee_times(self, search_dates: List[date], player_count, holes_count, cities: List[str] = None) -> List[TeeTime]:
+    def fetch_tee_times(self, search_dates: List[date], player_count, holes_count, cities: List[str] = None, city_forecasts: dict = None) -> List[TeeTime]:
         """
         Synchronous wrapper for the async implementation
         """
-        return asyncio.run(self.fetch_tee_times_async(search_dates, player_count, holes_count, cities))
+        return asyncio.run(self.fetch_tee_times_async(search_dates, player_count, holes_count, cities, city_forecasts))
 
-    async def fetch_tee_times_async(self, search_dates: List[date], player_count: int, holes_count: int, cities: List[str] = None) -> List[TeeTime]:
+    async def fetch_tee_times_async(self, search_dates: List[date], player_count: int, holes_count: int, cities: List[str] = None, city_forecasts: dict = None) -> List[TeeTime]:
         headers = {
             "x-apikey": "8ea2914e-cac2-48a7-a3e5-e0f41350bf3a",
             "Content-Type": "application/json",
@@ -46,7 +46,7 @@ class CpsGolf:
                 }
                 
                 for club in self.clubs:
-                    tasks.append(self.club_tee_times(session, club, params, headers, cities))
+                    tasks.append(self.club_tee_times(session, club, params, headers, cities, city_forecasts))
             
             results = await asyncio.gather(*tasks)
             
@@ -54,7 +54,7 @@ class CpsGolf:
         return [tee_time for sublist in results for tee_time in sublist]
     
     
-    async def club_tee_times(self, session: aiohttp.ClientSession, club: dict, params: Dict, headers: Dict, cities: List[str] = None) -> List[TeeTime]:
+    async def club_tee_times(self, session: aiohttp.ClientSession, club: dict, params: Dict, headers: Dict, cities: List[str] = None, city_forecasts: dict = None) -> List[TeeTime]:
         club_name = club["club_name"]
         course_name = club["course_name"]
         course_display_name = club["course_display_name"]
@@ -81,7 +81,18 @@ class CpsGolf:
                         if cities and city not in cities:
                             continue
                         start_datetime = datetime.strptime(tee_time_obj["startTime"], "%Y-%m-%dT%H:%M:%S")
+                        start_date = start_datetime.date()
+                        weather_hour_to_use = start_datetime.hour
+                        if start_datetime.minute > 30:
+                            weather_hour_to_use += 1 # if it's after 30 minutes of that hour, use the next hour
                         
+                        weather_hour_to_use = weather_hour_to_use % 24
+                        weather_hour_to_use = weather_hour_to_use - 1 # if it's 0, use 23
+                        
+                        weather_code = city_forecasts[city][start_date]['weather_codes'][weather_hour_to_use]
+                        temperature = city_forecasts[city][start_date]['temperatures'][weather_hour_to_use]
+                        precipitation_probability = city_forecasts[city][start_date]['precipitation_probabilities'][weather_hour_to_use]
+
                         tee_time = TeeTime(
                             start_date=start_datetime.date(),
                             start_time=start_datetime.time(),
