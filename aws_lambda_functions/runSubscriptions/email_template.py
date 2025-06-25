@@ -48,10 +48,66 @@ def generate_rating_stars(rating: float) -> str:
     
     return f'<span style="color: #fbbf24; font-size: 14px;">{stars_html}</span> <span style="color: #64748b; font-size: 12px;">({rating:.1f})</span>'
 
+def generate_weather_html(tee_time: dict) -> str:
+    """Generate HTML for weather information"""
+    weather_code = tee_time.get("weather_code")
+    temperature = tee_time.get("temperature")
+    precipitation_probability = tee_time.get("precipitation_probability")
+    
+    # If no weather data, return empty string
+    if not weather_code and temperature is None and precipitation_probability is None:
+        return ""
+    
+    # Get weather emoji based on weather code
+    weather_emoji = "☁️"  # default cloud
+    if weather_code:
+        if "Clear" in weather_code:
+            weather_emoji = "☀️"
+        elif "Rain" in weather_code or "Drizzle" in weather_code:
+            weather_emoji = "🌧️"
+        elif "Snow" in weather_code:
+            weather_emoji = "❄️"
+        elif "Thunderstorm" in weather_code:
+            weather_emoji = "⛈️"
+        elif "Fog" in weather_code:
+            weather_emoji = "🌫️"
+    
+    weather_details = []
+    
+    # Add temperature if available
+    if temperature is not None:
+        weather_details.append(f"🌡️ {round(temperature)}°C")
+    
+    # Add precipitation probability if available
+    if precipitation_probability is not None:
+        weather_details.append(f"💧 {round(precipitation_probability)}%")
+    
+    weather_info = " • ".join(weather_details)
+    
+    weather_html = f'''
+    <div style="
+        background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+        border: 1px solid #bfdbfe;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 16px;
+    ">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 18px;">{weather_emoji}</span>
+            <div style="flex: 1;">
+                {f'<div style="font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 2px;">{weather_info}</div>' if weather_info else ''}
+                {f'<div style="font-size: 12px; color: #6b7280;">{weather_code}</div>' if weather_code else ''}
+            </div>
+        </div>
+    </div>'''
+    
+    return weather_html
+
 def generate_tee_time_card_html(tee_time: dict, index: int) -> str:
     """Generate HTML for a single tee time card"""
     time_str = format_time_for_email(tee_time["start_datetime"])
     rating_html = generate_rating_stars(tee_time.get("rating"))
+    weather_html = generate_weather_html(tee_time)
     
     # Determine button style based on booking link
     button_style = ""
@@ -59,9 +115,10 @@ def generate_tee_time_card_html(tee_time: dict, index: int) -> str:
     if tee_time.get("booking_link"):
         if "cps" in tee_time["booking_link"]:
             button_style = "background-color: #000000; color: #ffffff;"
-            button_text = "Take me to website"
+            button_text = "View Course Website"
         else:
-            button_style = "background-color: #22c55e; color: #ffffff;"
+            button_style = "background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: #ffffff;"
+            button_text = "Book on ChronoGolf"
     else:
         button_style = "background-color: #6b7280; color: #ffffff;"
         button_text = "No booking available"
@@ -80,6 +137,7 @@ def generate_tee_time_card_html(tee_time: dict, index: int) -> str:
             text-align: center;
             {button_style}
             transition: opacity 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         " target="_blank" rel="noopener noreferrer">{button_text}</a>'''
     
     return f"""
@@ -107,6 +165,8 @@ def generate_tee_time_card_html(tee_time: dict, index: int) -> str:
             {rating_html}
         </div>
         
+        {weather_html}
+        
         <div style="margin-bottom: 16px;">
             <p style="
                 margin: 0 0 8px 0;
@@ -114,22 +174,37 @@ def generate_tee_time_card_html(tee_time: dict, index: int) -> str:
                 font-weight: 500;
                 color: #374151;
             ">{time_str}</p>
-            <p style="
-                margin: 0 0 4px 0;
-                font-size: 14px;
-                color: #374151;
-            ">{tee_time["holes"]} holes</p>
-            <p style="
-                margin: 0 0 8px 0;
-                font-size: 14px;
-                color: #374151;
-            ">{tee_time["players_available"]} spots available</p>
-            <p style="
-                margin: 0;
-                font-size: 20px;
-                font-weight: 700;
-                color: #2563eb;
-            ">${float(tee_time["price"]):.2f}</p>
+            <div style="display: flex; gap: 12px; margin-bottom: 8px;">
+                <span style="
+                    background-color: #f1f5f9;
+                    color: #475569;
+                    padding: 4px 8px;
+                    border-radius: 12px;
+                    font-size: 12px;
+                    font-weight: 500;
+                ">{tee_time["holes"]} holes</span>
+                <span style="
+                    background-color: #dcfce7;
+                    color: #15803d;
+                    padding: 4px 8px;
+                    border-radius: 12px;
+                    font-size: 12px;
+                    font-weight: 500;
+                ">{tee_time["players_available"]} spots</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <p style="
+                    margin: 0;
+                    font-size: 24px;
+                    font-weight: 700;
+                    color: #2563eb;
+                ">${float(tee_time["price"]):.2f}</p>
+                <p style="
+                    margin: 0;
+                    font-size: 12px;
+                    color: #64748b;
+                ">per person</p>
+            </div>
         </div>
         
         {booking_button_html}
@@ -313,7 +388,7 @@ def generate_no_tee_times_html() -> str:
                         font-size: 12px;
                         color: #9ca3af;
                     ">
-                        © 2024 T-Times Golf. All rights reserved.
+                        © 2025 T-Times Golf. All rights reserved.
                     </p>
                 </div>
             </div>
@@ -330,7 +405,7 @@ def generate_email_text(tee_times: list[dict]) -> str:
 No tee times are currently available for your preferences. 
 Check back later or adjust your subscription settings.
 
-© 2024 T-Times Golf. All rights reserved."""
+© 2025 T-Times Golf. All rights reserved."""
     
     text = "Your Golf Tee Times\n\n"
     text += "Here are the latest tee times available for your preferred courses and times:\n\n"
@@ -342,11 +417,25 @@ Check back later or adjust your subscription settings.
         text += f"{i}. {tee_time['course_name']}{rating_text}\n"
         text += f"   Location: {tee_time['city']}\n"
         text += f"   Time: {time_str}\n"
+        
+        # Add weather information if available
+        weather_parts = []
+        if tee_time.get("temperature") is not None:
+            weather_parts.append(f"Temperature: {round(tee_time['temperature'])}°C")
+        if tee_time.get("precipitation_probability") is not None:
+            weather_parts.append(f"Rain chance: {round(tee_time['precipitation_probability'])}%")
+        if tee_time.get("weather_code"):
+            weather_parts.append(f"Conditions: {tee_time['weather_code']}")
+        
+        if weather_parts:
+            text += f"   Weather: {' | '.join(weather_parts)}\n"
+        
         text += f"   {tee_time['holes']} holes, {tee_time['players_available']} spots available\n"
-        text += f"   Price: ${float(tee_time['price']):.2f}\n"
+        text += f"   Price: ${float(tee_time['price']):.2f} per person\n"
         if tee_time.get("booking_link"):
-            text += f"   Book here: {tee_time['booking_link']}\n"
+            booking_text = "View Course Website" if "cps" in tee_time["booking_link"] else "Book on ChronoGolf"
+            text += f"   {booking_text}: {tee_time['booking_link']}\n"
         text += "\n"
     
-    text += "\n© 2024 T-Times Golf. All rights reserved."
+    text += "\n© 2025 T-Times Golf. All rights reserved."
     return text 
