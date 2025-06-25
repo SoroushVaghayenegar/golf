@@ -84,27 +84,48 @@ def generate_weather_html(tee_time: dict) -> str:
     
     weather_info = " • ".join(weather_details)
     
-    weather_html = f'''
-    <div style="
-        background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
-        border: 1px solid #bfdbfe;
-        border-radius: 8px;
-        padding: 12px;
-        margin-bottom: 16px;
+    # Light theme weather section
+    weather_html_light = f'''
+    <div class="weather-section-light" style="
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 8px;
+        margin-bottom: 12px;
     ">
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 18px;">{weather_emoji}</span>
+        <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 16px;">{weather_emoji}</span>
             <div style="flex: 1;">
-                {f'<div style="font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 2px;">{weather_info}</div>' if weather_info else ''}
-                {f'<div style="font-size: 12px; color: #6b7280;">{weather_code}</div>' if weather_code else ''}
+                {f'<div style="font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 1px;">{weather_info}</div>' if weather_info else ''}
+                {f'<div style="font-size: 10px; color: #6b7280;">{weather_code}</div>' if weather_code else ''}
             </div>
         </div>
     </div>'''
     
+    # Dark theme weather section
+    weather_html_dark = f'''
+    <div class="weather-section-dark" style="
+        background: #374151;
+        border: 1px solid #4b5563;
+        border-radius: 6px;
+        padding: 8px;
+        margin-bottom: 12px;
+    ">
+        <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 16px;">{weather_emoji}</span>
+            <div style="flex: 1;">
+                {f'<div style="font-size: 12px; font-weight: 500; color: #e2e8f0; margin-bottom: 1px;">{weather_info}</div>' if weather_info else ''}
+                {f'<div style="font-size: 10px; color: #94a3b8;">{weather_code}</div>' if weather_code else ''}
+            </div>
+        </div>
+    </div>'''
+    
+    weather_html = weather_html_light + weather_html_dark
+    
     return weather_html
 
 def generate_tee_time_card_html(tee_time: dict, index: int) -> str:
-    """Generate HTML for a single tee time card"""
+    """Generate HTML for a single tee time card (optimized for two-column layout)"""
     time_str = format_time_for_email(tee_time["start_datetime"])
     rating_html = generate_rating_stars(tee_time.get("rating"))
     weather_html = generate_weather_html(tee_time)
@@ -127,88 +148,98 @@ def generate_tee_time_card_html(tee_time: dict, index: int) -> str:
     booking_button_html = ""
     if tee_time.get("booking_link"):
         booking_button_html = f'''
-        <a href="{tee_time["booking_link"]}" style="
-            display: inline-block;
-            width: 93%;
-            padding: 12px 16px;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
-            text-align: center;
-            {button_style}
-            transition: opacity 0.2s;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        " target="_blank" rel="noopener noreferrer">{button_text}</a>'''
+        <div style="padding: 0 2px;">
+            <a href="{tee_time["booking_link"]}" style="
+                display: block;
+                width: 100%;
+                padding: 10px 12px;
+                text-decoration: none;
+                border-radius: 8px;
+                font-weight: 600;
+                text-align: center;
+                font-size: 13px;
+                {button_style}
+                transition: opacity 0.2s;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                box-sizing: border-box;
+            " target="_blank" rel="noopener noreferrer">{button_text}</a>
+        </div>'''
     
     return f"""
-    <div style="
-        background-color: #ffffff;
-        border-radius: 12px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        padding: 20px;
-        margin-bottom: 16px;
-        border: 1px solid #e5e7eb;
+    <td style="
+        width: 50%;
+        vertical-align: top;
+        padding: 0 8px 16px 8px;
     ">
-        <div style="margin-bottom: 12px;">
-            <h3 style="
-                margin: 0 0 4px 0;
-                font-size: 18px;
-                font-weight: 600;
-                color: #1e293b;
-                line-height: 1.3;
-            ">{tee_time["course_name"]}</h3>
-            <p style="
-                margin: 0 0 4px 0;
-                font-size: 14px;
-                color: #64748b;
-            ">{tee_time["city"]}</p>
-            {rating_html}
-        </div>
-        
-        {weather_html}
-        
-        <div style="margin-bottom: 16px;">
-            <p style="
-                margin: 0 0 8px 0;
-                font-size: 18px;
-                font-weight: 500;
-                color: #374151;
-            ">{time_str}</p>
-            <div style="display: flex; gap: 12px; margin-bottom: 8px;">
-                <span style="
-                    background-color: #f1f5f9;
-                    color: #475569;
-                    padding: 4px 8px;
-                    border-radius: 12px;
-                    font-size: 12px;
-                    font-weight: 500;
-                ">{tee_time["holes"]} holes</span>
-                <span style="
-                    background-color: #dcfce7;
-                    color: #15803d;
-                    padding: 4px 8px;
-                    border-radius: 12px;
-                    font-size: 12px;
-                    font-weight: 500;
-                ">{tee_time["players_available"]} spots</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 16px;
+            border: 1px solid #e5e7eb;
+            height: 100%;
+        ">
+            <div style="margin-bottom: 10px;">
+                <h3 style="
+                    margin: 0 0 4px 0;
+                    font-size: 16px;
+                    font-weight: 600;
+                    color: #1e293b;
+                    line-height: 1.3;
+                ">{tee_time["course_name"]}</h3>
                 <p style="
-                    margin: 0;
-                    font-size: 24px;
-                    font-weight: 700;
-                    color: #2563eb;
-                ">${float(tee_time["price"]):.2f}</p>
-                <p style="
-                    margin: 0;
-                    font-size: 12px;
+                    margin: 0 0 4px 0;
+                    font-size: 13px;
                     color: #64748b;
-                ">per person</p>
+                ">{tee_time["city"]}</p>
+                {rating_html}
             </div>
+            
+            {weather_html}
+            
+            <div style="margin-bottom: 14px;">
+                <p style="
+                    margin: 0 0 6px 0;
+                    font-size: 16px;
+                    font-weight: 500;
+                    color: #374151;
+                ">{time_str}</p>
+                <div style="display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap;">
+                    <span style="
+                        background-color: #f1f5f9;
+                        color: #475569;
+                        padding: 3px 6px;
+                        border-radius: 10px;
+                        font-size: 11px;
+                        font-weight: 500;
+                    ">{tee_time["holes"]} holes</span>
+                    <span style="
+                        background-color: #dcfce7;
+                        color: #15803d;
+                        padding: 3px 6px;
+                        border-radius: 10px;
+                        font-size: 11px;
+                        font-weight: 500;
+                    ">{tee_time["players_available"]} spots</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <p style="
+                        margin: 0;
+                        font-size: 20px;
+                        font-weight: 700;
+                        color: #2563eb;
+                    ">${float(tee_time["price"]):.2f}</p>
+                    <p style="
+                        margin: 0;
+                        font-size: 11px;
+                        color: #64748b;
+                    ">per person</p>
+                </div>
+            </div>
+            
+            {booking_button_html}
         </div>
-        
-        {booking_button_html}
-    </div>
+    </td>
     """
 
 def generate_email_html(tee_times: list[dict]) -> str:
@@ -216,9 +247,21 @@ def generate_email_html(tee_times: list[dict]) -> str:
     if not tee_times:
         return generate_no_tee_times_html()
     
+    # Generate cards in rows of two
     cards_html = ""
-    for i, tee_time in enumerate(tee_times):
-        cards_html += generate_tee_time_card_html(tee_time, i)
+    for i in range(0, len(tee_times), 2):
+        cards_html += '<table class="two-column-table" style="width: 100%; border-collapse: collapse; margin-bottom: 0;"><tr>'
+        
+        # First card
+        cards_html += generate_tee_time_card_html(tee_times[i], i)
+        
+        # Second card (if exists), otherwise empty cell
+        if i + 1 < len(tee_times):
+            cards_html += generate_tee_time_card_html(tee_times[i + 1], i + 1)
+        else:
+            cards_html += '<td style="width: 50%; vertical-align: top; padding: 0 8px 16px 8px;"></td>'
+        
+        cards_html += '</tr></table>'
     
     return f"""
     <!DOCTYPE html>
@@ -235,6 +278,27 @@ def generate_email_html(tee_times: list[dict]) -> str:
                 .card {{
                     padding: 16px !important;
                 }}
+                .two-column-table {{
+                    display: block !important;
+                    width: 100% !important;
+                }}
+                .two-column-table tr {{
+                    display: block !important;
+                }}
+                .two-column-table td {{
+                    display: block !important;
+                    width: 100% !important;
+                    padding: 0 0 16px 0 !important;
+                }}
+            }}
+            
+            [data-ogsc] .weather-section-light {{ display: none !important; }}
+            [data-ogsc] .weather-section-dark {{ display: block !important; }}
+            .weather-section-dark {{ display: none; }}
+            
+            @media (prefers-color-scheme: dark) {{
+                .weather-section-light {{ display: none !important; }}
+                .weather-section-dark {{ display: block !important; }}
             }}
         </style>
     </head>

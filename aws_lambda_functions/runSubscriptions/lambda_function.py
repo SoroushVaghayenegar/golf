@@ -88,10 +88,14 @@ def filter_tee_times(tee_times: list[dict], cities: list[str], start_time: time,
     return filtered_times
 
 def lambda_handler(event, context):
+    print("Received event:")
+    print(json.dumps(event, indent=2)) 
+
     # today in vancouver time
     vancouver_time = datetime.now(pytz.timezone('America/Vancouver'))
     date = vancouver_time.strftime("%Y-%m-%d")
     day_of_week = get_day_of_week(vancouver_time)
+    print(f"Today is {day_of_week}")
 
     supabase_client = Supabase()
     subscriptions = supabase_client.fetch_tee_times_subscriptions()
