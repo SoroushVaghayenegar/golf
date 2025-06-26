@@ -44,13 +44,11 @@ export function SubscriptionSignup({ courseCityMapping, isOpen, onOpenChange, on
     return uniqueCities
   }, [courseCityMapping])
 
-
-
   const [golfDays, setGolfDays] = useState<string[]>([])
   const [timeFrom, setTimeFrom] = useState("05:00")
   const [timeTo, setTimeTo] = useState("22:00")
-  const [selectedCities, setSelectedCities] = useState<string[]>(cities)
-  const [selectedCourses, setSelectedCourses] = useState<string[]>(Object.keys(courseCityMapping))
+  const [selectedCities, setSelectedCities] = useState<string[]>([])
+  const [selectedCourses, setSelectedCourses] = useState<string[]>([])
   const [emailDays, setEmailDays] = useState<string[]>([])
   const [email, setEmail] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
