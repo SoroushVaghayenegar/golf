@@ -545,23 +545,24 @@ export default function Home() {
                 <School className="w-5 h-5 text-slate-600" />
                 <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase">Cities</span>
               </div>
-              <Select
-                isMulti
-                options={cityOptions}
-                value={cityOptions.filter(option => selectedCities.includes(option.value))}
-                onChange={handleCityChange}
-                placeholder="Filter by cities..."
-                isSearchable
-                isLoading={citiesLoading}
-                noOptionsMessage={() => citiesLoading ? "Loading cities..." : "No cities found"}
-                isOptionDisabled={(option) => option.isDisabled || false}
-                menuPlacement="top"
-                styles={selectStyles}
-                className="react-select-container"
-                classNamePrefix="react-select"
-                instanceId="cities-select"
-                {...commonSelectProps}
-              />
+                          <Select
+              isMulti
+              closeMenuOnSelect={false}
+              options={cityOptions}
+              value={cityOptions.filter(option => selectedCities.includes(option.value))}
+              onChange={handleCityChange}
+              placeholder="Filter by cities..."
+              isSearchable
+              isLoading={citiesLoading}
+              noOptionsMessage={() => citiesLoading ? "Loading cities..." : "No cities found"}
+              isOptionDisabled={(option) => option.isDisabled || false}
+              menuPlacement="top"
+              styles={selectStyles}
+              className="react-select-container"
+              classNamePrefix="react-select"
+              instanceId="cities-select"
+              {...commonSelectProps}
+            />
             </div>
 
             {/* Courses Filter */}
@@ -572,6 +573,7 @@ export default function Home() {
               </div>
               <Select
                 isMulti
+                closeMenuOnSelect={false}
                 options={courseOptions}
                 value={courseOptions.filter(option => selectedCourses.includes(option.value))}
                 onChange={handleCourseChange}
