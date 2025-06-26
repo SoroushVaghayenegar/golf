@@ -14,7 +14,7 @@ def send_email(email: str, tee_times: list[dict]):
     text_body = generate_email_text(tee_times)
     
     ses.send_email(
-        Source='no-reply@t-times.golf',
+        Source='hello@t-times.golf',
         Destination={
             'ToAddresses': [email]
         },

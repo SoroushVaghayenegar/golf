@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Vancouver Tee Times",
   description: "Find tee times for your next golf game in Vancouver",
+  icons: {
+    icon: `/favicon.ico?v=${process.env.APP_VERSION}&t=${process.env.BUILD_TIME}`,
+  },
 };
 
 export default function RootLayout({
