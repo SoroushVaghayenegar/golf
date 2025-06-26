@@ -8,6 +8,7 @@ export interface Subscription {
     start_time: string;
     end_time: string;
     city_list: string[];
+    course_list: string[];
     broadcast_day_list: string[];
 }
 

@@ -35,6 +35,7 @@ interface TeeTimeCardsProps {
   handleSubscriptionDismiss: () => void;
   isMobile: boolean;
   hasSearched: boolean;
+  courseCityMapping: Record<string, string>;
 }
 
 export interface TeeTimeCardsRef {
@@ -58,7 +59,8 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
   setShowSubscription,
   handleSubscriptionDismiss,
   isMobile,
-  hasSearched
+  hasSearched,
+  courseCityMapping
 }, ref) => {
   
   const sectionRef = useRef<HTMLElement>(null);
@@ -393,6 +395,7 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
           }`}>
             <div className="bg-white rounded-xl shadow-lg p-6 border border-slate-200">
               <SubscriptionSignup 
+                courseCityMapping={courseCityMapping}
                 isOpen={showSubscription} 
                 onOpenChange={setShowSubscription}
                 onDismiss={handleSubscriptionDismiss}

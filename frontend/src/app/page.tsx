@@ -59,7 +59,7 @@ export default function Home() {
     setIsClient(true);
     
     const dismissed = sessionStorage.getItem('subscription-dismissed') === 'true';
-    setSubscriptionDismissed(dismissed);
+    // setSubscriptionDismissed(dismissed);
     
     // Set mobile state after hydration
     setIsMobile(window.innerWidth < 1024);
@@ -259,19 +259,10 @@ export default function Home() {
   };
 
   // Convert cities and courses to react-select format
-  const cityOptions = cities.map(city => {
-    // Check if this city has any courses in the selected courses
-    const cityHasSelectedCourses = selectedCourses.length === 0 || selectedCourses.some(courseName => {
-      const courseCity = courseCityMapping[courseName];
-      return courseCity === city;
-    });
-    
-    return { 
-      value: city, 
-      label: city,
-      isDisabled: selectedCourses.length > 0 && !cityHasSelectedCourses
-    };
-  });
+  const cityOptions = cities.map(city => ({
+    value: city, 
+    label: city
+  }));
   
   const courseOptions = courses.map(course => {
     const courseCity = courseCityMapping[course];
@@ -287,17 +278,35 @@ export default function Home() {
   // Handle city selection changes
   const handleCityChange = (selectedOptions: MultiValue<SelectOption>) => {
     const values = selectedOptions ? selectedOptions.map((option) => option.value) : [];
+    const previousCities = selectedCities;
     setSelectedCities(values);
     
-    // Remove selected courses that are not in the selected cities
+    // Find newly added cities
+    const addedCities = values.filter(city => !previousCities.includes(city));
+    
+    // Find courses that belong to the newly added cities
+    const coursesToAdd = addedCities.length > 0 
+      ? Object.keys(courseCityMapping).filter(courseName => 
+          addedCities.includes(courseCityMapping[courseName])
+        )
+      : [];
+    
+    // Update selected courses
     if (values.length > 0) {
-      const filteredCourses = selectedCourses.filter(courseName => {
-        const courseCity = courseCityMapping[courseName];
-        return courseCity && values.includes(courseCity);
-      });
-      if (filteredCourses.length !== selectedCourses.length) {
-        setSelectedCourses(filteredCourses);
-      }
+      // Add courses from newly selected cities and keep courses from still-selected cities
+      const updatedCourses = [
+        ...new Set([
+          ...selectedCourses.filter(courseName => {
+            const courseCity = courseCityMapping[courseName];
+            return courseCity && values.includes(courseCity);
+          }),
+          ...coursesToAdd
+        ])
+      ];
+      setSelectedCourses(updatedCourses);
+    } else {
+      // If no cities are selected, clear all courses
+      setSelectedCourses([]);
     }
   };
 
@@ -543,7 +552,9 @@ export default function Home() {
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2">
                 <School className="w-5 h-5 text-slate-600" />
-                <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase">Cities</span>
+                <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase">
+                  Cities{selectedCities.length > 0 ? ` (${selectedCities.length})` : ''}
+                </span>
               </div>
                           <Select
               isMulti
@@ -555,7 +566,6 @@ export default function Home() {
               isSearchable
               isLoading={citiesLoading}
               noOptionsMessage={() => citiesLoading ? "Loading cities..." : "No cities found"}
-              isOptionDisabled={(option) => option.isDisabled || false}
               menuPlacement="top"
               styles={selectStyles}
               className="react-select-container"
@@ -569,7 +579,9 @@ export default function Home() {
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2">
                 <LandPlot className="w-5 h-5 text-slate-600" />
-                <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase">Courses</span>
+                <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase">
+                  Courses{selectedCourses.length > 0 ? ` (${selectedCourses.length})` : ''}
+                </span>
               </div>
               <Select
                 isMulti
@@ -629,6 +641,7 @@ export default function Home() {
               handleSubscriptionDismiss={handleSubscriptionDismiss}
               isMobile={isMobile}
               hasSearched={teeTimes.length > 0 || loading || !!error}
+              courseCityMapping={courseCityMapping}
             />
           </div>
         )}

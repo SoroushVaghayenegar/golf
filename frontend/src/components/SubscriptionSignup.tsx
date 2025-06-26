@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useMemo } from "react"
+import Select, { MultiValue, StylesConfig } from 'react-select'
 import {
   Dialog,
   DialogContent,
@@ -10,7 +11,7 @@ import {
 } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
-  Select,
+  Select as ShadcnSelect,
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -20,20 +21,49 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { createSubscription } from "@/services/supabaseService"
 
+interface SelectOption {
+  value: string;
+  label: string;
+  isDisabled?: boolean;
+  city?: string;
+}
+
 interface SubscriptionSignupProps {
+  courseCityMapping: Record<string, string>
   isOpen: boolean
   onOpenChange: (open: boolean) => void
   onDismiss?: () => void
 }
 
-export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss }: SubscriptionSignupProps) {
+export function SubscriptionSignup({ courseCityMapping, isOpen, onOpenChange, onDismiss }: SubscriptionSignupProps) {
   const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-  const cities = ["Pitt Meadows", "Langley", "Coquitlam", "Richmond", "Surrey", "Squamish", "Vancouver", "Burnaby"]
   
+  // Extract cities and courses from courseCityMapping
+  const cities = useMemo(() => {
+    const uniqueCities = [...new Set(Object.values(courseCityMapping))].sort()
+    return uniqueCities
+  }, [courseCityMapping])
+
+  const coursesByCity = useMemo(() => {
+    const result: Record<string, string[]> = {}
+    Object.entries(courseCityMapping).forEach(([course, city]) => {
+      if (!result[city]) {
+        result[city] = []
+      }
+      result[city].push(course)
+    })
+    // Sort courses within each city
+    Object.keys(result).forEach(city => {
+      result[city].sort()
+    })
+    return result
+  }, [courseCityMapping])
+
   const [golfDays, setGolfDays] = useState<string[]>([])
   const [timeFrom, setTimeFrom] = useState("05:00")
   const [timeTo, setTimeTo] = useState("22:00")
   const [selectedCities, setSelectedCities] = useState<string[]>(cities)
+  const [selectedCourses, setSelectedCourses] = useState<string[]>(Object.keys(courseCityMapping))
   const [emailDays, setEmailDays] = useState<string[]>([])
   const [email, setEmail] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -54,6 +84,92 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss }: Subscrip
     return options
   }, [])
 
+  // Convert cities and courses to react-select format
+  const cityOptions = cities.map(city => ({
+    value: city, 
+    label: city
+  }));
+  
+  const courseOptions = Object.keys(courseCityMapping).map(course => {
+    const courseCity = courseCityMapping[course];
+    const isDisabled = selectedCities.length > 0 && !selectedCities.includes(courseCity);
+    return { 
+      value: course, 
+      label: course, 
+      isDisabled: isDisabled,
+      city: courseCity 
+    };
+  });
+
+  // Custom styles for React Select with black colors
+  const selectStyles: StylesConfig<SelectOption, true> = {
+    control: (provided) => ({
+      ...provided,
+      minHeight: '42px',
+      border: '1px solid #e2e8f0',
+      borderRadius: '8px',
+      fontSize: '14px',
+      fontWeight: '500',
+      '&:hover': {
+        borderColor: '#cbd5e0'
+      },
+      '&:focus-within': {
+        borderColor: '#000000',
+        boxShadow: '0 0 0 2px rgba(0, 0, 0, 0.1)'
+      }
+    }),
+    placeholder: (provided) => ({
+      ...provided,
+      color: '#64748b'
+    }),
+    multiValue: (provided) => ({
+      ...provided,
+      backgroundColor: '#000000',
+      borderRadius: '4px'
+    }),
+    multiValueLabel: (provided) => ({
+      ...provided,
+      color: 'white',
+      fontSize: '12px'
+    }),
+    multiValueRemove: (provided) => ({
+      ...provided,
+      color: 'white',
+      '&:hover': {
+        backgroundColor: '#374151',
+        color: 'white'
+      }
+    }),
+    option: (provided, state) => ({
+      ...provided,
+      color: state.isDisabled ? '#9ca3af' : provided.color,
+      backgroundColor: state.isDisabled 
+        ? '#f9fafb' 
+        : state.isSelected 
+          ? '#000000' 
+          : state.isFocused 
+            ? '#f3f4f6' 
+            : 'white',
+      cursor: state.isDisabled ? 'not-allowed' : 'pointer',
+      opacity: state.isDisabled ? 0.6 : 1,
+      '&:hover': {
+        backgroundColor: state.isDisabled 
+          ? '#f9fafb' 
+          : state.isSelected 
+            ? '#000000' 
+            : '#f3f4f6'
+      }
+    })
+  };
+
+  // Common props for React Select to fix aria-activedescendant issue
+  const commonSelectProps = {
+    'aria-activedescendant': '',
+    inputProps: {
+      'aria-activedescendant': ''
+    }
+  };
+
   const handleGolfDayChange = (day: string) => {
     setGolfDays(prev => 
       prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
@@ -66,19 +182,55 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss }: Subscrip
     )
   }
 
-  const handleCityChange = (city: string) => {
-    setSelectedCities(prev => 
-      prev.includes(city) ? prev.filter(c => c !== city) : [...prev, city]
-    )
-  }
-
-  const handleAllCitiesChange = () => {
-    if (selectedCities.length === cities.length) {
-      setSelectedCities([])
+  // Handle city selection changes
+  const handleCityChange = (selectedOptions: MultiValue<SelectOption>) => {
+    const values = selectedOptions ? selectedOptions.map((option) => option.value) : [];
+    const previousCities = selectedCities;
+    setSelectedCities(values);
+    
+    // Find newly added cities
+    const addedCities = values.filter(city => !previousCities.includes(city));
+    
+    // Find courses that belong to the newly added cities
+    const coursesToAdd = addedCities.length > 0 
+      ? Object.keys(courseCityMapping).filter(courseName => 
+          addedCities.includes(courseCityMapping[courseName])
+        )
+      : [];
+    
+    // Update selected courses
+    if (values.length > 0) {
+      // Add courses from newly selected cities and keep courses from still-selected cities
+      const updatedCourses = [
+        ...new Set([
+          ...selectedCourses.filter(courseName => {
+            const courseCity = courseCityMapping[courseName];
+            return courseCity && values.includes(courseCity);
+          }),
+          ...coursesToAdd
+        ])
+      ];
+      setSelectedCourses(updatedCourses);
     } else {
-      setSelectedCities(cities)
+      // If no cities are selected, clear all courses
+      setSelectedCourses([]);
     }
-  }
+  };
+
+  // Handle course selection changes
+  const handleCourseChange = (selectedOptions: MultiValue<SelectOption>) => {
+    const values = selectedOptions ? selectedOptions.map((option) => option.value) : [];
+    setSelectedCourses(values);
+    
+    // Remove selected cities that don't have any of the selected courses
+    if (values.length > 0) {
+      const validCities = [...new Set(values.map(courseName => courseCityMapping[courseName]).filter(Boolean))];
+      const filteredCities = selectedCities.filter(cityName => validCities.includes(cityName));
+      if (filteredCities.length !== selectedCities.length) {
+        setSelectedCities(filteredCities);
+      }
+    }
+  };
 
   const handleNoThanks = () => {
     sessionStorage.setItem('subscription-dismissed', 'true')
@@ -89,7 +241,7 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss }: Subscrip
   }
 
   const handleSubmit = async () => {
-    if (!email || golfDays.length === 0 || selectedCities.length === 0 || emailDays.length === 0) {
+    if (!email || golfDays.length === 0 || selectedCourses.length === 0 || emailDays.length === 0) {
       alert("Please fill in all required fields")
       return
     }
@@ -102,6 +254,7 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss }: Subscrip
         start_time: timeFrom,
         end_time: timeTo,
         city_list: selectedCities,
+        course_list: selectedCourses,
         broadcast_day_list: emailDays,
       })
       
@@ -150,7 +303,7 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss }: Subscrip
             <div className="grid grid-cols-2 gap-4 pt-2">
               <div>
                 <label htmlFor="from-time" className="text-sm text-gray-500">From</label>
-                <Select value={timeFrom} onValueChange={setTimeFrom}>
+                <ShadcnSelect value={timeFrom} onValueChange={setTimeFrom}>
                   <SelectTrigger id="from-time">
                     <SelectValue placeholder="Select time" />
                   </SelectTrigger>
@@ -159,11 +312,11 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss }: Subscrip
                       <SelectItem key={`from-${option.value}`} value={option.value}>{option.label}</SelectItem>
                     ))}
                   </SelectContent>
-                </Select>
+                </ShadcnSelect>
               </div>
               <div>
                 <label htmlFor="to-time" className="text-sm text-gray-500">To</label>
-                <Select value={timeTo} onValueChange={setTimeTo}>
+                <ShadcnSelect value={timeTo} onValueChange={setTimeTo}>
                   <SelectTrigger id="to-time">
                     <SelectValue placeholder="Select time" />
                   </SelectTrigger>
@@ -172,35 +325,53 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss }: Subscrip
                       <SelectItem key={`to-${option.value}`} value={option.value}>{option.label}</SelectItem>
                     ))}
                   </SelectContent>
-                </Select>
+                </ShadcnSelect>
               </div>
             </div>
           </div>
 
           <div>
-            <label className="font-semibold">Select your cities</label>
-            <div className="border rounded-md p-2 mt-2">
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="all-cities" 
-                  checked={selectedCities.length === cities.length}
-                  onCheckedChange={handleAllCitiesChange}
-                />
-                <label htmlFor="all-cities">ALL ({selectedCities.length} of {cities.length} selected)</label>
-              </div>
-              <hr className="my-2"/>
-              <div className="grid grid-cols-2 gap-2">
-                {cities.map(city => (
-                  <div key={city} className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={`city-${city}`} 
-                      checked={selectedCities.includes(city)}
-                      onCheckedChange={() => handleCityChange(city)}
-                    />
-                    <label htmlFor={`city-${city}`}>{city}</label>
-                  </div>
-                ))}
-              </div>
+            <label className="font-semibold">
+              Select your cities{selectedCities.length > 0 ? ` (${selectedCities.length})` : ''}
+            </label>
+            <div className="mt-2">
+              <Select
+                isMulti
+                closeMenuOnSelect={false}
+                options={cityOptions}
+                value={cityOptions.filter(option => selectedCities.includes(option.value))}
+                onChange={handleCityChange}
+                placeholder="Select cities..."
+                isSearchable
+                styles={selectStyles}
+                className="react-select-container"
+                classNamePrefix="react-select"
+                instanceId="subscription-cities-select"
+                {...commonSelectProps}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="font-semibold">
+              Select your courses{selectedCourses.length > 0 ? ` (${selectedCourses.length})` : ''}
+            </label>
+            <div className="mt-2">
+              <Select
+                isMulti
+                closeMenuOnSelect={false}
+                options={courseOptions}
+                value={courseOptions.filter(option => selectedCourses.includes(option.value))}
+                onChange={handleCourseChange}
+                placeholder="Select courses..."
+                isSearchable
+                isOptionDisabled={(option) => option.isDisabled || false}
+                styles={selectStyles}
+                className="react-select-container"
+                classNamePrefix="react-select"
+                instanceId="subscription-courses-select"
+                {...commonSelectProps}
+              />
             </div>
           </div>
 
@@ -230,7 +401,7 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss }: Subscrip
           <Button 
             className="w-full bg-black hover:bg-black/80 text-white font-bold py-2 px-4 rounded"
             onClick={handleSubmit}
-            disabled={isSubmitting}
+            disabled={isSubmitting || selectedCourses.length === 0 || golfDays.length === 0 || emailDays.length === 0 || !email.trim()}
           >
             {isSubmitting ? "Creating..." : "Get My Weekly Tee Times →"}
           </Button>
