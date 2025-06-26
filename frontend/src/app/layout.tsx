@@ -17,7 +17,13 @@ export const metadata: Metadata = {
   title: "Vancouver Tee Times",
   description: "Find tee times for your next golf game in Vancouver",
   icons: {
-    icon: `/favicon.ico?v=${process.env.APP_VERSION}&t=${process.env.BUILD_TIME}`,
+    icon: [
+      {
+        url: `/favicon.ico?v=${process.env.APP_VERSION}&t=${process.env.BUILD_TIME}`,
+        sizes: "16x16",
+        type: "image/x-icon",
+      }
+    ],
   },
 };
 
