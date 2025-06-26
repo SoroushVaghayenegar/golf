@@ -74,10 +74,10 @@ def get_dates_for_days(tee_time_days: set[Day], current_date: datetime) -> dict[
     
     return day_to_date
 
-def filter_tee_times(tee_times: list[dict], cities: list[str], start_time: time, end_time: time) -> list[dict]:
+def filter_tee_times(tee_times: list[dict], courses: list[str], start_time: time, end_time: time) -> list[dict]:
     filtered_times = []
     for tee_time in tee_times:
-        if tee_time["city"] in cities:
+        if tee_time["course_name"] in courses:
             # Parse the start_datetime string to get the time component
             tee_time_datetime = datetime.fromisoformat(tee_time["start_datetime"])
             tee_time_time = tee_time_datetime.time()
@@ -129,7 +129,7 @@ def lambda_handler(event, context):
     
     for subscription in subscriptions_for_broadcast_today:
         tee_times = day_to_tee_times[subscription.days[0]]
-        filtered_tee_times = filter_tee_times(tee_times, subscription.cities, subscription.start_time, subscription.end_time)
+        filtered_tee_times = filter_tee_times(tee_times, subscription.courses, subscription.start_time, subscription.end_time)
         send_email(subscription.email, filtered_tee_times)
 
 

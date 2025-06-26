@@ -11,10 +11,10 @@ class Day(Enum):
     SUNDAY = "Sunday"
 
 class TeeTimeSubscription:
-    def __init__(self, email: str, days: list[Day], start_time: time, end_time: time, cities: list[str], broadcast_days: list[Day]):
+    def __init__(self, email: str, days: list[Day], start_time: time, end_time: time, courses: list[str], broadcast_days: list[Day]):
         self.email = email
         self.days = days
         self.start_time = start_time
         self.end_time = end_time
-        self.cities = cities
+        self.courses = courses
         self.broadcast_days = broadcast_days
