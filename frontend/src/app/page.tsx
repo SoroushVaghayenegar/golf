@@ -59,7 +59,7 @@ export default function Home() {
     setIsClient(true);
     
     const dismissed = sessionStorage.getItem('subscription-dismissed') === 'true';
-    // setSubscriptionDismissed(dismissed);
+    setSubscriptionDismissed(dismissed);
     
     // Set mobile state after hydration
     setIsMobile(window.innerWidth < 1024);
@@ -163,12 +163,14 @@ export default function Home() {
       }
     };
 
+    // Capture the current ref value to use in cleanup
+    const currentScrollableElement = resultsSectionRef.current?.scrollableElement;
+
     if (isMobile) {
       window.addEventListener('scroll', handleScroll);
     } else {
-      const scrollableElement = resultsSectionRef.current?.scrollableElement;
-      if (scrollableElement) {
-        scrollableElement.addEventListener('scroll', handleScroll);
+      if (currentScrollableElement) {
+        currentScrollableElement.addEventListener('scroll', handleScroll);
       }
     }
 
@@ -177,9 +179,8 @@ export default function Home() {
       if (isMobile) {
         window.removeEventListener('scroll', handleScroll);
       } else {
-        const scrollableElement = resultsSectionRef.current?.scrollableElement;
-        if (scrollableElement) {
-          scrollableElement.removeEventListener('scroll', handleScroll);
+        if (currentScrollableElement) {
+          currentScrollableElement.removeEventListener('scroll', handleScroll);
         }
       }
     };

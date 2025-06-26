@@ -44,20 +44,7 @@ export function SubscriptionSignup({ courseCityMapping, isOpen, onOpenChange, on
     return uniqueCities
   }, [courseCityMapping])
 
-  const coursesByCity = useMemo(() => {
-    const result: Record<string, string[]> = {}
-    Object.entries(courseCityMapping).forEach(([course, city]) => {
-      if (!result[city]) {
-        result[city] = []
-      }
-      result[city].push(course)
-    })
-    // Sort courses within each city
-    Object.keys(result).forEach(city => {
-      result[city].sort()
-    })
-    return result
-  }, [courseCityMapping])
+
 
   const [golfDays, setGolfDays] = useState<string[]>([])
   const [timeFrom, setTimeFrom] = useState("05:00")
