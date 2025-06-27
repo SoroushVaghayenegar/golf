@@ -214,7 +214,7 @@ export default function TeeTimeCard({ teeTime, index }: TeeTimeCardProps) {
                   : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl'
               }`}
             >
-              {teeTime.booking_link.includes('cps') ? 'View Course Website' : 'Book on ChronoGolf'}
+              {teeTime.booking_link.includes('cps') ? 'Book on Course Website' : 'Book on ChronoGolf'}
             </a>
           </div>
         )}
