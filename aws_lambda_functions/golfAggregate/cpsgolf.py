@@ -30,8 +30,8 @@ class CpsGolf:
             for search_date in search_dates:
                 params = {
                     "searchDate": search_date.strftime("%a %b %d %Y"),
-                    "holes": str(holes_count),
-                    "numberOfPlayer": str(player_count),
+                    # "holes": str(holes_count),
+                    # "numberOfPlayer": str(player_count),
                     "courseIds": "2,1,3",
                     "searchTimeType": "0",
                     "teeOffTimeMin": "0",
@@ -66,6 +66,7 @@ class CpsGolf:
         
         for attempt in range(3):
             try:
+                print(f"Fetching tee times for {club_name}")
                 async with session.get(url, params=params, headers=headers) as response:
                     response.raise_for_status()
                     tee_time_list = await response.json()
@@ -75,6 +76,7 @@ class CpsGolf:
                         return []
                         
                     tee_times = []
+                    print(f"Found {len(tee_time_list)} tee times for {club_name}")
                     for tee_time_obj in tee_time_list:
                         if tee_time_obj["courseName"].strip() != course_name.strip():
                             continue

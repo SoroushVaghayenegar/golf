@@ -11,3 +11,7 @@ class City(Enum):
     RICHMOND = "Richmond"
     PORT_COQUITLAM = "Port Coquitlam"
     SQUAMISH = "Squamish"
+    WEST_KELOWNA = "West Kelowna"
+    KELOWNA = "Kelowna"
+    PEMBERTON = "Pemberton"
+    WHISTLER = "Whistler"
