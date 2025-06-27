@@ -65,7 +65,7 @@ class Supabase:
                 days=days,
                 start_time=start_time,
                 end_time=end_time,
-                cities=item.get('city_list', []),
+                courses=item.get('course_list', []),
                 broadcast_days=broadcast_days
             )
             subscriptions.append(subscription)
