@@ -401,11 +401,8 @@ export default function Home() {
         {/* Settings Section - Fixed on left for desktop, top for mobile */}
         <section className="w-full lg:w-80 flex-shrink-0 bg-white shadow p-6 flex flex-col gap-3 lg:gap-4 lg:h-screen lg:sticky lg:top-0 lg:mr-8 rounded-xl lg:rounded-none lg:rounded-r-xl lg:justify-between relative z-20">
           {/* Filter Controls - Takes available space on desktop */}
-          <div className="flex flex-col gap-8 lg:gap-6 lg:flex-1">
-            <div className="flex flex-col items-center gap-3">
-              <div className="text-sm font-medium text-slate-600 tracking-wide">
-                Vancouver Time: {currentTime || 'Loading...'}
-              </div>
+          <div className="flex flex-col gap-4 lg:gap-4 lg:flex-1">
+            <div className="flex flex-col items-center">
               
               <div className="rounded-lg border shadow-sm">
                 {isClient ? (
@@ -451,7 +448,7 @@ export default function Home() {
                     <button
                       key={num}
                       onClick={() => setNumOfPlayers(num)}
-                      className={`flex-1 px-3 py-2.5 rounded-lg border font-medium text-sm transition-all duration-200 ${
+                      className={`flex-1 px-3 py-2 rounded-lg border text-sm transition-all duration-200 ${
                         numOfPlayers === num
                           ? 'bg-blue-500 text-white border-blue-500 shadow-md'
                           : 'bg-white hover:bg-blue-50 border-slate-200 text-slate-700 hover:border-blue-200'
@@ -468,7 +465,7 @@ export default function Home() {
                 <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase">Holes</span>
                 <Listbox value={holes} onChange={setHoles}>
                   <div className="relative">
-                    <Listbox.Button className="w-full px-4 py-2.5 text-left bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-blue-200 transition-colors font-medium text-slate-700">
+                    <Listbox.Button className="w-full px-4 py-2 text-left bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-blue-200 transition-colors font-medium text-slate-700">
                       <span>{holes}</span>
                       <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                     </Listbox.Button>
@@ -478,12 +475,12 @@ export default function Home() {
                           key={option}
                           value={option}
                           className={({ active }) =>
-                            `px-4 py-2.5 cursor-pointer font-medium ${
+                            `px-4 py-2 cursor-pointer font-medium ${
                               active ? 'bg-blue-50 text-blue-600' : 'text-slate-700'
                             }`
                           }
                         >
-                          {option} Holes
+                          {option}
                         </Listbox.Option>
                       ))}
                     </Listbox.Options>
