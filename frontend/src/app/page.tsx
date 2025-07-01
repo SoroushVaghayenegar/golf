@@ -48,7 +48,6 @@ export default function Home() {
   const [subscriptionShown, setSubscriptionShown] = useState(false);
   const [subscriptionDismissed, setSubscriptionDismissed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [currentTime, setCurrentTime] = useState<string>('');
   const [isClient, setIsClient] = useState(false);
   const [todayDate, setTodayDate] = useState<Date | null>(null);
   const resultsSectionRef = useRef<TeeTimeCardsRef>(null);
@@ -64,9 +63,6 @@ export default function Home() {
     // Set mobile state after hydration
     setIsMobile(window.innerWidth < 1024);
     
-    // Set initial time
-    setCurrentTime(getCurrentVancouverTime());
-    
     // Initialize dates after hydration
     const today = getVancouverToday();
     setTodayDate(today);
@@ -78,18 +74,12 @@ export default function Home() {
       setIsMobile(window.innerWidth < 1024);
     };
     
-    // Update time every minute
-    const updateTime = () => {
-      setCurrentTime(getCurrentVancouverTime());
-    };
-    
-    const timeInterval = setInterval(updateTime, 60000); // Update every minute
+
     
     window.addEventListener('resize', handleResize);
     
     return () => {
       window.removeEventListener('resize', handleResize);
-      clearInterval(timeInterval);
     };
   }, []);
 
