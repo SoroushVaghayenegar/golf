@@ -12,8 +12,7 @@ import {
   isPastDateInVancouver,
   getMinSelectableDateInVancouver, 
   isDateDisabledInVancouver, 
-  formatDateForAPI,
-  getCurrentVancouverTime
+  formatDateForAPI
 } from "../services/timezoneService";
 import TeeTimeCards, { TeeTimeCardsRef } from "@/components/TeeTimeCards";
 
