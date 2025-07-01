@@ -30,8 +30,8 @@ class CpsGolf:
             for search_date in search_dates:
                 params = {
                     "searchDate": search_date.strftime("%a %b %d %Y"),
-                    # "holes": str(holes_count),
-                    # "numberOfPlayer": str(player_count),
+                    "holes": str(holes_count),
+                    "numberOfPlayer": str(player_count),
                     "courseIds": "2,1,3",
                     "searchTimeType": "0",
                     "teeOffTimeMin": "0",

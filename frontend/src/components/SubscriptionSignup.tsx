@@ -226,7 +226,14 @@ export function SubscriptionSignup({ courseCityMapping, isOpen, onOpenChange, on
   }
 
   const handleSubmit = async () => {
-    if (!email || golfDays.length === 0 || selectedCourses.length === 0 || emailDays.length === 0) {
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!email || !emailRegex.test(email)) {
+      alert("Please enter a valid email address")
+      return
+    }
+    
+    if (golfDays.length === 0 || selectedCourses.length === 0 || emailDays.length === 0) {
       alert("Please fill in all required fields")
       return
     }
