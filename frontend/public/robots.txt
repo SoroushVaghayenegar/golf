@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://t-times.golf/sitemap.xml
+
+# Disallow admin or private areas
+Disallow: /api/
+Disallow: /_next/
+Disallow: /admin/ 

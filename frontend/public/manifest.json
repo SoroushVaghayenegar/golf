@@ -1,0 +1,29 @@
+{
+  "name": "T-Times Golf - Vancouver Tee Times",
+  "short_name": "T-Times Golf",
+  "description": "Find and book golf tee times in Vancouver",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/favicon-1.ico",
+      "sizes": "16x16 32x32",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/golf-course.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/golf-course.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+} 
