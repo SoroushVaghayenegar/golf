@@ -50,17 +50,42 @@ class Forecast:
         
         return result
 
-    async def get_organized_forecasts_by_city_and_date_async(self):
+    async def get_organized_forecasts_by_city_and_date_async(self, session=None, cities=None):
         """
         Async version of get_organized_forecasts_by_city_and_date
+        Now accepts a session parameter and optional cities list to only fetch specific cities
         """
-        city_forecasts = await self.fetch_forecast_for_all_cities_async()
-        result = {}
+        if cities is None:
+            # Fetch all cities if none specified
+            city_forecasts = await self.fetch_forecast_for_all_cities_async()
+        else:
+            # Only fetch weather for specified cities
+            city_forecasts = await self.fetch_forecast_for_specific_cities_async(session, cities)
         
+        result = {}
         for city_name, forecast_data in city_forecasts:
             result[city_name] = self._organize_forecast_by_date(forecast_data)
         
         return result
+
+    async def fetch_forecast_for_specific_cities_async(self, session, cities):
+        """
+        Fetches weather forecasts only for the specified cities
+        """
+        tasks = []
+        for city_name in cities:
+            try:
+                lat, lon = self.city_to_coordinates(city_name)
+                tasks.append(self.get_meteo_forecast_async(session, lat, lon, city_name))
+            except KeyError:
+                print(f"Warning: No coordinates found for city: {city_name}")
+                continue
+        
+        if tasks:
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            # Filter out exceptions
+            return [result for result in results if not isinstance(result, Exception)]
+        return []
     
     def _organize_forecast_by_date(self, forecast_data):
         """

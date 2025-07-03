@@ -3,19 +3,22 @@ import aiohttp
 from datetime import datetime, date
 from tee_time import TeeTime
 from typing import List
-from supabase_client import Supabase
 
 class Chronogolf:
 
-    def __init__(self):
-        self.supabase = Supabase()
-        self.courses = self.supabase.fetch_chronogolf_courses().data
+    def __init__(self, courses):
+        self.courses = courses
 
     def fetch_tee_times(self, search_dates: List[date], player_count: int, holes_count: int, cities: List[str] = None, city_forecasts: dict = None) -> List[TeeTime]:
-        return asyncio.run(self.fetch_tee_times_async(search_dates, player_count, holes_count, cities, city_forecasts))
+        return asyncio.run(self.fetch_tee_times_async(None, search_dates, player_count, holes_count, cities, city_forecasts))
     
-    async def fetch_tee_times_async(self, search_dates: List[date], player_count: int, holes_count: int, cities: List[str] = None, city_forecasts: dict = None) -> List[TeeTime]:
-        async with aiohttp.ClientSession() as session:
+    async def fetch_tee_times_async(self, session: aiohttp.ClientSession, search_dates: List[date], player_count: int, holes_count: int, cities: List[str] = None, city_forecasts: dict = None) -> List[TeeTime]:
+        # Use provided session or create new one
+        should_close_session = session is None
+        if session is None:
+            session = aiohttp.ClientSession()
+        
+        try:
             # Create tasks for each course and date combination
             tasks = []
             for search_date in search_dates:
@@ -23,9 +26,12 @@ class Chronogolf:
                     tasks.append(self.course_tee_times(session, course, search_date, player_count, holes_count, cities, city_forecasts))
             
             results = await asyncio.gather(*tasks)
-        
-        # Flatten the list of lists
-        return [tee_time for sublist in results for tee_time in sublist]
+            
+            # Flatten the list of lists
+            return [tee_time for sublist in results for tee_time in sublist]
+        finally:
+            if should_close_session:
+                await session.close()
 
     async def course_tee_times(self, session: aiohttp.ClientSession, course: dict, search_date, player_count, holes_count, cities: List[str] = None, city_forecasts: dict = None) -> List[TeeTime]:
         club_id = course["club_id"]
