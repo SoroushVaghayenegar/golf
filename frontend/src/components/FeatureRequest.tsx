@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { HandHelping, Bug } from "lucide-react";
 import {
   DropdownMenu,
@@ -19,12 +20,24 @@ export default function FeatureRequest() {
   const [isBugModalOpen, setIsBugModalOpen] = useState(false);
   const [requestType, setRequestType] = useState<string>("");
   const [requestText, setRequestText] = useState("");
+  const [requestEmail, setRequestEmail] = useState("");
   const [bugText, setBugText] = useState("");
+  const [bugEmail, setBugEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string>("");
 
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const handleSubmit = async () => {
-    if (!requestType || !requestText.trim()) return;
+    if (!requestType || !requestText.trim() || !requestEmail.trim()) return;
+    
+    if (!validateEmail(requestEmail)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
     
     setIsSubmitting(true);
     setError("");
@@ -32,7 +45,8 @@ export default function FeatureRequest() {
     try {
       const featureRequest: FeatureRequestType = {
         type: requestType,
-        request: requestText.trim()
+        request: requestText.trim(),
+        email: requestEmail.trim()
       };
       
       await sendFeatureRequest(featureRequest);
@@ -41,6 +55,7 @@ export default function FeatureRequest() {
       setIsModalOpen(false);
       setRequestType("");
       setRequestText("");
+      setRequestEmail("");
     } catch (err) {
       setError("Failed to submit request. Please try again.");
       console.error("Error submitting feature request:", err);
@@ -50,7 +65,12 @@ export default function FeatureRequest() {
   };
 
   const handleBugSubmit = async () => {
-    if (!bugText.trim()) return;
+    if (!bugText.trim() || !bugEmail.trim()) return;
+    
+    if (!validateEmail(bugEmail)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
     
     setIsSubmitting(true);
     setError("");
@@ -58,7 +78,8 @@ export default function FeatureRequest() {
     try {
       const bugReport: FeatureRequestType = {
         type: "bug",
-        request: bugText.trim()
+        request: bugText.trim(),
+        email: bugEmail.trim()
       };
       
       await sendFeatureRequest(bugReport);
@@ -66,6 +87,7 @@ export default function FeatureRequest() {
       // Reset form and close modal on success
       setIsBugModalOpen(false);
       setBugText("");
+      setBugEmail("");
     } catch (err) {
       setError("Failed to submit bug report. Please try again.");
       console.error("Error submitting bug report:", err);
@@ -104,6 +126,9 @@ export default function FeatureRequest() {
         setIsModalOpen(open);
         if (!open) {
           setError("");
+          setRequestType("");
+          setRequestText("");
+          setRequestEmail("");
         }
       }}>
         <DialogContent className="sm:max-w-md">
@@ -145,6 +170,21 @@ export default function FeatureRequest() {
               />
             </div>
 
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Email
+              </label>
+              <Input
+                type="email"
+                value={requestEmail}
+                onChange={(e) => {
+                  setRequestEmail(e.target.value);
+                  if (error) setError("");
+                }}
+                placeholder="Enter your email"
+              />
+            </div>
+
             {error && (
               <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md">
                 {error}
@@ -161,7 +201,7 @@ export default function FeatureRequest() {
               </Button>
               <Button
                 onClick={handleSubmit}
-                disabled={!requestType || !requestText.trim() || isSubmitting}
+                disabled={!requestType || !requestText.trim() || !requestEmail.trim() || isSubmitting}
               >
                 {isSubmitting ? "Submitting..." : "Submit"}
               </Button>
@@ -175,6 +215,8 @@ export default function FeatureRequest() {
         setIsBugModalOpen(open);
         if (!open) {
           setError("");
+          setBugText("");
+          setBugEmail("");
         }
       }}>
         <DialogContent className="sm:max-w-md">
@@ -198,6 +240,21 @@ export default function FeatureRequest() {
               />
             </div>
 
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Email
+              </label>
+              <Input
+                type="email"
+                value={bugEmail}
+                onChange={(e) => {
+                  setBugEmail(e.target.value);
+                  if (error) setError("");
+                }}
+                placeholder="Enter your email"
+              />
+            </div>
+
             {error && (
               <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md">
                 {error}
@@ -214,7 +271,7 @@ export default function FeatureRequest() {
               </Button>
               <Button
                 onClick={handleBugSubmit}
-                disabled={!bugText.trim() || isSubmitting}
+                disabled={!bugText.trim() || !bugEmail.trim() || isSubmitting}
               >
                 {isSubmitting ? "Submitting..." : "Submit Bug Report"}
               </Button>
