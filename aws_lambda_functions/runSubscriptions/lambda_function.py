@@ -14,6 +14,7 @@ sys.path.insert(0, "./python_libs")
 lambda_client = boto3.client('lambda')
 
 def fetch_tee_times(date: str):
+    print(f"Getting tee times for {date.strftime('%A')}")
     payload = {
         "queryStringParameters": {
             "date": date
@@ -104,13 +105,8 @@ def lambda_handler(event, context):
     subscriptions_for_broadcast_today = [subscription for subscription in subscriptions if day_of_week in subscription.broadcast_days]
 
     if len(subscriptions_for_broadcast_today) == 0:
-        return {
-            "statusCode": 200,
-            "headers": {
-                "Content-Type": "application/json"
-            },
-            "body": "No subscriptions to broadcast"
-        }
+        print("No subscriptions to broadcast")
+        return
     
     # get a set of days for subscriptions
     tee_time_days = set()
@@ -133,10 +129,4 @@ def lambda_handler(event, context):
         send_email(subscription.email, filtered_tee_times)
 
 
-    return {
-        "statusCode": 200,
-        "headers": {
-            "Content-Type": "application/json"
-        },
-        "body": "Email sent"
-    }
+    print("Successfully sent emails")

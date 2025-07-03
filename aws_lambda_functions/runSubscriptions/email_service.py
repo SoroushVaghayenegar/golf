@@ -35,3 +35,4 @@ def send_email(email: str, tee_times: list[dict]):
             }
         }
     )
+    print(f"Email sent to: {email} {len(tee_times)} tee times")
