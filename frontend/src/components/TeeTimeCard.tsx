@@ -5,8 +5,9 @@ import {
   Sun, Cloud, CloudRain, CloudSnow, CloudDrizzle, 
   CloudLightning, CloudFog, Zap, CloudHail,
   CloudSunRain, CloudRainWind, Snowflake, Thermometer,
-  Droplets
+  Droplets, X
 } from 'lucide-react';
+import { useState } from 'react';
 
 // Weather icon mapping utility
 const getWeatherIcon = (weatherCode: string | null) => {
@@ -151,9 +152,37 @@ const WeatherInfo = ({ teeTime }: { teeTime: TeeTime }) => {
 interface TeeTimeCardProps {
   teeTime: TeeTime;
   index: number;
+  onRemoveCourse: (courseName: string) => void;
 }
 
-export default function TeeTimeCard({ teeTime, index }: TeeTimeCardProps) {
+// Simple tooltip component
+const Tooltip = ({ children, text }: { children: React.ReactNode; text: string }) => {
+  const [isVisible, setIsVisible] = useState(false);
+
+  return (
+    <div 
+      className="relative inline-block"
+      onMouseEnter={() => setIsVisible(true)}
+      onMouseLeave={() => setIsVisible(false)}
+    >
+      {children}
+      {isVisible && (
+        <div className="absolute top-full right-0 mt-2 px-3 py-2 text-sm text-white bg-gray-800 rounded-lg shadow-lg z-20 whitespace-nowrap">
+          {text}
+          <div className="absolute bottom-full right-3 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-800"></div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default function TeeTimeCard({ teeTime, index, onRemoveCourse }: TeeTimeCardProps) {
+  const handleRemoveCourse = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onRemoveCourse(teeTime.course_name);
+  };
+
   return (
     <div
       key={index}
@@ -163,7 +192,18 @@ export default function TeeTimeCard({ teeTime, index }: TeeTimeCardProps) {
         {/* Header Section */}
         <div className="flex flex-col gap-3 mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-1">{teeTime.course_name}</h3>
+            <div className="flex items-start gap-2 mb-1">
+              <h3 className="text-lg font-semibold text-slate-900">{teeTime.course_name}</h3>
+              <Tooltip text="Remove course from filters">
+                <button
+                  onClick={handleRemoveCourse}
+                  className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100 hover:bg-red-100 flex items-center justify-center transition-colors duration-200 group ml-1 mt-0.5"
+                  aria-label="Remove course from filters"
+                >
+                  <X className="w-4 h-4 text-gray-500 group-hover:text-red-500" />
+                </button>
+              </Tooltip>
+            </div>
             <p className="text-sm text-slate-500 mb-2">{teeTime.city}</p>
             <Rating rating={teeTime.rating} />
           </div>

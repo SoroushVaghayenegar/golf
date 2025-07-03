@@ -33,6 +33,7 @@ interface SidebarProps {
   setSelectedCities: (cities: string[]) => void;
   selectedCourses: string[];
   setSelectedCourses: (courses: string[]) => void;
+  removedCourses: string[];
   loading: boolean;
   onGetTeeTimes: () => void;
   isClient: boolean;
@@ -53,6 +54,7 @@ export default function Sidebar({
   setSelectedCities,
   selectedCourses,
   setSelectedCourses,
+  removedCourses,
   loading,
   onGetTeeTimes,
   isClient,
@@ -113,16 +115,18 @@ export default function Sidebar({
     label: city
   }));
   
-  const courseOptions = courses.map(course => {
-    const courseCity = localCourseCityMapping[course];
-    const isDisabled = selectedCities.length > 0 && !selectedCities.includes(courseCity);
-    return { 
-      value: course, 
-      label: course, 
-      isDisabled: isDisabled,
-      city: courseCity 
-    };
-  });
+  const courseOptions = courses
+    .filter(course => !removedCourses.includes(course))
+    .map(course => {
+      const courseCity = localCourseCityMapping[course];
+      const isDisabled = selectedCities.length > 0 && !selectedCities.includes(courseCity);
+      return { 
+        value: course, 
+        label: course, 
+        isDisabled: isDisabled,
+        city: courseCity 
+      };
+    });
 
   const handleCityChange = (selectedOptions: MultiValue<SelectOption>) => {
     const values = selectedOptions ? selectedOptions.map((option) => option.value) : [];

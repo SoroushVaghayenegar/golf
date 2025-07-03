@@ -20,6 +20,7 @@ export default function Home() {
   const [timeRange, setTimeRange] = useState<number[]>([5, 22]); // 5am to 10pm
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
+  const [removedCourses, setRemovedCourses] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'startTime' | 'priceAsc' | 'priceDesc' | 'rating'>('startTime');
   const [teeTimes, setTeeTimes] = useState<TeeTime[]>([]);
   const [loading, setLoading] = useState(false);
@@ -139,6 +140,12 @@ export default function Home() {
     setSubscriptionShown(true);
   };
 
+  // Handle removing a course from filters
+  const handleRemoveCourse = (courseName: string) => {
+    setRemovedCourses(prev => [...prev, courseName]);
+    setSelectedCourses(prev => prev.filter(course => course !== courseName));
+  };
+
   // Function to fetch tee times
   const handleGetTeeTimes = async () => {
     if (!selectedDates || selectedDates.length === 0) {
@@ -148,6 +155,7 @@ export default function Home() {
     
     setLoading(true);
     setError(null);
+    setRemovedCourses([]); // Clear removed courses when starting a new search
     try {
       console.log('Selected dates:', selectedDates);
       
@@ -207,6 +215,7 @@ export default function Home() {
           setSelectedCities={setSelectedCities}
           selectedCourses={selectedCourses}
           setSelectedCourses={setSelectedCourses}
+          removedCourses={removedCourses}
           loading={loading}
           onGetTeeTimes={handleGetTeeTimes}
           isClient={isClient}
@@ -229,6 +238,8 @@ export default function Home() {
               selectedCities={selectedCities}
               coursesFilterEnabled={true}
               selectedCourses={selectedCourses}
+              removedCourses={removedCourses}
+              onRemoveCourse={handleRemoveCourse}
               fetchedDates={fetchedDates}
               sortBy={sortBy}
               setSortBy={setSortBy}

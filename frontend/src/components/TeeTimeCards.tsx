@@ -27,6 +27,8 @@ interface TeeTimeCardsProps {
   selectedCities: string[];
   coursesFilterEnabled: boolean;
   selectedCourses: string[];
+  removedCourses: string[];
+  onRemoveCourse: (courseName: string) => void;
   fetchedDates: Date[] | undefined;
   sortBy: 'startTime' | 'priceAsc' | 'priceDesc' | 'rating';
   setSortBy: (sortBy: 'startTime' | 'priceAsc' | 'priceDesc' | 'rating') => void;
@@ -52,6 +54,8 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
   selectedCities,
   coursesFilterEnabled,
   selectedCourses,
+  removedCourses,
+  onRemoveCourse,
   fetchedDates,
   sortBy,
   setSortBy,
@@ -90,6 +94,11 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
     // Filter by courses if enabled
     if (coursesFilterEnabled && selectedCourses.length > 0) {
       filtered = filtered.filter(teeTime => selectedCourses.includes(teeTime.course_name));
+    }
+    
+    // Filter out removed courses
+    if (removedCourses.length > 0) {
+      filtered = filtered.filter(teeTime => !removedCourses.includes(teeTime.course_name));
     }
     
     // If any of the fetched dates is today, filter out tee times that are earlier than now
@@ -350,6 +359,7 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
                     key={index}
                     teeTime={teeTime}
                     index={index}
+                    onRemoveCourse={onRemoveCourse}
                   />
                 ))}
               </div>
@@ -378,6 +388,7 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
                           key={index}
                           teeTime={teeTime}
                           index={index}
+                          onRemoveCourse={onRemoveCourse}
                         />
                       ))}
                     </div>
