@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { HandHelping, Bug } from "lucide-react";
+import { BadgeQuestionMark, Bug } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -105,7 +105,7 @@ export default function FeatureRequest() {
             <Button
               className="w-12 h-12 rounded-full bg-black hover:bg-gray-800 text-white shadow-lg hover:shadow-xl transition-all duration-200"
             >
-              <HandHelping className="size-7"/>
+              <BadgeQuestionMark className="size-7"/>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
