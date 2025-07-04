@@ -14,7 +14,9 @@ sys.path.insert(0, "./python_libs")
 lambda_client = boto3.client('lambda')
 
 def fetch_tee_times(date: str):
-    print(f"Getting tee times for {date.strftime('%A')}")
+    # Convert string date to datetime to get day name
+    date_obj = datetime.strptime(date, "%Y-%m-%d")
+    print(f"Getting tee times for {date_obj.strftime('%A')}")
     payload = {
         "queryStringParameters": {
             "date": date
