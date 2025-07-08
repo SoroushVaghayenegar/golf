@@ -7,19 +7,21 @@ from tee_time_subscription import Day
 from datetime import time
 from email_service import send_email
 import boto3
+from retry import retry
 
 sys.path.insert(0, "./python_libs")
 
 
 lambda_client = boto3.client('lambda')
 
-def fetch_tee_times(date: str):
-    # Convert string date to datetime to get day name
-    date_obj = datetime.strptime(date, "%Y-%m-%d")
-    print(f"Getting tee times for {date_obj.strftime('%A')}")
+@retry(tries=3, delay=2)
+def fetch_tee_times(dates: list[str]):
+    # print list of day of week in one line
+    print(f"Getting tee times for {', '.join([datetime.strptime(date, '%Y-%m-%d').strftime('%A') for date in dates])}")
+
     payload = {
         "queryStringParameters": {
-            "date": date
+            "dates": ','.join(dates)
         }
     }
 
@@ -119,11 +121,17 @@ def lambda_handler(event, context):
     day_to_date_mapping = get_dates_for_days(tee_time_days, vancouver_time)
     
     # maping of day to tee times
+    tee_times = fetch_tee_times(list(day_to_date_mapping.values()))
     day_to_tee_times = {}
-    for day in day_to_date_mapping.keys():
-        date = day_to_date_mapping[day]
-        tee_times = fetch_tee_times(date)
-        day_to_tee_times[day] = tee_times
+    for tee_time in tee_times:
+        # Parse the start_datetime string to get the date and day
+        tee_time_datetime = datetime.fromisoformat(tee_time["start_datetime"])
+        day_of_week = get_day_of_week(tee_time_datetime)
+        if day_of_week not in day_to_tee_times:
+            day_to_tee_times[day_of_week] = []
+        day_to_tee_times[day_of_week].append(tee_time)
+
+    
     
     for subscription in subscriptions_for_broadcast_today:
         tee_times = day_to_tee_times[subscription.days[0]]

@@ -368,7 +368,7 @@ def generate_email_html(tee_times: list[dict]) -> str:
                         font-size: 12px;
                         color: #9ca3af;
                     ">
-                        © 2024 T-Times Golf. All rights reserved.
+                        © 2025 T-Times Golf. All rights reserved.
                     </p>
                 </div>
             </div>
