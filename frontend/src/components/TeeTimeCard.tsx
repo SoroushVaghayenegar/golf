@@ -184,6 +184,8 @@ export default function TeeTimeCard({ teeTime, index, onRemoveCourse, onVisibili
   useEffect(() => {
     if (!onVisibilityChange || hasBeenVisible) return;
 
+    const currentCardRef = cardRef.current;
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -199,13 +201,13 @@ export default function TeeTimeCard({ teeTime, index, onRemoveCourse, onVisibili
       }
     );
 
-    if (cardRef.current) {
-      observer.observe(cardRef.current);
+    if (currentCardRef) {
+      observer.observe(currentCardRef);
     }
 
     return () => {
-      if (cardRef.current) {
-        observer.unobserve(cardRef.current);
+      if (currentCardRef) {
+        observer.unobserve(currentCardRef);
       }
     };
   }, [index, onVisibilityChange, hasBeenVisible]);

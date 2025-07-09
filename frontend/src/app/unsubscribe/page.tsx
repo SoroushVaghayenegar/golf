@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { unsubscribe } from '@/services/supabaseService';
@@ -65,7 +66,7 @@ export default function UnsubscribePage() {
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Unsubscribe</h1>
               <p className="text-gray-600">
-                We're sorry to see you go. You can unsubscribe from our weekly tee times below.
+                We&apos;re sorry to see you go. You can unsubscribe from our weekly tee times below.
               </p>
             </div>
             
@@ -115,9 +116,9 @@ export default function UnsubscribePage() {
               <div className="pt-4 border-t border-gray-200">
                 <p className="text-center text-sm text-gray-500">
                   Changed your mind?{' '}
-                  <a href="/" className="text-blue-600 hover:text-blue-500 underline">
+                  <Link href="/" className="text-blue-600 hover:text-blue-500 underline">
                     Return to T-Times Golf
-                  </a>
+                  </Link>
                 </p>
               </div>
             </div>
@@ -144,12 +145,12 @@ export default function UnsubscribePage() {
               </div>
               
               <div className="pt-4">
-                <a 
+                <Link 
                   href="/" 
                   className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   Return to T-Times Golf
-                </a>
+                </Link>
               </div>
             </div>
           </div>

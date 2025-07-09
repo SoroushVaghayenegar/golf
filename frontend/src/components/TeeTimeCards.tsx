@@ -71,7 +71,7 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
   
   const sectionRef = useRef<HTMLElement>(null);
   const scrollableRef = useRef<HTMLDivElement>(null);
-  const [visibleTeeTimes, setVisibleTeeTimes] = useState<Set<number>>(new Set());
+  const [, setVisibleTeeTimes] = useState<Set<number>>(new Set());
 
   // Expose both refs to parent component
   useImperativeHandle(ref, () => ({
