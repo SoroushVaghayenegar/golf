@@ -120,3 +120,34 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Prevent zoom on input focus for mobile devices */
+@media screen and (max-width: 768px) {
+  input[type="text"],
+  input[type="search"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="password"],
+  input[type="number"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+  
+  /* Specifically target react-select components */
+  .react-select__input-container input,
+  .react-select__control input {
+    font-size: 16px !important;
+  }
+  
+  /* Target the react-select control itself */
+  .react-select-container .react-select__control {
+    font-size: 16px !important;
+  }
+  
+  /* Target react-select input field */
+  .react-select-container .react-select__input-container {
+    font-size: 16px !important;
+  }
+}
