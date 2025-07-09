@@ -150,4 +150,24 @@
   .react-select-container .react-select__input-container {
     font-size: 16px !important;
   }
+  
+  /* Prevent cursor from appearing on react-select input fields on mobile */
+  .react-select-container .react-select__input-container input {
+    caret-color: transparent !important;
+  }
+  
+  /* Alternative approach: hide the input cursor completely on mobile */
+  .react-select-container .react-select__input-container input:focus {
+    caret-color: transparent !important;
+  }
+  
+  /* Ensure the input doesn't show a cursor when focused */
+  .react-select-container .react-select__input-container input {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
 }
