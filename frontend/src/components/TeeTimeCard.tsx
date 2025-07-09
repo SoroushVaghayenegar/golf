@@ -7,7 +7,7 @@ import {
   CloudSunRain, CloudRainWind, Snowflake, Thermometer,
   Droplets, X
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 // Weather icon mapping utility
 const getWeatherIcon = (weatherCode: string | null) => {
@@ -153,6 +153,7 @@ interface TeeTimeCardProps {
   teeTime: TeeTime;
   index: number;
   onRemoveCourse: (courseName: string) => void;
+  onVisibilityChange?: (isVisible: boolean) => void;
 }
 
 // Simple tooltip component
@@ -176,7 +177,39 @@ const Tooltip = ({ children, text }: { children: React.ReactNode; text: string }
   );
 };
 
-export default function TeeTimeCard({ teeTime, index, onRemoveCourse }: TeeTimeCardProps) {
+export default function TeeTimeCard({ teeTime, index, onRemoveCourse, onVisibilityChange }: TeeTimeCardProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [hasBeenVisible, setHasBeenVisible] = useState(false);
+
+  useEffect(() => {
+    if (!onVisibilityChange || hasBeenVisible) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !hasBeenVisible) {
+            setHasBeenVisible(true);
+            onVisibilityChange(true);
+          }
+        });
+      },
+      {
+        threshold: 0.5, // Trigger when 50% of the card is visible
+        rootMargin: '0px 0px -50px 0px' // Trigger slightly before the card is fully in view
+      }
+    );
+
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
+    }
+
+    return () => {
+      if (cardRef.current) {
+        observer.unobserve(cardRef.current);
+      }
+    };
+  }, [index, onVisibilityChange, hasBeenVisible]);
+
   const handleRemoveCourse = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -185,6 +218,7 @@ export default function TeeTimeCard({ teeTime, index, onRemoveCourse }: TeeTimeC
 
   return (
     <div
+      ref={cardRef}
       key={index}
       className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-200 border border-gray-100 overflow-hidden"
     >

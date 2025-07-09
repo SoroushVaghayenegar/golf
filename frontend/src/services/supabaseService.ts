@@ -36,6 +36,29 @@ export const createSubscription = async (subscription: Subscription) => {
     }
 }
 
+export const unsubscribe = async (email: string, token: string) => {
+    try {
+        const response = await fetch(`${supabaseUrl}/functions/v1/unsubscribe`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${supabaseAnonKey}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, token }),
+        })
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}))
+            throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+        }
+        
+        const data = await response.json()
+        return data
+    } catch (error) {
+        console.error('Error unsubscribing:', error)
+        throw error
+    }
+}
 
 
 export const fetchCourseDisplayNamesAndTheirCities = async () => {

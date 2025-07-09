@@ -96,6 +96,8 @@ def lambda_handler(event, context):
     print("Received event:")
     print(json.dumps(event, indent=2)) 
 
+    test_email = event.get('test-email')
+    
     # today in vancouver time
     vancouver_time = datetime.now(pytz.timezone('America/Vancouver'))
     date = vancouver_time.strftime("%Y-%m-%d")
@@ -136,7 +138,11 @@ def lambda_handler(event, context):
     for subscription in subscriptions_for_broadcast_today:
         tee_times = day_to_tee_times[subscription.days[0]]
         filtered_tee_times = filter_tee_times(tee_times, subscription.courses, subscription.start_time, subscription.end_time)
-        send_email(subscription.email, filtered_tee_times)
+        if test_email:
+            send_email(test_email, filtered_tee_times, subscription.token)
+            print("Successfully sent test email")
+            return
+        send_email(subscription.email, filtered_tee_times, subscription.token)
 
 
     print("Successfully sent emails")

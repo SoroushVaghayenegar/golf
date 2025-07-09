@@ -194,3 +194,4 @@ cython_debug/
 .cursorindexingignore
 node_modules
 /**/*.zip
+*.pyc

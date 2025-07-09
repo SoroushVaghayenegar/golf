@@ -1,5 +1,5 @@
 "use client";
-import { forwardRef, useRef, useImperativeHandle } from "react";
+import { forwardRef, useRef, useImperativeHandle, useState, useEffect } from "react";
 import { Listbox } from "@headlessui/react";
 import { ChevronDown, ArrowUp, ArrowDown } from "lucide-react";
 import { type TeeTime } from "../services/teeTimeService";
@@ -38,6 +38,7 @@ interface TeeTimeCardsProps {
   isMobile: boolean;
   hasSearched: boolean;
   courseCityMapping: Record<string, string>;
+  onTeeTimeVisibilityChange?: (visibleCount: number) => void;
 }
 
 export interface TeeTimeCardsRef {
@@ -64,17 +65,48 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
   handleSubscriptionDismiss,
   isMobile,
   hasSearched,
-  courseCityMapping
+  courseCityMapping,
+  onTeeTimeVisibilityChange
 }, ref) => {
   
   const sectionRef = useRef<HTMLElement>(null);
   const scrollableRef = useRef<HTMLDivElement>(null);
+  const [visibleTeeTimes, setVisibleTeeTimes] = useState<Set<number>>(new Set());
 
   // Expose both refs to parent component
   useImperativeHandle(ref, () => ({
     scrollableElement: scrollableRef.current,
     sectionElement: sectionRef.current,
   }), []);
+
+  // Handle tee time visibility changes
+  const handleTeeTimeVisibilityChange = (index: number, isVisible: boolean) => {
+    setVisibleTeeTimes(prev => {
+      const newSet = new Set(prev);
+      if (isVisible) {
+        newSet.add(index);
+      } else {
+        newSet.delete(index);
+      }
+      
+      // Notify parent of visible count
+      if (onTeeTimeVisibilityChange) {
+        onTeeTimeVisibilityChange(newSet.size);
+      }
+      
+      return newSet;
+    });
+  };
+
+  // Create callback function for TeeTimeCard
+  const createVisibilityCallback = (index: number) => {
+    return (isVisible: boolean) => handleTeeTimeVisibilityChange(index, isVisible);
+  };
+
+  // Reset visible tee times when tee times change
+  useEffect(() => {
+    setVisibleTeeTimes(new Set());
+  }, [teeTimes]);
 
   const filteredTeeTimes = (teeTimes: TeeTime[]) => {
     let filtered = teeTimes;
@@ -354,14 +386,15 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
           if (grouped.length === 1) {
             return (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {grouped[0].teeTimes.map((teeTime, index) => (
-                  <TeeTimeCard
-                    key={index}
-                    teeTime={teeTime}
-                    index={index}
-                    onRemoveCourse={onRemoveCourse}
-                  />
-                ))}
+                                      {grouped[0].teeTimes.map((teeTime, index) => (
+                        <TeeTimeCard
+                          key={index}
+                          teeTime={teeTime}
+                          index={index}
+                          onRemoveCourse={onRemoveCourse}
+                          onVisibilityChange={createVisibilityCallback(index)}
+                        />
+                      ))}
               </div>
             );
           }
@@ -389,6 +422,7 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
                           teeTime={teeTime}
                           index={index}
                           onRemoveCourse={onRemoveCourse}
+                          onVisibilityChange={createVisibilityCallback(index)}
                         />
                       ))}
                     </div>

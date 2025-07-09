@@ -61,14 +61,17 @@ class Supabase:
             
             # Create TeeTimeSubscription object
             subscription = TeeTimeSubscription(
-                email=item.get('email', ''),
+                email=item.get('email'),
                 days=days,
                 start_time=start_time,
                 end_time=end_time,
                 courses=item.get('course_list', []),
-                broadcast_days=broadcast_days
+                broadcast_days=broadcast_days,
+                token=item.get('token')
             )
-            subscriptions.append(subscription)
+            
+            if subscription.valid_for_subscription():
+                subscriptions.append(subscription)
         
         return subscriptions
     

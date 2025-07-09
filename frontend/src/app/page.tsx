@@ -9,8 +9,6 @@ import TeeTimeCards, { TeeTimeCardsRef } from "@/components/TeeTimeCards";
 import Sidebar from "@/components/Sidebar";
 import FeatureRequest from "@/components/FeatureRequest";
 
-
-
 export default function Home() {
   // State for filters
   const [selectedDates, setSelectedDates] = useState<Date[] | undefined>(undefined);
@@ -34,6 +32,7 @@ export default function Home() {
   const [isMobile, setIsMobile] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [todayDate, setTodayDate] = useState<Date | null>(null);
+  const [visibleTeeTimeCount, setVisibleTeeTimeCount] = useState(0);
   const resultsSectionRef = useRef<TeeTimeCardsRef>(null);
 
   // Check sessionStorage and set mobile state on component mount
@@ -58,8 +57,6 @@ export default function Home() {
       setIsMobile(window.innerWidth < 1024);
     };
     
-
-    
     window.addEventListener('resize', handleResize);
     
     return () => {
@@ -67,70 +64,25 @@ export default function Home() {
     };
   }, []);
 
-
-
-  // Scroll detection for subscription component
+  // Tee time count-based subscription trigger
   useEffect(() => {
     if (!teeTimes.length || subscriptionShown || subscriptionDismissed) return;
 
-    let scrollTimeout: NodeJS.Timeout;
+    const mobileThreshold = 5;
+    const desktopThreshold = 15;
+    const threshold = isMobile ? mobileThreshold : desktopThreshold;
 
-    const handleScroll = () => {
-      if (isMobile) {
-        // On mobile, check if page has scrolled down significantly
-        const scrollY = window.scrollY;
-        const windowHeight = window.innerHeight;
-        
-        if (scrollY > windowHeight * 0.6) { // Show after 60% of viewport height (increased from 30%)
-          // Add a small delay to prevent immediate triggering
-          clearTimeout(scrollTimeout);
-          scrollTimeout = setTimeout(() => {
-            setShowSubscription(true);
-            setSubscriptionShown(true);
-          }, 500); // 500ms delay
-        }
-      } else {
-        // On desktop, check if scrollable div has scrolled
-        const scrollableElement = resultsSectionRef.current?.scrollableElement;
-        if (scrollableElement) {
-          const scrollTop = scrollableElement.scrollTop;
-          const clientHeight = scrollableElement.clientHeight;
-          
-          if (scrollTop > clientHeight * 0.5) { // Show after 50% of results section height
-            setShowSubscription(true);
-            setSubscriptionShown(true);
-          }
-        }
-      }
-    };
-
-    // Capture the current ref value to use in cleanup
-    const currentScrollableElement = resultsSectionRef.current?.scrollableElement;
-
-    if (isMobile) {
-      window.addEventListener('scroll', handleScroll);
-    } else {
-      if (currentScrollableElement) {
-        currentScrollableElement.addEventListener('scroll', handleScroll);
-      }
+    if (visibleTeeTimeCount >= threshold) {
+      setShowSubscription(true);
+      setSubscriptionShown(true);
     }
-
-    return () => {
-      clearTimeout(scrollTimeout);
-      if (isMobile) {
-        window.removeEventListener('scroll', handleScroll);
-      } else {
-        if (currentScrollableElement) {
-          currentScrollableElement.removeEventListener('scroll', handleScroll);
-        }
-      }
-    };
-  }, [teeTimes.length, subscriptionShown, subscriptionDismissed, isMobile]);
+  }, [visibleTeeTimeCount, teeTimes.length, subscriptionShown, subscriptionDismissed, isMobile]);
 
   // Reset subscription state when new search is performed
   useEffect(() => {
     setShowSubscription(false);
     setSubscriptionShown(false);
+    setVisibleTeeTimeCount(0);
   }, [fetchedDates]);
 
   // Handle subscription dismissal
@@ -249,6 +201,7 @@ export default function Home() {
               isMobile={isMobile}
               hasSearched={teeTimes.length > 0 || loading || !!error}
               courseCityMapping={courseCityMapping}
+              onTeeTimeVisibilityChange={setVisibleTeeTimeCount}
             />
           </div>
         )}

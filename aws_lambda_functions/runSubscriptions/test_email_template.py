@@ -69,4 +69,98 @@ def test_email_template():
     print("\nHTML email saved to 'email_preview.html' - open this in a browser to preview")
 
 if __name__ == "__main__":
-    test_email_template() 
+    from email_template import generate_email_html
+    import datetime
+
+    # Sample tee_times data
+    tee_times = [
+        {
+            "start_datetime": "2024-12-09T07:30:00Z",
+            "course_name": "Pebble Beach Golf Links",
+            "city": "Monterey, CA",
+            "holes": 18,
+            "players_available": 12,
+            "price": 250.00,
+        },
+        {
+            "start_datetime": "2024-12-09T13:00:00Z",
+            "course_name": "Pebble Beach Golf Links",
+            "city": "Monterey, CA",
+            "holes": 18,
+            "players_available": 8,
+            "price": 250.00,
+        },
+        {
+            "start_datetime": "2024-12-09T18:00:00Z",
+            "course_name": "Pebble Beach Golf Links",
+            "city": "Monterey, CA",
+            "holes": 18,
+            "players_available": 3,
+            "price": 250.00,
+        },
+        {
+            "start_datetime": "2024-12-09T08:00:00Z",
+            "course_name": "Augusta National Golf Club",
+            "city": "Augusta, GA",
+            "holes": 18,
+            "players_available": 15,
+            "price": 400.00,
+        },
+        {
+            "start_datetime": "2024-12-09T15:00:00Z",
+            "course_name": "Augusta National Golf Club",
+            "city": "Augusta, GA",
+            "holes": 18,
+            "players_available": 6,
+            "price": 400.00,
+        },
+        {
+            "start_datetime": "2024-12-09T19:00:00Z",
+            "course_name": "Augusta National Golf Club",
+            "city": "Augusta, GA",
+            "holes": 18,
+            "players_available": 0,
+            "price": 400.00,
+        },
+        {
+            "start_datetime": "2024-12-11T08:00:00Z",
+            "course_name": "St. Andrews Old Course",
+            "city": "St. Andrews, Scotland",
+            "holes": 18,
+            "players_available": 5,
+            "price": 300.00,
+        },
+        {
+            "start_datetime": "2024-12-11T14:00:00Z",
+            "course_name": "St. Andrews Old Course",
+            "city": "St. Andrews, Scotland",
+            "holes": 18,
+            "players_available": 11,
+            "price": 300.00,
+        },
+        {
+            "start_datetime": "2024-12-11T18:00:00Z",
+            "course_name": "St. Andrews Old Course",
+            "city": "St. Andrews, Scotland",
+            "holes": 18,
+            "players_available": 7,
+            "price": 300.00,
+        },
+        {
+            "start_datetime": "2024-12-14T09:00:00Z",
+            "course_name": "Torrey Pines Golf Course",
+            "city": "La Jolla, CA",
+            "holes": 18,
+            "players_available": 9,
+            "price": 180.00,
+        },
+    ]
+
+    # Sample token for testing
+    test_token = "abc123xyz789"
+    test_email = "test@example.com"
+    
+    html = generate_email_html(tee_times, test_token, test_email)
+    with open("test_email_output.html", "w") as f:
+        f.write(html)
+    print("Test email HTML written to test_email_output.html") 
