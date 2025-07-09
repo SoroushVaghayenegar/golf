@@ -194,6 +194,7 @@ export default function Sidebar({
     control: (provided) => ({
       ...provided,
       minHeight: '42px',
+      maxHeight: '70px', // Reduced from 84px for more compact height
       border: '1px solid #e2e8f0',
       borderRadius: '8px',
       fontSize: '14px',
@@ -206,6 +207,12 @@ export default function Sidebar({
         boxShadow: '0 0 0 2px rgba(59, 130, 246, 0.1)'
       }
     }),
+    valueContainer: (provided) => ({
+      ...provided,
+      maxHeight: '70px', // Reduced from 84px for more compact height
+      overflow: 'auto',
+      padding: '4px 8px'
+    }),
     placeholder: (provided) => ({
       ...provided,
       color: '#64748b'
@@ -213,7 +220,9 @@ export default function Sidebar({
     multiValue: (provided) => ({
       ...provided,
       backgroundColor: '#3b82f6',
-      borderRadius: '4px'
+      borderRadius: '4px',
+      margin: '2px 4px 2px 0',
+      maxWidth: 'calc(100% - 8px)'
     }),
     multiValueLabel: (provided) => ({
       ...provided,
