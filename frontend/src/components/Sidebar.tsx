@@ -455,6 +455,17 @@ export default function Sidebar({
                 className="react-select-container"
                 classNamePrefix="react-select"
                 instanceId="cities-select"
+                blurInputOnSelect={false}
+                onMenuOpen={() => {
+                  // Prevent cursor from appearing on mobile
+                  if (window.innerWidth <= 768) {
+                    const input = document.querySelector('#cities-select input');
+                    if (input) {
+                      (input as HTMLInputElement).style.caretColor = 'transparent';
+                      (input as HTMLInputElement).style.userSelect = 'none';
+                    }
+                  }
+                }}
                 {...commonSelectProps}
               />
             )
@@ -509,6 +520,17 @@ export default function Sidebar({
                 className="react-select-container"
                 classNamePrefix="react-select"
                 instanceId="courses-select"
+                blurInputOnSelect={false}
+                onMenuOpen={() => {
+                  // Prevent cursor from appearing on mobile
+                  if (window.innerWidth <= 768) {
+                    const input = document.querySelector('#courses-select input');
+                    if (input) {
+                      (input as HTMLInputElement).style.caretColor = 'transparent';
+                      (input as HTMLInputElement).style.userSelect = 'none';
+                    }
+                  }
+                }}
                 {...commonSelectProps}
               />
             )
