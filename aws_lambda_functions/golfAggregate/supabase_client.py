@@ -21,16 +21,31 @@ class Supabase:
     def fetch_chronogolf_courses(self):
         url = f"{self.base_url}/rest/v1/chrono_courses"
         response = requests.get(url, headers=self.headers)
-        response.raise_for_status()
-        return type('Response', (), {'data': response.json()})()
+        return response.json()
     
     def fetch_cps_courses(self):
         url = f"{self.base_url}/rest/v1/cps_courses"
         response = requests.get(url, headers=self.headers)
-        response.raise_for_status()
-        return type('Response', (), {'data': response.json()})()
+        return response.json()
     
+    def fetch_cities(self):
+        url = f"{self.base_url}/rest/v1/cities"
+        response = requests.get(url, headers=self.headers)
+        return response.json()
 
+    def insert_to_courses(self, name, display_name, club_name, city, rating, external_api, external_api_attributes):
+        url = f"{self.base_url}/rest/v1/courses"
+        response = requests.post(url, headers=self.headers, json={
+            "name": name,
+            "club_name": club_name,
+            "display_name": display_name,
+            "city": city,
+            "rating": rating,
+            "external_api": external_api,
+            "external_api_attributes": external_api_attributes
+        })
+        return response.status_code
+    
 class AsyncSupabase:
     def __init__(self):
         self.base_url = SUPABASE_URL

@@ -1,8 +1,26 @@
 import asyncio
 import aiohttp
+import random
 from datetime import datetime, date
 from tee_time import TeeTime
 from typing import List, Dict
+
+username = 'ttimesgolf_Bw3Ck'
+password = 'T_timesgolf1'
+
+
+PROXIES = [
+   "http://user-ttimesgolf_Bw3Ck:T_timesgolf1@dc.oxylabs.io:8001",
+   "http://user-ttimesgolf_Bw3Ck:T_timesgolf1@dc.oxylabs.io:8002",
+   "http://user-ttimesgolf_Bw3Ck:T_timesgolf1@dc.oxylabs.io:8003",
+   "http://user-ttimesgolf_Bw3Ck:T_timesgolf1@dc.oxylabs.io:8004",
+   "http://user-ttimesgolf_Bw3Ck:T_timesgolf1@dc.oxylabs.io:8005",
+   "http://user-ttimesgolf_rnopU:T_timesgolf1@dc.oxylabs.io:8001",
+   "http://user-ttimesgolf_rnopU:T_timesgolf1@dc.oxylabs.io:8002",
+   "http://user-ttimesgolf_rnopU:T_timesgolf1@dc.oxylabs.io:8003",
+   "http://user-ttimesgolf_rnopU:T_timesgolf1@dc.oxylabs.io:8004",
+   "http://user-ttimesgolf_rnopU:T_timesgolf1@dc.oxylabs.io:8005"
+]
 
 class CpsGolf:
 
@@ -73,7 +91,7 @@ class CpsGolf:
         for attempt in range(3):
             try:
                 print(f"Fetching tee times for {club_name}")
-                async with session.get(url, params=params, headers=headers) as response:
+                async with session.get(url, params=params, headers=headers, proxy=random.choice(PROXIES)) as response:
                     response.raise_for_status()
                     tee_time_list = await response.json()
                     
@@ -128,7 +146,7 @@ class CpsGolf:
             except Exception as e:
                 print(f"Error fetching tee times for {club_name} (attempt {attempt + 1}/3): {e}")
                 if attempt < 2:  # Don't wait after the last attempt
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(random.randint(1, 3))
                 else:
                     print(f"Failed to fetch tee times for {club_name} after 3 attempts")
         

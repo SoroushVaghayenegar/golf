@@ -1,0 +1,20 @@
+{
+  "name": "fetch-tee-times",
+  "version": "1.0.0",
+  "description": "Lambda function to fetch tee times from golf courses",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "deploy": "npm run build && zip -r function.zip .",
+    "test": "npm run build && node test-local.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.51.0",
+    "https-proxy-agent": "^7.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "dotenv": "^17.2.0",
+    "typescript": "^5.0.0"
+  }
+}
