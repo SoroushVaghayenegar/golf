@@ -334,7 +334,7 @@ export default function Sidebar({
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 </Listbox.Button>
                 <Listbox.Options className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg focus:outline-none">
-                  {[18, 9].map((option) => (
+                  {[18, 16, 9].map((option) => (
                     <Listbox.Option
                       key={option}
                       value={option}
