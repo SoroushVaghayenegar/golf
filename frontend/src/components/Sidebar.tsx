@@ -83,7 +83,7 @@ export default function Sidebar({
         
         // each course has {courseId: number, city: string}
         const courseNames = Object.keys(courseCityData);
-        const cityNames = [...new Set(Object.values(courseCityData).map((course: any) => course.city))].sort((a: string, b: string) => a.localeCompare(b));
+        const cityNames = [...new Set(Object.values(courseCityData).map((course: unknown) => (course as { courseId: number; city: string }).city))].sort((a: string, b: string) => a.localeCompare(b));
         
         setLocalCourseCityMapping(courseCityData);
         setCourseCityMapping(courseCityData);

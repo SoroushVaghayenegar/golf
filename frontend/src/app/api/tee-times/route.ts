@@ -2,6 +2,46 @@ import { NextRequest, NextResponse } from "next/server"
 import { supabaseClient } from "@/services/supabaseClient"
 import { TeeTime } from "@/services/teeTimeService"
 
+// Define interfaces for better type safety
+interface CourseData {
+    id: number;
+    name: string;
+    display_name: string;
+    club_name: string;
+    rating: number;
+    city_id: number;
+    cities: {
+        id: number;
+        name: string;
+        latitude: number;
+        longitude: number;
+    };
+}
+
+interface TeeTimeData {
+    start_datetime: string;
+    players_available: string | number;
+    holes: number;
+    price: number;
+    booking_link: string;
+}
+
+interface CourseTeeTimes {
+    id: number;
+    course_id: number;
+    date: string;
+    tee_times_data: TeeTimeData[];
+    tee_times_count: number;
+    courses: CourseData;
+}
+
+interface ForecastData {
+    city_id: number;
+    date: string;
+    [key: string]: {
+        data: number[];
+    } | number | string;
+}
 
 export async function GET(request: NextRequest) {
     try {
@@ -75,7 +115,7 @@ async function getTeeTimes(dates: string[], numOfPlayers: string | null, holes: 
     }
 
     // Get forecasts for the same cities and dates
-    const cityIds = [...new Set(courseTeeTimesListData?.map(tt => (tt.courses as any).city_id) || [])]
+    const cityIds = [...new Set(courseTeeTimesListData?.map(tt => (tt.courses as unknown as CourseData).city_id) || [])]
     
     const { data: forecastsData, error: forecastsError } = await supabaseClient
         .from('forecasts')
@@ -91,13 +131,14 @@ async function getTeeTimes(dates: string[], numOfPlayers: string | null, holes: 
     // Merge forecast data with tee times
     const result: TeeTime[] = []
     
-    courseTeeTimesListData?.forEach(courseTeeTimes => {
-        const cityId = (courseTeeTimes.courses as any).city_id
+    courseTeeTimesListData?.forEach((courseTeeTimes: unknown) => {
+        const typedCourseTeeTimes = courseTeeTimes as CourseTeeTimes;
+        const cityId = typedCourseTeeTimes.courses.city_id
         const forecast = forecastsData?.find(f => 
-            f.city_id === cityId && f.date === courseTeeTimes.date
-        )
+            f.city_id === cityId && f.date === typedCourseTeeTimes.date
+        ) as ForecastData | undefined
         
-        courseTeeTimes.tee_times_data.forEach((teeTime: any) => {
+        typedCourseTeeTimes.tee_times_data.forEach((teeTime: TeeTimeData) => {
             if ((teeTime.players_available !== "any" && teeTime.players_available.toString() !== numOfPlayers) || teeTime.holes.toString() !== holes){
                 return;
             }
@@ -107,15 +148,15 @@ async function getTeeTimes(dates: string[], numOfPlayers: string | null, holes: 
             const startTime = startDatetime.toTimeString().slice(0, 5) // HH:MM format
             
             const teeTimeObj: TeeTime = {
-                start_date: courseTeeTimes.date,
+                start_date: typedCourseTeeTimes.date,
                 start_time: startTime,
                 start_datetime: startTimeString,
-                players_available: teeTime.players_available,
-                course_name: (courseTeeTimes.courses as any).display_name,
-                rating: (courseTeeTimes.courses as any).rating,
+                players_available: typeof teeTime.players_available === 'string' ? parseInt(teeTime.players_available) : teeTime.players_available,
+                course_name: typedCourseTeeTimes.courses.display_name,
+                rating: typedCourseTeeTimes.courses.rating,
                 holes: teeTime.holes,
                 price: teeTime.price,
-                city: (courseTeeTimes.courses as any).cities.name,
+                city: typedCourseTeeTimes.courses.cities.name,
                 booking_link: teeTime.booking_link,
                 temperature: getForecastNumber(forecast, 'temperature_2m', startTime),
                 precipitation_probability: getForecastNumber(forecast, 'precipitation_probability', startTime),
@@ -138,56 +179,19 @@ async function getTeeTimes(dates: string[], numOfPlayers: string | null, holes: 
 }
 
 /**
- * Extracts a forecast value based on start_time from hourly data
- * @param forecastData - The forecast object containing the metric
- * @param metricName - The name of the metric (e.g., "temperature_2m")
- * @param startTime - The start time in HH:MM format
- * @returns The forecast value with unit, or null if not available
- */
-function getForecastValue(forecastData: any, metricName: string, startTime: string): number | null {
-    if (!forecastData || !forecastData[metricName] || !startTime) {
-        return null;
-    }
-
-    const metric = forecastData[metricName];
-    if (!metric.data || !Array.isArray(metric.data) || metric.data.length !== 24) {
-        return null;
-    }
-
-    // Parse hour and minute from start_time (HH:MM format)
-    const [hourStr, minuteStr] = startTime.split(':');
-    const hour = parseInt(hourStr, 10);
-    const minute = parseInt(minuteStr, 10);
-
-    if (isNaN(hour) || isNaN(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
-        return null;
-    }
-
-    // Determine which hour to use based on the rule:
-    // If time is between hour:00 and hour:30, use that hour
-    // If time is after hour:30, use the next hour
-    let targetHour = hour;
-    if (minute > 30) {
-        targetHour = (hour + 1) % 24; // Handle wrap-around for hour 23
-    }
-
-    return metric.data[targetHour];
-}
-
-/**
  * Extracts a forecast numeric value based on start_time from hourly data
  * @param forecastData - The forecast object containing the metric
  * @param metricName - The name of the metric (e.g., "temperature_2m")
  * @param startTime - The start time in HH:MM format
  * @returns The forecast numeric value, or null if not available
  */
-function getForecastNumber(forecastData: any, metricName: string, startTime: string): number | null {
+function getForecastNumber(forecastData: ForecastData | undefined, metricName: string, startTime: string): number | null {
     if (!forecastData || !forecastData[metricName] || !startTime) {
         return null;
     }
 
     const metric = forecastData[metricName];
-    if (!metric.data || !Array.isArray(metric.data) || metric.data.length !== 24) {
+    if (!metric || typeof metric !== 'object' || !('data' in metric) || !Array.isArray(metric.data) || metric.data.length !== 24) {
         return null;
     }
 
