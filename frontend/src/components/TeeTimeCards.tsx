@@ -71,13 +71,20 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
   
   const sectionRef = useRef<HTMLElement>(null);
   const scrollableRef = useRef<HTMLDivElement>(null);
-  const [, setVisibleTeeTimes] = useState<Set<number>>(new Set());
+  const [visibleTeeTimes, setVisibleTeeTimes] = useState<Set<number>>(new Set());
 
   // Expose both refs to parent component
   useImperativeHandle(ref, () => ({
     scrollableElement: scrollableRef.current,
     sectionElement: sectionRef.current,
   }), []);
+
+  // Notify parent when visible count changes (deferred to avoid render cycle issues)
+  useEffect(() => {
+    if (onTeeTimeVisibilityChange) {
+      onTeeTimeVisibilityChange(visibleTeeTimes.size);
+    }
+  }, [visibleTeeTimes.size, onTeeTimeVisibilityChange]);
 
   // Handle tee time visibility changes
   const handleTeeTimeVisibilityChange = (index: number, isVisible: boolean) => {
@@ -88,12 +95,6 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
       } else {
         newSet.delete(index);
       }
-      
-      // Notify parent of visible count
-      if (onTeeTimeVisibilityChange) {
-        onTeeTimeVisibilityChange(newSet.size);
-      }
-      
       return newSet;
     });
   };

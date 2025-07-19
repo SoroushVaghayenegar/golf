@@ -63,13 +63,7 @@ export const unsubscribe = async (email: string, token: string) => {
 
 export const fetchCourseDisplayNamesAndTheirCities = async () => {
     try {
-        const response = await fetch(`${supabaseUrl}/functions/v1/fetch-course-display-names`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${supabaseAnonKey}`,
-                'Content-Type': 'application/json',
-            }
-        })
+        const response = await fetch(`/api/courses`)
         
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}))

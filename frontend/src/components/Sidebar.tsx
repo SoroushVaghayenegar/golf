@@ -81,8 +81,9 @@ export default function Sidebar({
           throw new Error('Invalid data format received from API');
         }
         
+        // each course has {courseId: number, city: string}
         const courseNames = Object.keys(courseCityData);
-        const cityNames = [...new Set(Object.values(courseCityData) as string[])].sort((a: string, b: string) => a.localeCompare(b));
+        const cityNames = [...new Set(Object.values(courseCityData).map((course: any) => course.city))].sort((a: string, b: string) => a.localeCompare(b));
         
         setLocalCourseCityMapping(courseCityData);
         setCourseCityMapping(courseCityData);

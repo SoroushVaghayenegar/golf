@@ -12,6 +12,11 @@ export interface TeeTime {
     temperature: number | null;
     precipitation_probability: number | null;
     weather_code: string | null;
+    wind_speed: number | null;
+    wind_gusts: number | null;
+    cloud_cover: number | null;
+    uv_index: number | null;
+    precipitation: number | null;
 }
 
 interface TeeTimeFilters {
@@ -25,12 +30,12 @@ interface TeeTimeFilters {
 export const fetchTeeTimes = async (filters: TeeTimeFilters): Promise<TeeTime[]> => {
     try {
         // Construct URL with query parameters
-        const url = new URL('https://vndbaupvj666ku3bhellxf5akq0vzkje.lambda-url.us-west-2.on.aws/');
-        url.searchParams.append('dates', filters.dates.join(','));
-        url.searchParams.append('numOfPlayers', filters.numOfPlayers.toString());
-        url.searchParams.append('holes', filters.holes.toString());
+        const params = new URLSearchParams();
+        params.append('dates', filters.dates.join(','));
+        params.append('numOfPlayers', filters.numOfPlayers.toString());
+        params.append('holes', filters.holes.toString());
         
-        const response = await fetch(url.toString());
+        const response = await fetch(`/api/tee-times?${params.toString()}`);
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);

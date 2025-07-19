@@ -183,22 +183,33 @@ async function fetchWithRetry(courseName: string, url: string, headers: Record<s
   headers["Connection"] = "keep-alive";
   headers["Sec-Fetch-Dest"] = "empty";
   headers["Sec-Fetch-Mode"] = "cors";
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-            const response = await fetch(url, { headers: headers });
-            if (!response.ok) {
-              if (![429, 500, 503].includes(response.status)) {
-                console.error(`Error fetching ${courseName}: ${response.status} ${response.statusText} ${response.body}`);
-              }
-                throw new Error(`Error fetching ${courseName}: ${response.status} ${response.statusText} ${response.body}`);
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+          const response = await fetch(url, { headers: headers });
+          if (!response.ok) {
+            // Read the response body to get the actual error message
+            let errorBody = '';
+            try {
+              errorBody = await response.text();
+            } catch (e) {
+              errorBody = 'Unable to read response body';
             }
-            return response;
-        } catch (error) {
-            if (attempt < maxRetries) {
-                const delay = Math.floor(Math.random() * maxDelay) + minDelay; // Random delay between 1000-15000ms
-                await new Promise(resolve => setTimeout(resolve, delay));
+            
+            if (![429, 500, 503, 502].includes(response.status)) {
+              console.error(`Error fetching ${courseName}: ${response.status} ${response.statusText} - ${errorBody}`);
             }
-        }
-    }
-    throw new Error(`[${courseName}] Failed to fetch after ${maxRetries} attempts`);
+            throw new Error(`Error fetching ${courseName}: ${response.status} ${response.statusText} - ${errorBody}`);
+          }
+          return response;
+      } catch (error) {
+          if (attempt < maxRetries) {
+              const delay = Math.floor(Math.random() * maxDelay) + minDelay; // Random delay between 1000-15000ms
+              await new Promise(resolve => setTimeout(resolve, delay));
+          }
+          else{
+            throw new Error(`[${courseName}] Failed to fetch after ${maxRetries} attempts - ${error}`);
+          }
+      }
+  }
+  
 }
