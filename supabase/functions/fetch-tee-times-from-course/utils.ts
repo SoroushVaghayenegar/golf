@@ -73,6 +73,7 @@ export async function fetchTeeTimesFromCPS(
     }
     const loginUrl = `https://${subdomain}.cps.golf/identityapi/connect/token`
     const loginHeaders = {
+      ...headers,
       'Content-Type': 'application/x-www-form-urlencoded'
     }
     const accessToken = await getAccessTokenWithRetry(courseName, loginUrl, loginParams, loginHeaders);
@@ -108,8 +109,8 @@ export async function fetchTeeTimesFromCPS(
       // turn time from "%Y-%m-%dT%H:%M:%S"
       const startDateTime = new Date(teeTimeObject["startTime"]);
       const playersAvailable = teeTimeObject["availableParticipantNo"].length;
-      const holes = teeTimeObject["holes"];
-      const price = teeTimeObject["shItemPrices"][0]["taxInclusivePrice"];
+      const holes = teeTimeObject["is18HoleOnly"] ? 18 : 9;
+      const price = teeTimeObject["shItemPrices"][0]["displayPrice"];
       const booking_link = `https://${subdomain}.cps.golf`
       teeTimes.push(new TeeTime(startDateTime, playersAvailable, holes, price, booking_link));
     }
