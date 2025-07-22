@@ -8,6 +8,7 @@ export class Course {
   external_api: string;
   external_api_attributes: Record<string, any>;
   booking_visibility_days: number;
+  requires_login: boolean;
 
   constructor(
     id: number,
@@ -18,7 +19,8 @@ export class Course {
     rating: number,
     external_api: string,
     external_api_attributes: Record<string, any> = {},
-    booking_visibility_days: number = 0
+    booking_visibility_days: number = 0,
+    requires_login: boolean
   ) {
     this.id = id;
     this.name = name;
@@ -29,6 +31,7 @@ export class Course {
     this.external_api = external_api;
     this.external_api_attributes = external_api_attributes;
     this.booking_visibility_days = booking_visibility_days;
+    this.requires_login = requires_login;
   }
 
   // Helper method to create a Course from a plain object
@@ -45,7 +48,8 @@ export class Course {
       obj.rating,
       obj.external_api,
       obj.external_api_attributes || {},
-      obj.booking_visibility_days || 0
+      obj.booking_visibility_days || 0,
+      obj.requires_login || false
     );
   }
 
@@ -60,7 +64,8 @@ export class Course {
       rating: this.rating,
       external_api: this.external_api,
       external_api_attributes: this.external_api_attributes,
-      booking_visibility_days: this.booking_visibility_days
+      booking_visibility_days: this.booking_visibility_days,
+      requires_login: this.requires_login
     };
   }
 } 

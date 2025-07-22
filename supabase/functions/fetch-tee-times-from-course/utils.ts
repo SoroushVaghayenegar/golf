@@ -12,7 +12,7 @@ export async function fetchCourseTeeTimes(course: Course, searchDate: Date): Pro
         return {
             courseId: course.id,
             date: searchDate.toISOString().split('T')[0],
-            teeTimes: await fetchTeeTimesFromCPS(course.name,subdomain, params, headers, searchDate)
+            teeTimes: await fetchTeeTimesFromCPS(course.name,subdomain, params, headers, searchDate, course.requires_login)
         }
     } else if (course.external_api === CHRONO_LIGHTSPEED) {
         
@@ -54,7 +54,8 @@ export async function fetchTeeTimesFromCPS(
   subdomain: string,
   params: Record<string, any>,
   headers: Record<string, string>,
-  searchDate: Date
+  searchDate: Date,
+  requiresLogin: boolean
 ): Promise<TeeTime[]> {
   // Add the encoded date to params
   const requestParams = {
@@ -62,6 +63,22 @@ export async function fetchTeeTimesFromCPS(
     searchDate: searchDate.toDateString()
   };
   
+  if (requiresLogin) {
+    const loginParams = {
+      grant_type: 'password',
+      username: "account@teeclub.golf",
+      password: "TeeclubAdmin1!",
+      client_id: "js1",
+      client_secret: "v4secret"
+    }
+    const loginUrl = `https://${subdomain}.cps.golf/identityapi/connect/token`
+    const loginHeaders = {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    }
+    const accessToken = await getAccessTokenWithRetry(courseName, loginUrl, loginParams, loginHeaders);
+    headers['authorization'] = `Bearer ${accessToken}`;
+  }
+
   // Build the URL with query parameters
   const url = new URL(`https://${subdomain}.cps.golf/onlineres/onlineapi/api/v1/onlinereservation/TeeTimes`);
   
@@ -92,7 +109,7 @@ export async function fetchTeeTimesFromCPS(
       const startDateTime = new Date(teeTimeObject["startTime"]);
       const playersAvailable = teeTimeObject["availableParticipantNo"].length;
       const holes = teeTimeObject["holes"];
-      const price = teeTimeObject["shItemPrices"][0]["price"];
+      const price = teeTimeObject["shItemPrices"][0]["taxInclusivePrice"];
       const booking_link = `https://${subdomain}.cps.golf`
       teeTimes.push(new TeeTime(startDateTime, playersAvailable, holes, price, booking_link));
     }
@@ -104,6 +121,32 @@ export async function fetchTeeTimesFromCPS(
   }
 }
 
+async function getAccessTokenWithRetry(courseName: string, url: string, body: Record<string, string>, headers: Record<string, string>, maxRetries: number = 5, maxDelay: number = 19000, minDelay: number = 2000): Promise<string> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: headers,
+        body: new URLSearchParams(body).toString()
+      })
+      if (!response.ok) {
+        const errorBody = await response.text();
+        throw new Error(`Failed to get access token: ${response.status} ${response.statusText} ${errorBody}`);
+      }
+      const data = await response.json();
+      return data.access_token;
+    } catch (error) {
+      if (attempt < maxRetries) {
+        const delay = Math.floor(Math.random() * maxDelay) + minDelay; // Random delay between 1000-15000ms
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+      else{
+        throw new Error(`[${courseName}] Failed to fetch after ${maxRetries} attempts - ${error}`);
+      }
+    }
+  }
+  throw new Error(`[${courseName}] Failed to get access token after ${maxRetries} attempts`);
+}
 
 export async function fetchTeeTimesFromChronoLightspeed(courseName: string, club_id: number, course_id: number, affiliation_type_id: number, course_holes: number, searchDate: Date, clubLinkName: string): Promise<TeeTime[]> {
    // format to '%Y-%m-%d'

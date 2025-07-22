@@ -26,6 +26,7 @@ Deno.serve(async (req) => {
         *,
         cities!inner(name)
       `)
+      .eq('external_api', 'CPS')
 
     if (error) {
       throw new Error(`Error fetching courses: ${error.message}`)
