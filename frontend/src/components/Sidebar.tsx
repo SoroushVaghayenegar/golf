@@ -99,8 +99,14 @@ export default function Sidebar({
         const courseNames = Object.keys(courseCityData);
         const cityNames = [...new Set(Object.values(courseCityData).map((course: unknown) => (course as { courseId: number; city: string }).city))].sort((a: string, b: string) => a.localeCompare(b));
         
-        setLocalCourseCityMapping(courseCityData);
-        setCourseCityMapping(courseCityData);
+        // Create simple course name to city name mapping for local use
+        const simpleCityMapping: Record<string, string> = {};
+        Object.entries(courseCityData).forEach(([courseName, courseData]) => {
+          simpleCityMapping[courseName] = (courseData as { courseId: number; city: string }).city;
+        });
+        
+        setLocalCourseCityMapping(simpleCityMapping);
+        setCourseCityMapping(simpleCityMapping);
         setCourses(courseNames);
         setCities(cityNames);
       } catch (error) {
