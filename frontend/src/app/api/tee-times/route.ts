@@ -51,12 +51,15 @@ export async function GET(request: NextRequest) {
         const datesParam = searchParams.get("dates")
         const numOfPlayers = searchParams.get("numOfPlayers")
         const holes = searchParams.get("holes")
+        const region = searchParams.get("region")
         const courseIdsParam = searchParams.get("courseIds")
-        console.log(datesParam, numOfPlayers, holes, courseIdsParam)
 
         // Validate required parameters
         if (!datesParam) {
             return NextResponse.json({ error: "dates parameter is required" }, { status: 400 })
+        }
+        if (!region) {
+            return NextResponse.json({ error: "region parameter is required" }, { status: 400 })
         }
 
         // Parse dates and courseIds from comma-separated strings
@@ -64,7 +67,7 @@ export async function GET(request: NextRequest) {
         const courseIds = courseIdsParam ? courseIdsParam.split(',').map(id => parseInt(id.trim())) : []
 
         // Get tee times with forecast data
-        const result = await getTeeTimes(dates, numOfPlayers, holes, courseIds)
+        const result = await getTeeTimes(dates, numOfPlayers, holes, courseIds, region)
         
         if (result.error) {
             return NextResponse.json({ error: result.error.message }, { status: 500 })
@@ -77,7 +80,20 @@ export async function GET(request: NextRequest) {
     }
 }
 
-async function getTeeTimes(dates: string[], numOfPlayers: string | null, holes: string | null, courseIds: number[]) {
+async function getTeeTimes(dates: string[], numOfPlayers: string | null, holes: string | null, courseIds: number[], region: string) {
+    if (courseIds.length === 0) {
+        const { data: coursesData, error } = await supabaseClient
+        .from('courses_view')
+        .select('*')
+        .eq('region_name', region);
+
+        if (error) {
+            return { data: null, error: error }
+        }
+
+        courseIds = coursesData.map(course => course.id)
+    }
+
     let query = supabaseClient
         .from('tee_times')
         .select(`

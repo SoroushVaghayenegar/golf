@@ -23,6 +23,7 @@ interface TeeTimeFilters {
     dates: string[];  // Format: YYYY-MM-DD
     numOfPlayers: number;
     holes: number;
+    region: string;
 }
 
 // Cities are now fetched dynamically from the database via supabaseService
@@ -34,7 +35,7 @@ export const fetchTeeTimes = async (filters: TeeTimeFilters): Promise<TeeTime[]>
         params.append('dates', filters.dates.join(','));
         params.append('numOfPlayers', filters.numOfPlayers.toString());
         params.append('holes', filters.holes.toString());
-        
+        params.append('region', filters.region);
         const response = await fetch(`/api/tee-times?${params.toString()}`);
         
         if (!response.ok) {

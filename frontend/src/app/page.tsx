@@ -5,9 +5,32 @@ import {
   getVancouverToday, 
   formatDateForAPI
 } from "../services/timezoneService";
-import TeeTimeCards, { TeeTimeCardsRef } from "@/components/TeeTimeCards";
+import VirtualizedTeeTimeCards, { VirtualizedTeeTimeCardsRef } from "@/components/VirtualizedTeeTimeCards";
 import Sidebar from "@/components/Sidebar";
 import FeatureRequest from "@/components/FeatureRequest";
+
+// Custom hook for managing region with localStorage persistence
+const useRegionWithStorage = (defaultRegion: string = 'Metro Vancouver') => {
+  const [selectedRegion, setSelectedRegion] = useState<string>(defaultRegion);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const savedRegion = localStorage.getItem('selectedRegion');
+    if (savedRegion) {
+      setSelectedRegion(savedRegion);
+    }
+    setIsInitialized(true);
+  }, []);
+
+  // Save to localStorage whenever region changes
+  const setRegionWithStorage = (region: string) => {
+    setSelectedRegion(region);
+    localStorage.setItem('selectedRegion', region);
+  };
+
+  return { selectedRegion, setSelectedRegion: setRegionWithStorage, isInitialized };
+};
 
 export default function Home() {
   // State for filters
@@ -19,6 +42,7 @@ export default function Home() {
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
   const [removedCourses, setRemovedCourses] = useState<string[]>([]);
+  const { selectedRegion, setSelectedRegion, isInitialized } = useRegionWithStorage();
   const [sortBy, setSortBy] = useState<'startTime' | 'priceAsc' | 'priceDesc' | 'rating'>('startTime');
   const [teeTimes, setTeeTimes] = useState<TeeTime[]>([]);
   const [loading, setLoading] = useState(false);
@@ -33,7 +57,7 @@ export default function Home() {
   const [isClient, setIsClient] = useState(false);
   const [todayDate, setTodayDate] = useState<Date | null>(null);
   const [visibleTeeTimeCount, setVisibleTeeTimeCount] = useState(0);
-  const resultsSectionRef = useRef<TeeTimeCardsRef>(null);
+  const resultsSectionRef = useRef<VirtualizedTeeTimeCardsRef>(null);
 
   // Check sessionStorage and set mobile state on component mount
   useEffect(() => {
@@ -105,6 +129,7 @@ export default function Home() {
       return;
     }
     
+    const startTime = Date.now();
     setLoading(true);
     setError(null);
     setRemovedCourses([]); // Clear removed courses when starting a new search
@@ -116,7 +141,8 @@ export default function Home() {
       const data = await fetchTeeTimes({
         dates: formattedDates, // Array of YYYY-MM-DD strings
         numOfPlayers,
-        holes
+        holes,
+        region: selectedRegion
       });
       setTeeTimes(data);
       setFetchedDates(selectedDates);
@@ -124,6 +150,14 @@ export default function Home() {
       setError('Failed to fetch tee times. Please try again.');
       console.error(err);
     } finally {
+      // Ensure the function takes at least 1.5 seconds
+      const elapsedTime = Date.now() - startTime;
+      const remainingTime = Math.max(0, 2000 - elapsedTime);
+      
+      if (remainingTime > 0) {
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+      }
+      
       setLoading(false);
       
       // Auto-scroll to results section after loading is complete
@@ -152,35 +186,39 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-100 p-4 sm:p-10 lg:p-0 font-[family-name:var(--font-geist-sans)]">
-      <main className="w-full flex flex-col lg:flex-row lg:h-screen gap-8 lg:gap-0">
-        <Sidebar
-          selectedDates={selectedDates}
-          setSelectedDates={setSelectedDates}
-          numOfPlayers={numOfPlayers}
-          setNumOfPlayers={setNumOfPlayers}
-          holes={holes}
-          setHoles={setHoles}
-          timeRange={timeRange}
-          setTimeRange={setTimeRange}
-          selectedCities={selectedCities}
-          setSelectedCities={setSelectedCities}
-          selectedCourses={selectedCourses}
-          setSelectedCourses={setSelectedCourses}
-          removedCourses={removedCourses}
-          loading={loading}
-          onGetTeeTimes={handleGetTeeTimes}
-          isClient={isClient}
-          todayDate={todayDate}
-          setCourseCityMapping={setCourseCityMapping}
-        />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-100 p-4 sm:p-10 lg:p-0 font-[family-name:var(--font-geist-sans)] w-full max-w-full overflow-x-hidden">
+      <main className="w-full max-w-full flex flex-col lg:flex-row lg:h-screen gap-8 lg:gap-0 overflow-x-hidden">
+        {isInitialized && (
+          <Sidebar
+            selectedDates={selectedDates}
+            setSelectedDates={setSelectedDates}
+            numOfPlayers={numOfPlayers}
+            setNumOfPlayers={setNumOfPlayers}
+            holes={holes}
+            setHoles={setHoles}
+            timeRange={timeRange}
+            setTimeRange={setTimeRange}
+            selectedCities={selectedCities}
+            setSelectedCities={setSelectedCities}
+            selectedCourses={selectedCourses}
+            setSelectedCourses={setSelectedCourses}
+            removedCourses={removedCourses}
+            loading={loading}
+            onGetTeeTimes={handleGetTeeTimes}
+            isClient={isClient}
+            todayDate={todayDate}
+            setCourseCityMapping={setCourseCityMapping}
+            selectedRegion={selectedRegion}
+            setSelectedRegion={setSelectedRegion}
+          />
+        )}
 
         {/* Tee Times Results Section - Scrollable */}
         {/* On mobile, only show results section if there are results, loading, or error */}
         {/* On desktop, always show to display initial state */}
         {(!isMobile || teeTimes.length > 0 || loading || !!error) && (
-          <div className="flex-1 lg:p-10 lg:pl-0 lg:pr-10 lg:py-10 px-4 sm:px-10 lg:px-0">
-            <TeeTimeCards
+          <div className="flex-1 lg:p-10 lg:pl-0 lg:pr-10 lg:py-10 px-4 sm:px-10 lg:px-0 w-full max-w-full overflow-x-hidden">
+            <VirtualizedTeeTimeCards
               ref={resultsSectionRef}
               teeTimes={teeTimes}
               loading={loading}

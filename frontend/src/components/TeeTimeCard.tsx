@@ -222,14 +222,14 @@ export default function TeeTimeCard({ teeTime, index, onRemoveCourse, onVisibili
     <div
       ref={cardRef}
       key={index}
-      className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-200 border border-gray-100 overflow-hidden"
+      className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-200 border border-gray-100 overflow-hidden w-full max-w-full"
     >
-      <div className="p-5">
+      <div className="p-5 w-full max-w-full">
         {/* Header Section */}
         <div className="flex flex-col gap-3 mb-4">
           <div>
             <div className="flex items-start gap-2 mb-1">
-              <h3 className="text-lg font-semibold text-slate-900">{teeTime.course_name}</h3>
+              <h3 className="text-lg font-semibold text-slate-900 flex-1 min-w-0 truncate">{teeTime.course_name}</h3>
               <Tooltip text="Remove course from filters">
                 <button
                   onClick={handleRemoveCourse}
@@ -240,18 +240,20 @@ export default function TeeTimeCard({ teeTime, index, onRemoveCourse, onVisibili
                 </button>
               </Tooltip>
             </div>
-            <p className="text-sm text-slate-500 mb-2">{teeTime.city}</p>
+            <p className="text-sm text-slate-500 mb-2 truncate">{teeTime.city}</p>
             <Rating rating={teeTime.rating} />
           </div>
         </div>
 
         {/* Weather Section */}
-        <WeatherInfo teeTime={teeTime} />
+        <div className="w-full max-w-full overflow-hidden">
+          <WeatherInfo teeTime={teeTime} />
+        </div>
 
         {/* Tee Time Details */}
-        <div className="flex flex-col gap-3 mt-4">
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-3 mt-4 w-full max-w-full">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-col gap-1 flex-1 min-w-0">
               <p className="text-xl font-bold text-slate-900">
                 {parseDateTimeInVancouver(teeTime.start_datetime).toLocaleTimeString([], {
                   hour: 'numeric',
@@ -259,38 +261,40 @@ export default function TeeTimeCard({ teeTime, index, onRemoveCourse, onVisibili
                   timeZone: 'America/Vancouver'
                 })}
               </p>
-              <div className="flex items-center gap-4 text-sm text-slate-600">
-                <span className="bg-slate-100 px-2 py-1 rounded-full">
+              <div className="flex items-center gap-2 sm:gap-4 text-sm text-slate-600 flex-wrap">
+                <span className="bg-slate-100 px-2 py-1 rounded-full whitespace-nowrap">
                   {teeTime.holes} holes
                 </span>
-                <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full whitespace-nowrap">
                   {teeTime.players_available} spots
                 </span>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold text-blue-600">
+            <div className="text-right flex-shrink-0">
+              <p className="text-xl sm:text-2xl font-bold text-blue-600">
                 ${Number(teeTime.price).toFixed(2)}
               </p>
-              <p className="text-xs text-slate-500">per person</p>
+              <p className="text-xs text-slate-500 whitespace-nowrap">per person</p>
             </div>
           </div>
         </div>
 
         {/* Booking Button */}
         {teeTime.booking_link && (
-          <div className="mt-5 pt-4 border-t border-gray-100">
+          <div className="mt-5 pt-4 border-t border-gray-100 w-full max-w-full">
             <a
               href={teeTime.booking_link}
               target="_blank"
               rel="noopener noreferrer"
-              className={`w-full px-4 py-3 font-semibold rounded-lg transition-all duration-200 text-center block transform hover:scale-[1.02] active:scale-[0.98] ${
+              className={`w-full px-4 py-3 font-semibold rounded-lg transition-all duration-200 text-center block transform hover:scale-[1.02] active:scale-[0.98] max-w-full overflow-hidden ${
                 teeTime.booking_link.includes('cps')
                   ? 'bg-black hover:bg-gray-800 text-white shadow-lg hover:shadow-xl'
                   : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl'
               }`}
             >
-              {teeTime.booking_link.includes('cps') ? 'Book on Course Website' : 'Book on ChronoGolf'}
+              <span className="truncate block">
+                {teeTime.booking_link.includes('cps') ? 'Book on Course Website' : 'Book on ChronoGolf'}
+              </span>
             </a>
           </div>
         )}

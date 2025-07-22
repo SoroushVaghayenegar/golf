@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Listbox } from "@headlessui/react";
-import { ChevronDown, Users, Clock, School, LandPlot } from "lucide-react";
+import { ChevronDown, Users, Clock, School, LandPlot, MapPin } from "lucide-react";
 import { Range } from "react-range";
 import Select, { MultiValue, StylesConfig } from 'react-select';
 import { Skeleton } from "@/components/ui/skeleton";
@@ -39,6 +39,8 @@ interface SidebarProps {
   isClient: boolean;
   todayDate: Date | null;
   setCourseCityMapping: (mapping: Record<string, string>) => void;
+  selectedRegion: string;
+  setSelectedRegion: (region: string) => void;
 }
 
 export default function Sidebar({
@@ -59,7 +61,9 @@ export default function Sidebar({
   onGetTeeTimes,
   isClient,
   todayDate,
-  setCourseCityMapping
+  setCourseCityMapping,
+  selectedRegion,
+  setSelectedRegion
 }: SidebarProps) {
   const [cities, setCities] = useState<string[]>([]);
   const [citiesLoading, setCitiesLoading] = useState(false);
@@ -69,13 +73,23 @@ export default function Sidebar({
   const [showCitySelector, setShowCitySelector] = useState(false);
   const [showCourseSelector, setShowCourseSelector] = useState(false);
 
-  // Fetch cities and courses on component mount
+  const regions = [
+    { value: 'Metro Vancouver', label: 'Metro Vancouver' },
+    { value: 'Ottawa', label: 'Ottawa' }
+  ];
+
+  // Fetch cities and courses on component mount and when region changes
   useEffect(() => {
     const loadCitiesAndCourses = async () => {
       setCitiesLoading(true);
       setCoursesLoading(true);
+      
+      // Clear selected cities and courses when region changes
+      setSelectedCities([]);
+      setSelectedCourses([]);
+      
       try {
-        const courseCityData = await fetchCourseDisplayNamesAndTheirCities();
+        const courseCityData = await fetchCourseDisplayNamesAndTheirCities(selectedRegion);
         
         if (!courseCityData || typeof courseCityData !== 'object') {
           throw new Error('Invalid data format received from API');
@@ -102,7 +116,7 @@ export default function Sidebar({
     };
 
     loadCitiesAndCourses();
-  }, [setCourseCityMapping]);
+  }, [selectedRegion, setCourseCityMapping, setSelectedCities, setSelectedCourses]);
 
   const formatHour = (hour: number) => {
     if (hour === 0) return '12 AM';
@@ -270,6 +284,36 @@ export default function Sidebar({
   return (
     <section className="w-full lg:w-80 flex-shrink-0 bg-white shadow p-6 flex flex-col gap-3 lg:gap-4 lg:h-screen lg:sticky lg:top-0 lg:mr-8 rounded-xl lg:rounded-none lg:rounded-r-xl lg:justify-between relative z-20">
       <div className="flex flex-col gap-4 lg:gap-4 lg:flex-1">
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-slate-600" />
+            <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase">Region</span>
+          </div>
+          <Listbox value={selectedRegion} onChange={setSelectedRegion}>
+            <div className="relative">
+              <Listbox.Button className="w-full px-4 py-2 text-left bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-blue-200 transition-colors font-medium text-slate-700">
+                <span>{regions.find(r => r.value === selectedRegion)?.label || 'Select Region'}</span>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              </Listbox.Button>
+              <Listbox.Options className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg focus:outline-none">
+                {regions.map((region) => (
+                  <Listbox.Option
+                    key={region.value}
+                    value={region.value}
+                    className={({ active }) =>
+                      `px-4 py-2 cursor-pointer font-medium ${
+                        active ? 'bg-blue-50 text-blue-600' : 'text-slate-700'
+                      }`
+                    }
+                  >
+                    {region.label}
+                  </Listbox.Option>
+                ))}
+              </Listbox.Options>
+            </div>
+          </Listbox>
+        </div>
+
         <div className="flex flex-col items-center">
           <div className="rounded-lg border shadow-sm">
             {isClient ? (

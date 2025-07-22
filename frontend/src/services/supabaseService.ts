@@ -61,9 +61,9 @@ export const unsubscribe = async (email: string, token: string) => {
 }
 
 
-export const fetchCourseDisplayNamesAndTheirCities = async () => {
+export const fetchCourseDisplayNamesAndTheirCities = async (region: string) => {
     try {
-        const response = await fetch(`/api/courses`)
+        const response = await fetch(`/api/courses?region=${region}`)
         
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}))
