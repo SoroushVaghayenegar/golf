@@ -6,7 +6,7 @@ import { ChevronDown, Users, Clock, School, LandPlot, MapPin } from "lucide-reac
 import { Range } from "react-range";
 import Select, { MultiValue, StylesConfig } from 'react-select';
 import { Skeleton } from "@/components/ui/skeleton";
-import { fetchCourseDisplayNamesAndTheirCities } from "../services/supabaseService";
+import { fetchCourseDisplayNamesAndTheirCities, fetchRegions } from "../services/supabaseService";
 import {
   isPastDateInVancouver,
   getMinSelectableDateInVancouver, 
@@ -72,13 +72,20 @@ export default function Sidebar({
   const [localCourseCityMapping, setLocalCourseCityMapping] = useState<Record<string, string>>({});
   const [showCitySelector, setShowCitySelector] = useState(false);
   const [showCourseSelector, setShowCourseSelector] = useState(false);
-
-  const regions = [
-    { value: 'Metro Vancouver', label: 'Metro Vancouver' },
-    { value: 'Ottawa', label: 'Ottawa' }
-  ];
+  const [regions, setRegions] = useState<{ value: string; label: string }[]>([]);
 
   // Fetch cities and courses on component mount and when region changes
+  useEffect(() => {
+    const loadRegions = async () => {
+      const regions = await fetchRegions();
+      setRegions(regions.map((region: { value: string; label: string }) => ({
+        value: region.value,
+        label: region.label
+      })));
+    };
+    loadRegions();
+  }, []);
+
   useEffect(() => {
     const loadCitiesAndCourses = async () => {
       setCitiesLoading(true);

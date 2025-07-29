@@ -105,14 +105,18 @@ export async function fetchTeeTimesFromCPS(
     const teeTimes: TeeTime[] = [];
 
     for (const teeTimeObject of teeTimesList) {
+      const holesDisplay = teeTimeObject["holesDisplay"].toLowerCase();
+      // if there is an "or" in the holesDisplay, then split by or
+      const holesArray = holesDisplay.includes("or") ? holesDisplay.split("or").map((s: string) => s.trim()) : [holesDisplay];
       
-      // turn time from "%Y-%m-%dT%H:%M:%S"
-      const startDateTime = new Date(teeTimeObject["startTime"]);
-      const playersAvailable = teeTimeObject["availableParticipantNo"].length;
-      const holes = teeTimeObject["is18HoleOnly"] ? 18 : 9;
-      const price = teeTimeObject["shItemPrices"][0]["displayPrice"];
-      const booking_link = `https://${subdomain}.cps.golf`
-      teeTimes.push(new TeeTime(startDateTime, playersAvailable, holes, price, booking_link));
+      for (const holesStr of holesArray) {
+        const startDateTime = new Date(teeTimeObject["startTime"]);
+        const playersAvailable = teeTimeObject["availableParticipantNo"].length;
+        const holes = parseInt(holesStr);
+        const price = teeTimeObject["shItemPrices"][0]["displayPrice"];
+        const booking_link = `https://${subdomain}.cps.golf`
+        teeTimes.push(new TeeTime(startDateTime, playersAvailable, holes, price, booking_link));
+      }
     }
     return teeTimes;
   } catch (error) {

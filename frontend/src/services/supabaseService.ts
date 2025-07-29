@@ -1,3 +1,5 @@
+import { supabaseClient } from "./supabaseClient";
+
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -74,6 +76,26 @@ export const fetchCourseDisplayNamesAndTheirCities = async (region: string) => {
         return data
     } catch (error) {
         console.error('Error fetching course display names:', error)
+        throw error
+    }
+}
+
+export const fetchRegions = async () => {
+    try {
+        const { data, error } = await supabaseClient
+        .from('regions')
+        .select('*')
+        
+        if (error) {
+            throw new Error(error.message)
+        }
+        
+        return data.map((region: { name: string }) => ({
+            value: region.name,
+            label: region.name
+        }))
+    } catch (error) {
+        console.error('Error fetching regions:', error)
         throw error
     }
 }
