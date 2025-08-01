@@ -7,7 +7,22 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from "@supabase/supabase-js"
 import { Course } from "./Course.ts"
 import { fetchCourseTeeTimes } from "./utils.ts"
+import * as Sentry from 'https://deno.land/x/sentry/index.mjs'
 
+Sentry.init({
+  // https://docs.sentry.io/product/sentry-basics/concepts/dsn-explainer/#where-to-find-your-dsn
+  dsn: "https://1dc02eb43236272edaca0faba6c990c6@o4509770601332736.ingest.us.sentry.io/4509770808819712",
+
+  defaultIntegrations: false,
+  // Performance Monitoring
+  tracesSampleRate: 1.0,
+  // Set sampling rate for profiling - this is relative to tracesSampleRate
+  profilesSampleRate: 1.0,
+})
+
+// Set region and execution_id as custom tags
+Sentry.setTag('region', Deno.env.get('SB_REGION'))
+Sentry.setTag('execution_id', Deno.env.get('SB_EXECUTION_ID'))
 
 Deno.serve(async (req) => {
   try {

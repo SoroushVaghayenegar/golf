@@ -4,6 +4,11 @@ import { TeeTime } from "./TeeTime.ts";
 const CPS = "CPS"
 const CHRONO_LIGHTSPEED = "CHRONO_LIGHTSPEED"
 
+export function timeStringToMinutes(timeStr: string): number {
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  return hours * 60 + minutes;
+}
+
 export async function fetchCourseTeeTimes(course: Course, searchDate: Date): Promise<{courseId: number, date: string, teeTimes: TeeTime[]}> {
     if (course.external_api === CPS) {
         const subdomain = course.external_api_attributes.subdomain

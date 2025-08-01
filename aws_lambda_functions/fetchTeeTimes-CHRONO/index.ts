@@ -1,6 +1,18 @@
 import { Course } from "./Course"
 import { fetchCourseTeeTimes, batchUpsertTeeTimes } from "./utils"
 import { createClient } from "@supabase/supabase-js"
+import * as Sentry from "@sentry/aws-serverless"
+
+Sentry.init({
+  dsn: "https://1dc02eb43236272edaca0faba6c990c6@o4509770601332736.ingest.us.sentry.io/4509770808819712",
+
+  // Send structured logs to Sentry
+  enableLogs: true,
+
+  // Setting this option to true will send default PII data to Sentry.
+  // For example, automatic IP address collection on events
+  sendDefaultPii: true,
+});
 
 export const handler = async (event: any) => {
   // Start timer

@@ -1,5 +1,7 @@
 import { Course } from "./Course";
 import { TeeTime } from "./TeeTime";
+import * as Sentry from "@sentry/aws-serverless";
+
 
 const CHRONO_LIGHTSPEED = "CHRONO_LIGHTSPEED"
 
@@ -55,11 +57,11 @@ export async function fetchTeeTimesFromChronoLightspeed(courseName: string, club
        }
        
        try {
-           const response = await fetchWithRetry(courseName, fullUrl, {}, 5, 6000, 1000);
+           const response = await fetchWithRetry(courseName, club_id, fullUrl, {}, 5, 6000, 1000);
            const teeTimes = await response.json();
            return { players, teeTimes };
        } catch (error) {
-           console.error(`Failed to fetch tee times from Lightspeed for ${players} players after retries`);
+           console.error(error);
            return { players, teeTimes: [] };
        }
        
@@ -107,15 +109,19 @@ function getChronoLightspeedBookingLink(
     return `https://www.chronogolf.ca/club/${clubLinkName}/booking/?source=club&medium=widget#/teetime/review?course_id=${courseId}&nb_holes=${nbHoles}&date=${dateStr}&affiliation_type_ids=${affiliationTypeIds}&teetime_id=${teetimeId}&is_deal=false&new_user=false`;
 }
 
-async function fetchWithRetry(courseName: string, url: string, headers: Record<string, string>, maxRetries: number = 5, maxDelay: number = 19000, minDelay: number = 2000): Promise<Response> {
+async function fetchWithRetry(courseName: string, clubId: number, url: string, headers: Record<string, string>, maxRetries: number = 5, maxDelay: number = 19000, minDelay: number = 2000): Promise<Response> {
   // Add to headers to pretend this is from a safari browser
   headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15";
-  headers["Accept"] = "application/json, text/plain, */*";
+  headers["Accept"] = "application/json";
+  headers["Content-Type"] = "application/json";
   headers["Accept-Language"] = "en-CA,en-US;q=0.9,en;q=0.8";
   headers["Accept-Encoding"] = "gzip, deflate, br";
   headers["Connection"] = "keep-alive";
   headers["Sec-Fetch-Dest"] = "empty";
   headers["Sec-Fetch-Mode"] = "cors";
+  headers["referer"] = `https://www.chronogolf.ca/en/club/${clubId}/widget?medium=widget&source=club`;
+  headers["cookie"] = `__cf_bm=3OuOH.CupPbfALo7qfMwZmgIwKkC1U5fAlmQlBSUvUg-1754073952-1.0.1.1-h8fDWjQ2banh2hyiFyIAGRTgf.SxBQgQ_yOiA0HGjOE5wSZGbdiNKNTeBtNrI1U3rKaat_2p3zUG9PcD8KEUN_8f80BViGsgRsXRCp8CxNc; cf_clearance=OBACPqL0StpzKJQiqzvo4nigiEHIloCwcEJXS0RLsZA-1754073957-1.2.1.1-1THq6g5DG2O6qHkE1v6yB_Kl8.AlGyituOX3_7F6SK0rP2AdW0_4.1j9ttzUdVi5nvGq0GGYHGLTBdyeuifeTOt6pu3mmWOljg1cXcr36bI5ASYJSD.o0CRdFrzcz6LCNmkYX5d0KuVKOk0xotzSX1I.WXePdTGrkcz6plJ.6TwOd_UFWjyu_kq0akbi.7d0R5ocZ5NnyeoNfpBDzOm8jDmLvUaI674GiPyxTf1vZbc; _chronogolf_session=X4xS%2BBTwZWgnjHkhClbwztpT5KNT9857YIR8vjH2bzL9PG3WMy1bFmrS1VY0V2cdF04UL8LhOsOmTvViLaNe19gNIoc5RbLmUv7hMdN%2BLAhLUDGtN9v7uJ3btL6oJLCH3EUsZ5%2Bx5hk5PIL1N%2FWBDpfA7y2loMmDHp4U78m7C%2FsLRiBsHw7pjiJvKfqAH1LHzXJwtq44hea3qtkviTx%2FIcyWo1ozJ8DS808Je2pzvxGwxWH8LlwNbd298Q118bZU%2FR9%2B1BldLdPep1BvknzAnpuvPtJLrCzQxpnkTdTB34aT96mXHThB5o7qrBOkewB5NS1KXbHFv%2BgWACMt0xqcL0akK0ICdFCGFRNxLXjiLIBHup7WFackqBLR8xN16T6h6CV6GtkH%2BaHtTAM%3D--FEDLYYU3hKYnauuF--z5jiqLQCUzt1cxktPfhSpA%3D%3D`;
+  headers["x-csrf-token"] = "fMW9yPZCtZgtCAk5u3OecSnwokDYOnEbyLDdnw2nkkhNno_HNYJSK0PKdbK0MZz3A3t8vS54EfIHwQ0EfqI_g";
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
@@ -126,9 +132,9 @@ async function fetchWithRetry(courseName: string, url: string, headers: Record<s
                   // Try to read the response body for error details
                   errorBody = await response.text();
                   // Limit error body length to avoid huge logs
-                  if (errorBody.length > 500) {
-                      errorBody = errorBody.substring(0, 500) + '...';
-                  }
+                  // if (errorBody.length > 500) {
+                  //     errorBody = errorBody.substring(0, 500) + '...';
+                  // }
               } catch (bodyError) {
                   errorBody = 'Unable to read response body';
               }
@@ -137,7 +143,8 @@ async function fetchWithRetry(courseName: string, url: string, headers: Record<s
               
               
               if (attempt === maxRetries) {
-                console.error(`Error status: ${response.status} [${courseName}]`);
+                Sentry.captureMessage(errorMessage);
+                console.error(`Error status: ${response.status} [${courseName}] ${response.statusText} ${errorBody ? ` - ${errorBody}` : ''}`);
               }
               throw new Error(errorMessage);
           }
@@ -146,6 +153,9 @@ async function fetchWithRetry(courseName: string, url: string, headers: Record<s
           if (attempt < maxRetries) {
               const delay = Math.floor(Math.random() * maxDelay) + minDelay; // Random delay between 1000-15000ms
               await new Promise(resolve => setTimeout(resolve, delay));
+          }
+          else{
+            Sentry.captureException(error);
           }
       }
   }

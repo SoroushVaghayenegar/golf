@@ -1,5 +1,6 @@
 import { Course } from "./Course.ts";
 import { TeeTime } from "./TeeTime.ts";
+import * as Sentry from 'https://deno.land/x/sentry/index.mjs'
 
 const CPS = "CPS"
 const CHRONO_LIGHTSPEED = "CHRONO_LIGHTSPEED"
@@ -110,10 +111,10 @@ export async function fetchTeeTimesFromCPS(
       const holesArray = holesDisplay.includes("or") ? holesDisplay.split("or").map((s: string) => s.trim()) : [holesDisplay];
       
       for (const holesStr of holesArray) {
+        const price = teeTimeObject["shItemPrices"].find((priceObj: any) => priceObj.shItemCode === `GreenFee${holesStr}`)?.displayPrice;
         const startDateTime = new Date(teeTimeObject["startTime"]);
         const playersAvailable = teeTimeObject["availableParticipantNo"].length;
         const holes = parseInt(holesStr);
-        const price = teeTimeObject["shItemPrices"][0]["displayPrice"];
         const booking_link = `https://${subdomain}.cps.golf`
         teeTimes.push(new TeeTime(startDateTime, playersAvailable, holes, price, booking_link));
       }
@@ -255,6 +256,7 @@ async function fetchWithRetry(courseName: string, url: string, headers: Record<s
               await new Promise(resolve => setTimeout(resolve, delay));
           }
           else{
+            Sentry.captureException(error)
             throw new Error(`[${courseName}] Failed to fetch after ${maxRetries} attempts - ${error}`);
           }
       }

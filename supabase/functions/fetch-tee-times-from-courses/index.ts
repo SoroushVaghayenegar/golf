@@ -6,7 +6,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from "@supabase/supabase-js"
 import { Course } from "./Course.ts"
-import { fetchCourseTeeTimes } from "./utils.ts"
+import { timeStringToMinutes } from "./utils.ts"
 
 Deno.serve(async (req) => {
   try {
@@ -26,7 +26,6 @@ Deno.serve(async (req) => {
         *,
         cities!inner(name)
       `)
-      .eq('external_api', 'CPS')
 
     if (error) {
       throw new Error(`Error fetching courses: ${error.message}`)
@@ -41,12 +40,28 @@ Deno.serve(async (req) => {
       return vancouverTime
     }
 
+    const getVancouverTime24HourFormat = () => {
+      const vancouverTime = new Date(new Date().toLocaleString('en', {timeZone: 'America/Vancouver'}))
+
+      const hours = vancouverTime.getHours().toString().padStart(2, '0');
+      const minutes = vancouverTime.getMinutes().toString().padStart(2, '0');
+
+      return `${hours}:${minutes}`
+    }
+
     const startDate = getVancouverDate()
     
     let invokeCounter = 0
     // Process all courses and dates in parallel without waiting for responses
     for (const course of courses) {
       for (let i = 0; i <= course.booking_visibility_days; i++) {
+        if (i === course.booking_visibility_days && course.booking_visibility_start_time) {
+          const bookingVisibilityStartTime = timeStringToMinutes(course.booking_visibility_start_time)
+          const currentTime = timeStringToMinutes(getVancouverTime24HourFormat())
+          if (currentTime < bookingVisibilityStartTime) {
+            continue
+          }
+        }
         const searchDate = new Date(startDate)
         searchDate.setDate(searchDate.getDate() + i)
 
