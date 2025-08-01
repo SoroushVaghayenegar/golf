@@ -1,3 +1,9 @@
+import { supabaseClient } from "./supabaseClient";
+
+// Initialize Supabase client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
 export interface TeeTime {
     start_date: string;
     start_time: string;
@@ -36,7 +42,13 @@ export const fetchTeeTimes = async (filters: TeeTimeFilters): Promise<TeeTime[]>
         params.append('numOfPlayers', filters.numOfPlayers.toString());
         params.append('holes', filters.holes.toString());
         params.append('region', filters.region);
-        const response = await fetch(`/api/tee-times?${params.toString()}`);
+
+        const response = await fetch(`${supabaseUrl}/functions/v1/tee-times?${params.toString()}`, {
+            headers: {
+                'Authorization': `Bearer ${supabaseAnonKey}`,
+                'Content-Type': 'application/json',
+            }
+        })
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);

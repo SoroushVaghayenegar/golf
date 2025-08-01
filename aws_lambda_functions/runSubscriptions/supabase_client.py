@@ -75,3 +75,4 @@ class Supabase:
         
         return subscriptions
     
+    def fetch_tee_times(self, dates: list[str]):
