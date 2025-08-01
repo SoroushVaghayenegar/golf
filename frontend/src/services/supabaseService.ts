@@ -12,6 +12,7 @@ export interface Subscription {
     city_list: string[];
     course_list: string[];
     broadcast_day_list: string[];
+    region: string;
 }
 
 export const createSubscription = async (subscription: Subscription) => {

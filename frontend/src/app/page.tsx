@@ -240,6 +240,7 @@ export default function Home() {
               hasSearched={teeTimes.length > 0 || loading || !!error}
               courseCityMapping={courseCityMapping}
               onTeeTimeVisibilityChange={setVisibleTeeTimeCount}
+              selectedRegion={selectedRegion}
             />
           </div>
         )}

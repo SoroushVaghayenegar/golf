@@ -39,6 +39,7 @@ interface TeeTimeCardsProps {
   hasSearched: boolean;
   courseCityMapping: Record<string, string>;
   onTeeTimeVisibilityChange?: (visibleCount: number) => void;
+  selectedRegion: string;
 }
 
 export interface TeeTimeCardsRef {
@@ -65,8 +66,8 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
   handleSubscriptionDismiss,
   isMobile,
   hasSearched,
-  courseCityMapping,
-  onTeeTimeVisibilityChange
+  onTeeTimeVisibilityChange,
+  selectedRegion
 }, ref) => {
   
   const sectionRef = useRef<HTMLElement>(null);
@@ -441,10 +442,10 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
           }`}>
             <div className="bg-white rounded-xl shadow-lg p-6 border border-slate-200">
               <SubscriptionSignup 
-                courseCityMapping={courseCityMapping}
                 isOpen={showSubscription} 
                 onOpenChange={setShowSubscription}
                 onDismiss={handleSubscriptionDismiss}
+                selectedRegion={selectedRegion}
               />
             </div>
           </div>

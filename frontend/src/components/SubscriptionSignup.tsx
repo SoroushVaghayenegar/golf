@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo } from "react"
+import React, { useState, useMemo, useEffect } from "react"
 import Select, { MultiValue, StylesConfig } from 'react-select'
 import {
   Dialog,
@@ -19,7 +19,9 @@ import {
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { createSubscription } from "@/services/supabaseService"
+import { Skeleton } from "@/components/ui/skeleton"
+import { createSubscription, fetchCourseDisplayNamesAndTheirCities, fetchRegions } from "@/services/supabaseService"
+import { MapPin } from "lucide-react"
 
 interface SelectOption {
   value: string;
@@ -29,20 +31,14 @@ interface SelectOption {
 }
 
 interface SubscriptionSignupProps {
-  courseCityMapping: Record<string, string>
   isOpen: boolean
   onOpenChange: (open: boolean) => void
   onDismiss?: () => void
+  selectedRegion: string
 }
 
-export function SubscriptionSignup({ courseCityMapping, isOpen, onOpenChange, onDismiss }: SubscriptionSignupProps) {
+export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRegion }: SubscriptionSignupProps) {
   const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-  
-  // Extract cities and courses from courseCityMapping
-  const cities = useMemo(() => {
-    const uniqueCities = [...new Set(Object.values(courseCityMapping))].sort()
-    return uniqueCities
-  }, [courseCityMapping])
 
   const [golfDays, setGolfDays] = useState<string[]>([])
   const [timeFrom, setTimeFrom] = useState("05:00")
@@ -52,6 +48,14 @@ export function SubscriptionSignup({ courseCityMapping, isOpen, onOpenChange, on
   const [emailDays, setEmailDays] = useState<string[]>([])
   const [email, setEmail] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  
+  // Region and data loading states (initialize with prop value)
+  const [localSelectedRegion, setLocalSelectedRegion] = useState<string>(selectedRegion)
+  const [regions, setRegions] = useState<{ value: string; label: string }[]>([])
+  const [cities, setCities] = useState<string[]>([])
+  const [courseCityMapping, setCourseCityMapping] = useState<Record<string, string>>({})
+  const [citiesLoading, setCitiesLoading] = useState(false)
+  const [coursesLoading, setCoursesLoading] = useState(false)
 
   const timeOptions = useMemo(() => {
     const options = []
@@ -68,6 +72,63 @@ export function SubscriptionSignup({ courseCityMapping, isOpen, onOpenChange, on
     }
     return options
   }, [])
+
+  // Update local region when prop changes
+  useEffect(() => {
+    setLocalSelectedRegion(selectedRegion);
+  }, [selectedRegion]);
+
+  // Fetch regions on component mount
+  useEffect(() => {
+    const loadRegions = async () => {
+      const regions = await fetchRegions();
+      setRegions(regions.map((region: { value: string; label: string }) => ({
+        value: region.value,
+        label: region.label
+      })));
+    };
+    loadRegions();
+  }, []);
+
+  // Fetch cities and courses when region changes
+  useEffect(() => {
+    const loadCitiesAndCourses = async () => {
+      setCitiesLoading(true);
+      setCoursesLoading(true);
+      
+      // Clear selected cities and courses when region changes
+      setSelectedCities([]);
+      setSelectedCourses([]);
+      
+      try {
+        const courseCityData = await fetchCourseDisplayNamesAndTheirCities(localSelectedRegion);
+        
+        if (!courseCityData || typeof courseCityData !== 'object') {
+          throw new Error('Invalid data format received from API');
+        }
+        
+        const cityNames = [...new Set(Object.values(courseCityData).map((course: unknown) => (course as { courseId: number; city: string }).city))].sort((a: string, b: string) => a.localeCompare(b));
+        
+        // Create simple course name to city name mapping for local use
+        const simpleCityMapping: Record<string, string> = {};
+        Object.entries(courseCityData).forEach(([courseName, courseData]) => {
+          simpleCityMapping[courseName] = (courseData as { courseId: number; city: string }).city;
+        });
+        
+        setCourseCityMapping(simpleCityMapping);
+        setCities(cityNames);
+      } catch (error) {
+        console.error('Failed to fetch cities or courses:', error);
+        setCourseCityMapping({});
+        setCities([]);
+      } finally {
+        setCitiesLoading(false);
+        setCoursesLoading(false);
+      }
+    };
+
+    loadCitiesAndCourses();
+  }, [localSelectedRegion]);
 
   // Convert cities and courses to react-select format
   const cityOptions = cities.map(city => ({
@@ -248,6 +309,7 @@ export function SubscriptionSignup({ courseCityMapping, isOpen, onOpenChange, on
         city_list: selectedCities,
         course_list: selectedCourses,
         broadcast_day_list: emailDays,
+        region: localSelectedRegion,
       })
       
       // Set sessionStorage to dismiss the subscription dialog
@@ -323,24 +385,48 @@ export function SubscriptionSignup({ courseCityMapping, isOpen, onOpenChange, on
           </div>
 
           <div>
+            <div className="flex items-center gap-2 mb-2">
+              <MapPin className="w-5 h-5 text-gray-600" />
+              <label className="font-semibold">Region</label>
+            </div>
+            <ShadcnSelect value={localSelectedRegion} onValueChange={setLocalSelectedRegion}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select Region" />
+              </SelectTrigger>
+              <SelectContent>
+                {regions.map((region) => (
+                  <SelectItem key={region.value} value={region.value}>
+                    {region.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </ShadcnSelect>
+          </div>
+
+          <div>
             <label className="font-semibold">
               Select your cities{selectedCities.length > 0 ? ` (${selectedCities.length})` : ''}
             </label>
             <div className="mt-2">
-              <Select
-                isMulti
-                closeMenuOnSelect={false}
-                options={cityOptions}
-                value={cityOptions.filter(option => selectedCities.includes(option.value))}
-                onChange={handleCityChange}
-                placeholder="Select cities..."
-                isSearchable
-                styles={selectStyles}
-                className="react-select-container"
-                classNamePrefix="react-select"
-                instanceId="subscription-cities-select"
-                {...commonSelectProps}
-              />
+              {citiesLoading ? (
+                <Skeleton className="h-[42px] w-full rounded-lg" />
+              ) : (
+                <Select
+                  isMulti
+                  closeMenuOnSelect={false}
+                  options={cityOptions}
+                  value={cityOptions.filter(option => selectedCities.includes(option.value))}
+                  onChange={handleCityChange}
+                  placeholder="Select cities..."
+                  isSearchable
+                  noOptionsMessage={() => "No cities found"}
+                  styles={selectStyles}
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  instanceId="subscription-cities-select"
+                  {...commonSelectProps}
+                />
+              )}
             </div>
           </div>
 
@@ -349,21 +435,26 @@ export function SubscriptionSignup({ courseCityMapping, isOpen, onOpenChange, on
               Select your courses{selectedCourses.length > 0 ? ` (${selectedCourses.length})` : ''}
             </label>
             <div className="mt-2">
-              <Select
-                isMulti
-                closeMenuOnSelect={false}
-                options={courseOptions}
-                value={courseOptions.filter(option => selectedCourses.includes(option.value))}
-                onChange={handleCourseChange}
-                placeholder="Select courses..."
-                isSearchable
-                isOptionDisabled={(option) => option.isDisabled || false}
-                styles={selectStyles}
-                className="react-select-container"
-                classNamePrefix="react-select"
-                instanceId="subscription-courses-select"
-                {...commonSelectProps}
-              />
+              {coursesLoading ? (
+                <Skeleton className="h-[42px] w-full rounded-lg" />
+              ) : (
+                <Select
+                  isMulti
+                  closeMenuOnSelect={false}
+                  options={courseOptions}
+                  value={courseOptions.filter(option => selectedCourses.includes(option.value))}
+                  onChange={handleCourseChange}
+                  placeholder="Select courses..."
+                  isSearchable
+                  noOptionsMessage={() => "No courses found"}
+                  isOptionDisabled={(option) => option.isDisabled || false}
+                  styles={selectStyles}
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  instanceId="subscription-courses-select"
+                  {...commonSelectProps}
+                />
+              )}
             </div>
           </div>
 
