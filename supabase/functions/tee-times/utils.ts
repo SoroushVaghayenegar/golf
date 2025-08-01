@@ -67,13 +67,16 @@ export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[
         const { data: coursesData, error } = await supabaseClient
         .from('courses_view')
         .select('*')
-        .eq('region_name', region);
+        .ilike('region_name', region);
 
         if (error) {
             return { data: null, error: error }
         }
 
         courseIds = coursesData.map(course => course.id)
+        if (courseIds.length === 0) {
+            return { data: [], error: null }
+        }
     }
 
     let query = supabaseClient
