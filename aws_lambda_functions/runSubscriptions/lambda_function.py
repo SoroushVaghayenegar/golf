@@ -14,26 +14,26 @@ sys.path.insert(0, "./python_libs")
 
 lambda_client = boto3.client('lambda')
 
-@retry(tries=3, delay=2)
-def fetch_tee_times(dates: list[str]):
-    # print list of day of week in one line
-    print(f"Getting tee times for {', '.join([datetime.strptime(date, '%Y-%m-%d').strftime('%A') for date in dates])}")
+# @retry(tries=3, delay=2)
+# def fetch_tee_times(dates: list[str]):
+#     # print list of day of week in one line
+#     print(f"Getting tee times for {', '.join([datetime.strptime(date, '%Y-%m-%d').strftime('%A') for date in dates])}")
 
-    payload = {
-        "queryStringParameters": {
-            "dates": ','.join(dates)
-        }
-    }
+#     payload = {
+#         "queryStringParameters": {
+#             "dates": ','.join(dates)
+#         }
+#     }
 
-    response = lambda_client.invoke(
-        FunctionName='golfAggregate',
-        InvocationType='RequestResponse',  # Or 'Event' for async
-        Payload=json.dumps(payload),
-    )
+#     response = lambda_client.invoke(
+#         FunctionName='golfAggregate',
+#         InvocationType='RequestResponse',  # Or 'Event' for async
+#         Payload=json.dumps(payload),
+#     )
 
-    response_data = json.loads(response['Payload'].read().decode("utf-8"))
-    # Extract the body from the response and parse it as JSON
-    return json.loads(response_data['body'])
+#     response_data = json.loads(response['Payload'].read().decode("utf-8"))
+#     # Extract the body from the response and parse it as JSON
+#     return json.loads(response_data['body'])
 
 def get_day_of_week(date: datetime) -> Day:
     day_of_week = date.strftime("%A")
@@ -114,35 +114,44 @@ def lambda_handler(event, context):
         print("No subscriptions to broadcast")
         return
     
-    # get a set of days for subscriptions
-    tee_time_days = set()
+    # get all regions from subscriptions
+    regions = set()
     for subscription in subscriptions_for_broadcast_today:
-        tee_time_days.update(subscription.days)
+        regions.add(subscription.region)
     
-    # Create mapping of days to dates
-    day_to_date_mapping = get_dates_for_days(tee_time_days, vancouver_time)
+    # get all tee times for each region
+    for region in regions:
+        print(f"Getting tee times for region: {region}")
+
+        # get a set of days for subscriptions
+        tee_time_days = set()
+        for subscription in subscriptions_for_broadcast_today:
+            tee_time_days.update(subscription.days)
     
-    # maping of day to tee times
-    tee_times = fetch_tee_times(list(day_to_date_mapping.values()))
-    day_to_tee_times = {}
-    for tee_time in tee_times:
-        # Parse the start_datetime string to get the date and day
-        tee_time_datetime = datetime.fromisoformat(tee_time["start_datetime"])
-        day_of_week = get_day_of_week(tee_time_datetime)
-        if day_of_week not in day_to_tee_times:
-            day_to_tee_times[day_of_week] = []
-        day_to_tee_times[day_of_week].append(tee_time)
+        # Create mapping of days to dates
+        day_to_date_mapping = get_dates_for_days(tee_time_days, vancouver_time)
+    
+        # maping of day to tee times
+        tee_times = supabase_client.fetch_tee_times(list(day_to_date_mapping.values()), region)
+        day_to_tee_times = {}
+        for tee_time in tee_times:
+            # Parse the start_datetime string to get the date and day
+            tee_time_datetime = datetime.fromisoformat(tee_time["start_datetime"])
+            day_of_week = get_day_of_week(tee_time_datetime)
+            if day_of_week not in day_to_tee_times:
+                day_to_tee_times[day_of_week] = []
+            day_to_tee_times[day_of_week].append(tee_time)
 
     
     
-    for subscription in subscriptions_for_broadcast_today:
-        tee_times = day_to_tee_times[subscription.days[0]]
-        filtered_tee_times = filter_tee_times(tee_times, subscription.courses, subscription.start_time, subscription.end_time)
-        if test_email:
-            send_email(test_email, filtered_tee_times, subscription.token)
-            print("Successfully sent test email")
-            return
-        send_email(subscription.email, filtered_tee_times, subscription.token)
+        for subscription in subscriptions_for_broadcast_today:
+            tee_times = day_to_tee_times[subscription.days[0]]
+            filtered_tee_times = filter_tee_times(tee_times, subscription.courses, subscription.start_time, subscription.end_time)
+            if test_email:
+                send_email(test_email, filtered_tee_times, subscription.token, region)
+                print("Successfully sent test email")
+                return
+            send_email(subscription.email, filtered_tee_times, subscription.token, region)
 
 
     print("Successfully sent emails")

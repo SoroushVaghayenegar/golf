@@ -7,7 +7,7 @@ AFTERNOON = {"name": "Afternoon", "start_hour": 11, "end_hour": 17}
 EVENING = {"name": "Evening", "start_hour": 17, "end_hour": 23}
 
 
-def send_email(email: str, tee_times: list[dict], token: str):
+def send_email(email: str, tee_times: list[dict], token: str, region: str):
     import boto3
     if len(tee_times) == 0:
         return
@@ -42,7 +42,7 @@ def send_email(email: str, tee_times: list[dict], token: str):
             }
         }
     )
-    print(f"Email sent to: {email} {len(tee_times)} tee times")
+    print(f"Email sent to: {email} {len(tee_times)} tee times for region: {region}")
 
 
 def organize_tee_times(tee_times: list[dict]):

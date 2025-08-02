@@ -140,7 +140,7 @@ export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[
         ) as ForecastData | undefined
         
         typedCourseTeeTimes.tee_times_data.forEach((teeTime: TeeTimeData) => {
-            if ((teeTime.players_available !== "any" && teeTime.players_available.toString() !== numOfPlayers) || teeTime.holes.toString() !== holes){
+            if ((numOfPlayers !== "any" && teeTime.players_available.toString() !== numOfPlayers) || (holes !== "any" && teeTime.holes.toString() !== holes)){
                 return;
             }
             
