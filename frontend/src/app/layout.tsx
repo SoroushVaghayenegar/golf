@@ -65,8 +65,8 @@ export const metadata: Metadata = {
   },
   manifest: '/manifest.json',
   icons: {
-    icon: "/favicon-1.ico",
-    apple: "/favicon-1.ico",
+    icon: "/favicon.ico",
+    apple: "/favicon.ico",
   },
   themeColor: "#000000",
   viewport: {
@@ -86,7 +86,7 @@ export default function RootLayout({
       <head>
         <meta name="theme-color" content="#000000" />
         <meta name="msapplication-TileColor" content="#000000" />
-        <link rel="apple-touch-icon" href="/favicon-1.ico" />
+        <link rel="apple-touch-icon" href="/favicon.ico" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
