@@ -1,4 +1,3 @@
-import { supabaseClient } from "./supabaseClient";
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
