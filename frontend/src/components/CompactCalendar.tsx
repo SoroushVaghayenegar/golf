@@ -73,10 +73,7 @@ export default function CompactCalendar({
 
   const handleDateSelect = (dates: Date[] | undefined) => {
     setSelectedDates(dates);
-    // Auto-collapse after selection on mobile
-    if (window.innerWidth <= 768) {
-      setTimeout(() => setIsExpanded(false), 300);
-    }
+    // Keep calendar open for multiple date selection
   };
 
   const removeDateFromSelection = (dateToRemove: Date) => {
