@@ -1,11 +1,11 @@
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Contact T-Times Golf - Get in Touch',
-  description: 'Contact T-Times Golf for support, feedback, or questions about Vancouver golf tee times. We&apos;re here to help you find the perfect golf experience.',
+  title: 'Contact TeeClub - Get in Touch',
+  description: 'Contact TeeClub for support, feedback, or questions about BC golf tee times. We&apos;re here to help you find the perfect golf experience.',
   openGraph: {
-    title: 'Contact T-Times Golf - Get in Touch',
-    description: 'Contact T-Times Golf for support, feedback, or questions about Vancouver golf tee times.',
+    title: 'Contact TeeClub - Get in Touch',
+    description: 'Contact TeeClub for support, feedback, or questions about BC golf tee times.',
   },
 }
 
@@ -32,10 +32,10 @@ export default function ContactPage() {
                     Need help with booking or have questions about our service?
                   </p>
                   <a 
-                    href="mailto:support@t-times.golf" 
+                    href="mailto:support@teeclub.golf" 
                     className="text-green-600 hover:text-green-700 font-medium"
                   >
-                    support@t-times.golf
+                    support@teeclub.golf
                   </a>
                 </div>
                 
@@ -45,10 +45,10 @@ export default function ContactPage() {
                     For general questions or feedback about our platform.
                   </p>
                   <a 
-                    href="mailto:hello@t-times.golf" 
+                    href="mailto:hello@teeclub.golf" 
                     className="text-green-600 hover:text-green-700 font-medium"
                   >
-                    hello@t-times.golf
+                    hello@teeclub.golf
                   </a>
                 </div>
                 
@@ -58,10 +58,10 @@ export default function ContactPage() {
                     Interested in partnering with us? We&apos;re always looking to work with golf courses.
                   </p>
                   <a 
-                    href="mailto:partnerships@t-times.golf" 
+                    href="mailto:partnerships@teeclub.golf" 
                     className="text-green-600 hover:text-green-700 font-medium"
                   >
-                    partnerships@t-times.golf
+                    partnerships@teeclub.golf
                   </a>
                 </div>
               </div>
@@ -98,7 +98,7 @@ export default function ContactPage() {
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-2">Which golf courses do you work with?</h3>
                   <p className="text-gray-600">
-                    We partner with golf courses throughout the Greater Vancouver area. Check our 
+                    We partner with golf courses throughout British Columbia. Check our 
                     homepage for current course listings.
                   </p>
                 </div>

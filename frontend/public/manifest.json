@@ -1,7 +1,7 @@
 {
-  "name": "T-Times Golf - Vancouver Tee Times",
-  "short_name": "T-Times Golf",
-  "description": "Find and book golf tee times in Vancouver",
+  "name": "TeeClub - #1 Tee Times finder in North America",
+  "short_name": "TeeClub",
+  "description": "BC's number 1 golf tee times platform. Find and book golf tee times across British Columbia",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

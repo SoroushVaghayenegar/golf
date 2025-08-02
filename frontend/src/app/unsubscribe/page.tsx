@@ -117,7 +117,7 @@ export default function UnsubscribePage() {
                 <p className="text-center text-sm text-gray-500">
                   Changed your mind?{' '}
                   <Link href="/" className="text-blue-600 hover:text-blue-500 underline">
-                    Return to T-Times Golf
+                    Return to TeeClub
                   </Link>
                 </p>
               </div>
@@ -149,7 +149,7 @@ export default function UnsubscribePage() {
                   href="/" 
                   className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  Return to T-Times Golf
+                  Return to TeeClub
                 </Link>
               </div>
             </div>

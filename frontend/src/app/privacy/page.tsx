@@ -1,11 +1,11 @@
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy - T-Times Golf',
-  description: 'Learn how T-Times Golf collects, uses, and protects your personal information when you use our golf tee time booking service.',
+  title: 'Privacy Policy - TeeClub',
+  description: 'Learn how TeeClub collects, uses, and protects your personal information when you use our golf tee time booking service.',
   openGraph: {
-    title: 'Privacy Policy - T-Times Golf',
-    description: 'Learn how T-Times Golf collects, uses, and protects your personal information.',
+    title: 'Privacy Policy - TeeClub',
+    description: 'Learn how TeeClub collects, uses, and protects your personal information.',
   },
 }
 
@@ -21,7 +21,7 @@ export default function PrivacyPage() {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Introduction</h2>
               <p className="text-gray-600 mb-4">
-                T-Times Golf (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy. This Privacy Policy 
+                TeeClub (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy. This Privacy Policy 
                 explains how we collect, use, disclose, and safeguard your information when you use our website 
                 and services for booking golf tee times.
               </p>
@@ -139,7 +139,7 @@ export default function PrivacyPage() {
               </p>
               <div className="bg-gray-50 p-4 rounded-lg">
                 <p className="text-gray-700">
-                  <strong>Email:</strong> privacy@t-times.golf<br />
+                  <strong>Email:</strong> privacy@teeclub.golf<br />
                   <strong>Address:</strong> [Your Business Address]<br />
                   <strong>Phone:</strong> [Your Phone Number]
                 </p>
