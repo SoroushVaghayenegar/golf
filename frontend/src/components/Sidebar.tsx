@@ -306,8 +306,8 @@ export default function Sidebar({
   };
 
   return (
-    <section className="w-full lg:w-80 flex-shrink-0 bg-white shadow p-6 flex flex-col gap-3 lg:gap-4 lg:h-screen lg:sticky lg:top-0 lg:mr-8 rounded-xl lg:rounded-none lg:rounded-r-xl lg:justify-between relative z-20">
-      <div className="flex flex-col gap-4 lg:gap-4 lg:flex-1">
+    <section className="w-full lg:w-80 flex-shrink-0 bg-white shadow p-6 flex flex-col gap-3 lg:gap-4 h-[90vh] lg:h-screen lg:sticky lg:top-0 lg:mr-8 rounded-xl lg:rounded-none lg:rounded-r-xl lg:justify-between relative z-20">
+      <div className="flex flex-col gap-4 lg:gap-4 flex-1 overflow-y-auto">
         {/* Company Logo */}
         <div className="flex justify-center mb-2">
           <Image 
@@ -398,13 +398,14 @@ export default function Sidebar({
             <Clock className="w-5 h-5 text-slate-600" />
             <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase">Time Range</span>
           </div>
-          <div className="px-2">
-            <Range
-              step={1}
-              min={5}
-              max={22}
-              values={timeRange}
-              onChange={(values) => setTimeRange(values)}
+          <div className="px-4 py-4">
+            <div className="my-4">
+              <Range
+                step={1}
+                min={5}
+                max={22}
+                values={timeRange}
+                onChange={(values) => setTimeRange(values)}
               renderTrack={({ props, children }) => (
                 <div
                   {...props}
@@ -441,8 +442,9 @@ export default function Sidebar({
                   </div>
                 );
               }}
-            />
-            <div className="flex justify-between mt-3 text-sm font-medium text-slate-600">
+              />
+            </div>
+            <div className="flex justify-between mt-2 mb-4 text-sm font-medium text-slate-600">
               <span>{formatHour(timeRange[0])}</span>
               <span>{formatHour(timeRange[1])}</span>
             </div>
