@@ -313,9 +313,10 @@ export default function Sidebar({
           <Image 
             src="/logo.png" 
             alt="Company Logo" 
-            width={48}
-            height={48}
+            width={120}
+            height={46}
             className="h-12 w-auto object-contain"
+            priority
           />
         </div>
         
