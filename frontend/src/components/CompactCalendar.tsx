@@ -238,14 +238,7 @@ export default function CompactCalendar({
               </div>
             )}
 
-            <div className="flex justify-end mt-4 pt-4 border-t border-slate-200">
-              <button
-                onClick={() => setIsExpanded(false)}
-                className="px-4 py-2 bg-blue-500 text-white rounded-md text-sm font-medium hover:bg-blue-600 transition-colors"
-              >
-                Done
-              </button>
-            </div>
+
           </div>
         </div>
       )}
