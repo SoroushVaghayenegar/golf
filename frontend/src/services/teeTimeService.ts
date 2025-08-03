@@ -26,8 +26,8 @@ export interface TeeTime {
 
 interface TeeTimeFilters {
     dates: string[];  // Format: YYYY-MM-DD
-    numOfPlayers: number;
-    holes: number;
+    numOfPlayers: string;
+    holes: string;
     region: string;
 }
 
@@ -38,8 +38,8 @@ export const fetchTeeTimes = async (filters: TeeTimeFilters): Promise<TeeTime[]>
         // Construct URL with query parameters
         const params = new URLSearchParams();
         params.append('dates', filters.dates.join(','));
-        params.append('numOfPlayers', filters.numOfPlayers.toString());
-        params.append('holes', filters.holes.toString());
+        params.append('numOfPlayers', filters.numOfPlayers);
+        params.append('holes', filters.holes);
         params.append('region', filters.region);
 
         const response = await fetch(`${supabaseUrl}/functions/v1/tee-times?${params.toString()}`, {

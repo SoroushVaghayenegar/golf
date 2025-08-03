@@ -1,17 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Calendar } from "@/components/ui/calendar";
 import { Listbox } from "@headlessui/react";
-import { ChevronDown, Users, Clock, School, LandPlot, MapPin } from "lucide-react";
+import { ChevronDown, Users, Clock, School, LandPlot, MapPin, Info } from "lucide-react";
 import { Range } from "react-range";
 import Select, { MultiValue, StylesConfig } from 'react-select';
+import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchCourseDisplayNamesAndTheirCities, fetchRegions } from "../services/supabaseService";
-import {
-  isPastDateInVancouver,
-  getMinSelectableDateInVancouver, 
-  isDateDisabledInVancouver
-} from "../services/timezoneService";
+import CompactCalendar from "./CompactCalendar";
 
 interface SelectOption {
   value: string;
@@ -23,10 +19,10 @@ interface SelectOption {
 interface SidebarProps {
   selectedDates: Date[] | undefined;
   setSelectedDates: (dates: Date[] | undefined) => void;
-  numOfPlayers: number;
-  setNumOfPlayers: (num: number) => void;
-  holes: number;
-  setHoles: (holes: number) => void;
+  numOfPlayers: string;
+  setNumOfPlayers: (num: string) => void;
+  holes: string;
+  setHoles: (holes: string) => void;
   timeRange: number[];
   setTimeRange: (range: number[]) => void;
   selectedCities: string[];
@@ -73,6 +69,7 @@ export default function Sidebar({
   const [showCitySelector, setShowCitySelector] = useState(false);
   const [showCourseSelector, setShowCourseSelector] = useState(false);
   const [regions, setRegions] = useState<{ value: string; label: string }[]>([]);
+  const [showHolesTooltip, setShowHolesTooltip] = useState(false);
 
   // Fetch cities and courses on component mount and when region changes
   useEffect(() => {
@@ -130,6 +127,20 @@ export default function Sidebar({
 
     loadCitiesAndCourses();
   }, [selectedRegion, setCourseCityMapping, setSelectedCities, setSelectedCourses]);
+
+  // Close tooltip when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showHolesTooltip && !(event.target as Element).closest('.holes-section')) {
+        setShowHolesTooltip(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showHolesTooltip]);
 
   const formatHour = (hour: number) => {
     if (hour === 0) return '12 AM';
@@ -295,39 +306,27 @@ export default function Sidebar({
   };
 
   return (
-    <section className="w-full lg:w-80 flex-shrink-0 bg-white shadow p-6 flex flex-col gap-3 lg:gap-4 lg:h-screen lg:sticky lg:top-0 lg:mr-8 rounded-xl lg:rounded-none lg:rounded-r-xl lg:justify-between relative z-20">
-      <div className="flex flex-col gap-4 lg:gap-4 lg:flex-1">
-        <div className="flex flex-col items-center">
-          <div className="rounded-lg border shadow-sm">
-            {isClient ? (
-              <Calendar
-                mode="multiple"
-                selected={selectedDates}
-                onSelect={setSelectedDates}
-                fromDate={getMinSelectableDateInVancouver()}
-                disabled={isDateDisabledInVancouver}
-                className="w-full"
-                classNames={{
-                  root: "!w-full",
-                  table: "w-full border-collapse",
-                  day: "relative w-full h-full p-0 text-center group/day aspect-square select-none [&_button[data-selected-single=true]]:bg-blue-500 [&_button[data-selected-single=true]]:text-white [&_button:hover]:bg-blue-50 [&_button:hover]:text-blue-900",
-                  today: "bg-green-100 text-green-800 rounded-md [&_button]:bg-green-100 [&_button]:text-green-800 [&_button[data-selected-single=true]]:!bg-blue-500 [&_button[data-selected-single=true]]:!text-white"
-                }}
-                modifiers={{
-                  past: (date: Date) => isPastDateInVancouver(date),
-                  today: (date: Date) => todayDate ? (date.toDateString() === todayDate.toDateString()) : false
-                }}
-                modifiersStyles={{
-                  past: { color: '#9ca3af', opacity: 0.5 }
-                }}
-              />
-            ) : (
-              <div className="w-full h-64 flex items-center justify-center text-slate-500">
-                Loading calendar...
-              </div>
-            )}
-          </div>
+    <section className="w-full lg:w-80 flex-shrink-0 bg-white shadow p-5 flex flex-col gap-3 lg:gap-4 h-[90vh] lg:h-screen lg:sticky lg:top-0 lg:mr-8 rounded-xl lg:rounded-none lg:rounded-r-xl lg:justify-between relative z-20">
+      <div className="flex flex-col gap-4 lg:gap-4 flex-1 overflow-y-auto">
+        {/* Company Logo */}
+        <div className="flex justify-center mb-2">
+          <Image 
+            src="/logo.png" 
+            alt="Company Logo" 
+            width={120}
+            height={46}
+            className="h-12 w-auto object-contain"
+            priority
+          />
         </div>
+        
+        <CompactCalendar
+          selectedDates={selectedDates}
+          setSelectedDates={setSelectedDates}
+          isClient={isClient}
+          todayDate={todayDate}
+          className="w-full"
+        />
 
         <div className="flex gap-6">
           <div className="flex-1 flex flex-col gap-3">
@@ -336,42 +335,56 @@ export default function Sidebar({
               <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase">Players</span>
             </div>
             <div className="flex gap-2">
-              {[1, 2, 3, 4].map((num) => (
+              {["2", "3", "4", "any"].map((option) => (
                 <button
-                  key={num}
-                  onClick={() => setNumOfPlayers(num)}
+                  key={option}
+                  onClick={() => setNumOfPlayers(option)}
                   className={`flex-1 px-3 py-2 rounded-lg border text-sm transition-all duration-200 ${
-                    numOfPlayers === num
+                    numOfPlayers === option
                       ? 'bg-blue-500 text-white border-blue-500 shadow-md'
                       : 'bg-white hover:bg-blue-50 border-slate-200 text-slate-700 hover:border-blue-200'
                   }`}
                 >
-                  {num}
+                  {option === "any" ? "Any" : option}
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col gap-3">
-            <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase">Holes</span>
+          <div className="flex-1 flex flex-col gap-3 holes-section">
+            <div className="flex items-center gap-2 relative">
+              <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase">Holes</span>
+              <button
+                onClick={() => setShowHolesTooltip(!showHolesTooltip)}
+                className="text-slate-500 hover:text-slate-700 transition-colors"
+              >
+                <Info className="w-4 h-4" />
+              </button>
+              {showHolesTooltip && (
+                <div className="absolute top-6 right-0 z-50 w-56 p-3 bg-slate-800 text-white text-xs rounded-lg shadow-lg">
+                  Some courses offer options beyond 9 or 18 holes. Select &quot;Any&quot; to view all available formats.
+                  <div className="absolute -top-1 right-4 w-2 h-2 bg-slate-800 rotate-45"></div>
+                </div>
+              )}
+            </div>
             <Listbox value={holes} onChange={setHoles}>
               <div className="relative">
                 <Listbox.Button className="w-full px-4 py-2 text-left bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-blue-200 transition-colors font-medium text-slate-700">
-                  <span>{holes}</span>
+                  <span>{holes === "any" ? "Any" : holes}</span>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 </Listbox.Button>
-                <Listbox.Options className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg focus:outline-none">
-                  {[18, 16, 9].map((option) => (
+                <Listbox.Options className="absolute z-40 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg focus:outline-none">
+                  {[{ value: "any", label: "Any" }, { value: "18", label: "18" }, { value: "9", label: "9" }].map((option) => (
                     <Listbox.Option
-                      key={option}
-                      value={option}
+                      key={option.value}
+                      value={option.value}
                       className={({ active }) =>
                         `px-4 py-2 cursor-pointer font-medium ${
                           active ? 'bg-blue-50 text-blue-600' : 'text-slate-700'
                         }`
                       }
                     >
-                      {option}
+                      {option.label}
                     </Listbox.Option>
                   ))}
                 </Listbox.Options>
@@ -385,13 +398,13 @@ export default function Sidebar({
             <Clock className="w-5 h-5 text-slate-600" />
             <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase">Time Range</span>
           </div>
-          <div className="px-2">
+          <div className="px-3 py-2">
             <Range
-              step={1}
-              min={5}
-              max={22}
-              values={timeRange}
-              onChange={(values) => setTimeRange(values)}
+                step={1}
+                min={5}
+                max={22}
+                values={timeRange}
+                onChange={(values) => setTimeRange(values)}
               renderTrack={({ props, children }) => (
                 <div
                   {...props}

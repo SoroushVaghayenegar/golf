@@ -15,32 +15,32 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Vancouver Tee Times - Find Golf Deals & Book Tee Times",
-  description: "Discover the best golf deals in Vancouver. Compare tee times across multiple courses, find discounts, and book your next round. Real-time availability for Vancouver golf courses.",
-  keywords: "Vancouver golf, tee times, golf deals, golf courses Vancouver, golf booking, golf discounts, golf Vancouver BC",
-  authors: [{ name: "T-Times Golf" }],
-  creator: "T-Times Golf",
-  publisher: "T-Times Golf",
+  title: "TeeClub - #1 Tee Times finder in Canada",
+  description: "Canada's number 1 golf tee times platform. Discover the best golf deals across Canada. Compare tee times across multiple courses, find discounts, and book your next round. Real-time availability for golf courses.",
+  keywords: "golf, tee times, golf booking, golf courses, golf deals, golf discounts, driving range, country clubs, golf reservations, golf packages, golf tournaments, golf memberships, golf lessons, golf clubs, golf equipment, golf pro shop, golf simulator, mini golf, putting green, golf cart, caddie, golf instruction, golf clinics, Canada, British Columbia, BC, Vancouver, Toronto, Montreal, Calgary, Ottawa, Edmonton, Winnipeg, Quebec City, Hamilton, Kitchener, London, Halifax, Victoria, Saskatoon, Regina, Windsor, Sherbrooke, St. John's, Barrie, Kelowna, Abbotsford, Kingston, Trois-Rivières, golf course booking, tee time reservations, Canadian golf, BC golf, golf deals Canada, golf courses Canada",
+  authors: [{ name: "TeeClub" }],
+  creator: "TeeClub",
+  publisher: "TeeClub",
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
-  metadataBase: new URL('https://t-times.golf'),
+  metadataBase: new URL('https://teeclub.golf'),
   alternates: {
     canonical: '/',
   },
   openGraph: {
-    title: "Vancouver Tee Times - Find Golf Deals & Book Tee Times",
-    description: "Discover the best golf deals in Vancouver. Compare tee times across multiple courses, find discounts, and book your next round.",
-    url: 'https://t-times.golf',
-    siteName: 'T-Times Golf',
+    title: "TeeClub - #1 Tee Times finder in Canada",
+    description: "Canada's number 1 golf tee times platform. Discover the best golf deals across Canada. Compare tee times across multiple courses, find discounts, and book your next round.",
+    url: 'https://teeclub.golf',
+    siteName: 'TeeClub',
     images: [
       {
         url: '/golf-course.png',
         width: 1200,
         height: 630,
-        alt: 'Vancouver Golf Course',
+        alt: 'BC Golf Course - TeeClub',
       },
     ],
     locale: 'en_CA',
@@ -48,8 +48,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: "Vancouver Tee Times - Find Golf Deals & Book Tee Times",
-    description: "Discover the best golf deals in Vancouver. Compare tee times across multiple courses.",
+    title: "TeeClub - #1 Tee Times finder in Canada",
+    description: "Canada's number 1 golf tee times platform. Discover the best golf deals across Canada.",
     images: ['/golf-course.png'],
   },
   robots: {
@@ -65,8 +65,8 @@ export const metadata: Metadata = {
   },
   manifest: '/manifest.json',
   icons: {
-    icon: "/favicon-1.ico",
-    apple: "/favicon-1.ico",
+    icon: "/favicon.ico",
+    apple: "/favicon.ico",
   },
   themeColor: "#000000",
   viewport: {
@@ -86,19 +86,19 @@ export default function RootLayout({
       <head>
         <meta name="theme-color" content="#000000" />
         <meta name="msapplication-TileColor" content="#000000" />
-        <link rel="apple-touch-icon" href="/favicon-1.ico" />
+        <link rel="apple-touch-icon" href="/favicon.ico" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebSite",
-              "name": "T-Times Golf",
-              "description": "Find and book tee times for golf courses in Vancouver",
-              "url": "https://t-times.golf",
+              "name": "TeeClub",
+              "description": "Canada's number 1 golf tee times platform. Find and book tee times for golf courses across Canada",
+              "url": "https://teeclub.golf",
               "potentialAction": {
                 "@type": "SearchAction",
-                "target": "https://t-times.golf/search?q={search_term_string}",
+                "target": "https://teeclub.golf/search?q={search_term_string}",
                 "query-input": "required name=search_term_string"
               }
             })

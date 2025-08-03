@@ -36,8 +36,8 @@ export default function Home() {
   // State for filters
   const [selectedDates, setSelectedDates] = useState<Date[] | undefined>(undefined);
   const [fetchedDates, setFetchedDates] = useState<Date[] | undefined>(undefined);
-  const [numOfPlayers, setNumOfPlayers] = useState<number>(4);
-  const [holes, setHoles] = useState(18);
+  const [numOfPlayers, setNumOfPlayers] = useState<string>("any");
+  const [holes, setHoles] = useState<string>("any");
   const [timeRange, setTimeRange] = useState<number[]>([5, 22]); // 5am to 10pm
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);

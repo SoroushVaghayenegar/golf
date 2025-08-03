@@ -1,11 +1,11 @@
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Terms of Service - T-Times Golf',
-  description: 'Read the terms and conditions for using T-Times Golf services. Learn about your rights and responsibilities when booking golf tee times.',
+  title: 'Terms of Service - TeeClub',
+  description: 'Read the terms and conditions for using TeeClub services. Learn about your rights and responsibilities when booking golf tee times.',
   openGraph: {
-    title: 'Terms of Service - T-Times Golf',
-    description: 'Read the terms and conditions for using T-Times Golf services.',
+    title: 'Terms of Service - TeeClub',
+    description: 'Read the terms and conditions for using TeeClub services.',
   },
 }
 
@@ -21,7 +21,7 @@ export default function TermsPage() {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Acceptance of Terms</h2>
               <p className="text-gray-600 mb-4">
-                By accessing and using T-Times Golf (&quot;the Service&quot;), you accept and agree to be bound by the 
+                By accessing and using TeeClub (&quot;the Service&quot;), you accept and agree to be bound by the 
                 terms and provision of this agreement. If you do not agree to abide by the above, please do 
                 not use this service.
               </p>
@@ -30,8 +30,8 @@ export default function TermsPage() {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">2. Description of Service</h2>
               <p className="text-gray-600 mb-4">
-                T-Times Golf provides an online platform for booking golf tee times at various golf courses 
-                in the Vancouver area. We aggregate tee time availability and facilitate bookings between 
+                TeeClub provides an online platform for booking golf tee times at various golf courses 
+                across British Columbia. We aggregate tee time availability and facilitate bookings between 
                 users and golf courses.
               </p>
             </section>
@@ -60,7 +60,7 @@ export default function TermsPage() {
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">5. Cancellation Policy</h2>
               <p className="text-gray-600 mb-4">
                 Cancellation policies vary by golf course. Please review the specific course&apos;s cancellation 
-                policy before booking. T-Times Golf will facilitate cancellations according to each course&apos;s 
+                policy before booking. TeeClub will facilitate cancellations according to each course&apos;s 
                 individual policy.
               </p>
             </section>
@@ -82,7 +82,7 @@ export default function TermsPage() {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">7. Intellectual Property</h2>
               <p className="text-gray-600 mb-4">
-                The Service and its original content, features, and functionality are owned by T-Times Golf 
+                The Service and its original content, features, and functionality are owned by TeeClub 
                 and are protected by international copyright, trademark, patent, trade secret, and other 
                 intellectual property laws.
               </p>
@@ -109,7 +109,7 @@ export default function TermsPage() {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">10. Limitation of Liability</h2>
               <p className="text-gray-600 mb-4">
-                In no event shall T-Times Golf be liable for any indirect, incidental, special, consequential, 
+                In no event shall TeeClub be liable for any indirect, incidental, special, consequential, 
                 or punitive damages, including without limitation, loss of profits, data, use, goodwill, or 
                 other intangible losses, resulting from your use of the Service.
               </p>
@@ -118,7 +118,7 @@ export default function TermsPage() {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">11. Indemnification</h2>
               <p className="text-gray-600 mb-4">
-                You agree to defend, indemnify, and hold harmless T-Times Golf from and against any claims, 
+                You agree to defend, indemnify, and hold harmless TeeClub from and against any claims, 
                 damages, obligations, losses, liabilities, costs, or debt arising from your use of the Service.
               </p>
             </section>
@@ -146,7 +146,7 @@ export default function TermsPage() {
               </p>
               <div className="bg-gray-50 p-4 rounded-lg">
                 <p className="text-gray-700">
-                  <strong>Email:</strong> legal@t-times.golf<br />
+                  <strong>Email:</strong> legal@teeclub.golf<br />
                   <strong>Address:</strong> [Your Business Address]<br />
                   <strong>Phone:</strong> [Your Phone Number]
                 </p>
