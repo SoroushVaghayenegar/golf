@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TeeClub - #1 Tee Times finder in North America",
-  description: "BC's number 1 golf tee times platform. Discover the best golf deals across British Columbia and Canada. Compare tee times across multiple courses, find discounts, and book your next round. Real-time availability for golf courses.",
+  title: "TeeClub - #1 Tee Times finder in Canada",
+  description: "Canada's number 1 golf tee times platform. Discover the best golf deals across Canada. Compare tee times across multiple courses, find discounts, and book your next round. Real-time availability for golf courses.",
   keywords: "golf, tee times, golf booking, golf courses, golf deals, golf discounts, driving range, country clubs, golf reservations, golf packages, golf tournaments, golf memberships, golf lessons, golf clubs, golf equipment, golf pro shop, golf simulator, mini golf, putting green, golf cart, caddie, golf instruction, golf clinics, Canada, British Columbia, BC, Vancouver, Toronto, Montreal, Calgary, Ottawa, Edmonton, Winnipeg, Quebec City, Hamilton, Kitchener, London, Halifax, Victoria, Saskatoon, Regina, Windsor, Sherbrooke, St. John's, Barrie, Kelowna, Abbotsford, Kingston, Trois-Rivières, golf course booking, tee time reservations, Canadian golf, BC golf, golf deals Canada, golf courses Canada",
   authors: [{ name: "TeeClub" }],
   creator: "TeeClub",
@@ -31,8 +31,8 @@ export const metadata: Metadata = {
     canonical: '/',
   },
   openGraph: {
-    title: "TeeClub - #1 Tee Times finder in North America",
-    description: "BC's number 1 golf tee times platform. Discover the best golf deals across British Columbia and Canada. Compare tee times across multiple courses, find discounts, and book your next round.",
+    title: "TeeClub - #1 Tee Times finder in Canada",
+    description: "Canada's number 1 golf tee times platform. Discover the best golf deals across Canada. Compare tee times across multiple courses, find discounts, and book your next round.",
     url: 'https://teeclub.golf',
     siteName: 'TeeClub',
     images: [
@@ -48,8 +48,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: "TeeClub - #1 Tee Times finder in North America",
-    description: "BC's number 1 golf tee times platform. Discover the best golf deals across British Columbia and Canada.",
+    title: "TeeClub - #1 Tee Times finder in Canada",
+    description: "Canada's number 1 golf tee times platform. Discover the best golf deals across Canada.",
     images: ['/golf-course.png'],
   },
   robots: {
@@ -94,7 +94,7 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "WebSite",
               "name": "TeeClub",
-              "description": "BC's number 1 golf tee times platform. Find and book tee times for golf courses across British Columbia and Canada",
+              "description": "Canada's number 1 golf tee times platform. Find and book tee times for golf courses across Canada",
               "url": "https://teeclub.golf",
               "potentialAction": {
                 "@type": "SearchAction",
