@@ -361,9 +361,9 @@ export default function Sidebar({
                 <Info className="w-4 h-4" />
               </button>
               {showHolesTooltip && (
-                <div className="absolute top-6 left-0 z-20 w-64 p-3 bg-slate-800 text-white text-xs rounded-lg shadow-lg">
+                <div className="absolute top-6 right-0 z-50 w-56 p-3 bg-slate-800 text-white text-xs rounded-lg shadow-lg">
                   Some courses offer options beyond 9 or 18 holes. Select &quot;Any&quot; to view all available formats.
-                  <div className="absolute -top-1 left-4 w-2 h-2 bg-slate-800 rotate-45"></div>
+                  <div className="absolute -top-1 right-4 w-2 h-2 bg-slate-800 rotate-45"></div>
                 </div>
               )}
             </div>
@@ -373,7 +373,7 @@ export default function Sidebar({
                   <span>{holes === "any" ? "Any" : holes}</span>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 </Listbox.Button>
-                <Listbox.Options className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg focus:outline-none">
+                <Listbox.Options className="absolute z-40 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg focus:outline-none">
                   {[{ value: "any", label: "Any" }, { value: "18", label: "18" }, { value: "9", label: "9" }].map((option) => (
                     <Listbox.Option
                       key={option.value}
@@ -398,9 +398,8 @@ export default function Sidebar({
             <Clock className="w-5 h-5 text-slate-600" />
             <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase">Time Range</span>
           </div>
-          <div className="px-4 py-4">
-            <div className="my-4">
-              <Range
+          <div className="px-3 py-2">
+            <Range
                 step={1}
                 min={5}
                 max={22}
@@ -442,9 +441,8 @@ export default function Sidebar({
                   </div>
                 );
               }}
-              />
-            </div>
-            <div className="flex justify-between mt-2 mb-4 text-sm font-medium text-slate-600">
+            />
+            <div className="flex justify-between mt-3 text-sm font-medium text-slate-600">
               <span>{formatHour(timeRange[0])}</span>
               <span>{formatHour(timeRange[1])}</span>
             </div>
