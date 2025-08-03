@@ -306,7 +306,7 @@ export default function Sidebar({
   };
 
   return (
-    <section className="w-full lg:w-80 flex-shrink-0 bg-white shadow p-6 flex flex-col gap-3 lg:gap-4 h-[90vh] lg:h-screen lg:sticky lg:top-0 lg:mr-8 rounded-xl lg:rounded-none lg:rounded-r-xl lg:justify-between relative z-20">
+    <section className="w-full lg:w-80 flex-shrink-0 bg-white shadow p-5 flex flex-col gap-3 lg:gap-4 h-[90vh] lg:h-screen lg:sticky lg:top-0 lg:mr-8 rounded-xl lg:rounded-none lg:rounded-r-xl lg:justify-between relative z-20">
       <div className="flex flex-col gap-4 lg:gap-4 flex-1 overflow-y-auto">
         {/* Company Logo */}
         <div className="flex justify-center mb-2">
