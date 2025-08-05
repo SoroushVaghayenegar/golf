@@ -32,9 +32,6 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.fetchCourseTeeTimes = fetchCourseTeeTimes;
 exports.fetchTeeTimesFromChronoLightspeed = fetchTeeTimesFromChronoLightspeed;
@@ -42,10 +39,8 @@ exports.batchUpsertTeeTimes = batchUpsertTeeTimes;
 exports.timeStringToMinutes = timeStringToMinutes;
 const TeeTime_1 = require("./TeeTime");
 const Sentry = __importStar(require("@sentry/aws-serverless"));
-const axios_1 = __importDefault(require("axios"));
-const tough = __importStar(require("tough-cookie"));
 const CHRONO_LIGHTSPEED = "CHRONO_LIGHTSPEED";
-async function fetchCourseTeeTimes(client, course, searchDate) {
+async function fetchCourseTeeTimes(page, course, searchDate) {
     if (course.external_api !== CHRONO_LIGHTSPEED) {
         throw new Error(`Unsupported external API: ${course.external_api}`);
     }
@@ -56,7 +51,7 @@ async function fetchCourseTeeTimes(client, course, searchDate) {
     const affiliationTypeId = course.external_api_attributes.affiliation_type_id;
     const clubLinkName = course.external_api_attributes.club_link_name;
     // Parallelize fetching for each course holes value
-    const teeTimesPromises = courseHolesArray.map(holes => fetchTeeTimesFromChronoLightspeed(client, course.name, clubId, courseId, affiliationTypeId, holes, searchDate, clubLinkName));
+    const teeTimesPromises = courseHolesArray.map(holes => fetchTeeTimesFromChronoLightspeed(page, course.name, clubId, courseId, affiliationTypeId, holes, searchDate, clubLinkName));
     const teeTimesResults = await Promise.all(teeTimesPromises);
     const allTeeTimes = teeTimesResults.flat();
     return {
@@ -65,7 +60,7 @@ async function fetchCourseTeeTimes(client, course, searchDate) {
         teeTimes: allTeeTimes
     };
 }
-async function fetchTeeTimesFromChronoLightspeed(client, courseName, club_id, course_id, affiliation_type_id, course_holes, searchDate, clubLinkName) {
+async function fetchTeeTimesFromChronoLightspeed(page, courseName, club_id, course_id, affiliation_type_id, course_holes, searchDate, clubLinkName) {
     // format to '%Y-%m-%d'
     const dateString = searchDate.toISOString().split('T')[0];
     const baseUrl = `https://www.chronogolf.ca/marketplace/clubs/${club_id}/teetimes?date=${dateString}&course_id=${course_id}&nb_holes=${course_holes}`;
@@ -78,8 +73,8 @@ async function fetchTeeTimesFromChronoLightspeed(client, courseName, club_id, co
             fullUrl += `&affiliation_type_ids%5B%5D=${affiliation_type_id}`;
         }
         try {
-            const response = await fetchWithRetry(client, courseName, club_id, fullUrl, {}, 3, 3000, 1000);
-            // For axios, the data is already parsed
+            const response = await fetchWithRetry(page, courseName, club_id, fullUrl, {}, 5, 5000, 1000);
+            // Extract the data from the response
             const teeTimes = response.data;
             return { players, teeTimes };
         }
@@ -118,7 +113,7 @@ function getChronoLightspeedBookingLink(clubLinkName, courseId, nbHoles, date, a
     const affiliationTypeIds = Array(numberOfPlayers).fill(affiliationTypeId).join(',');
     return `https://www.chronogolf.ca/club/${clubLinkName}/booking/?source=club&medium=widget#/teetime/review?course_id=${courseId}&nb_holes=${nbHoles}&date=${dateStr}&affiliation_type_ids=${affiliationTypeIds}&teetime_id=${teetimeId}&is_deal=false&new_user=false`;
 }
-async function fetchWithRetry(client, courseName, clubId, url, headers, maxRetries = 5, maxDelay = 19000, minDelay = 2000) {
+async function fetchWithRetry(page, courseName, clubId, url, headers, maxRetries = 5, maxDelay = 19000, minDelay = 2000) {
     // Add to headers to pretend this is from a safari browser
     headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15";
     headers["Accept"] = "application/json";
@@ -128,66 +123,41 @@ async function fetchWithRetry(client, courseName, clubId, url, headers, maxRetri
     headers["Sec-Fetch-Dest"] = "empty";
     headers["Sec-Fetch-Mode"] = "cors";
     headers["Referer"] = `https://www.chronogolf.com/en/club/${clubId}/widget?medium=widget&source=club`;
-    // Create isolated client to prevent shared state corruption
-    const originalJar = client.defaults.jar;
-    const isolatedJar = new tough.CookieJar();
-    // Copy cookies from the shared client to isolated jar
-    try {
-        const cookies = await originalJar.getCookies('https://www.chronogolf.ca');
-        for (const cookie of cookies) {
-            await isolatedJar.setCookie(cookie.toString(), 'https://www.chronogolf.ca');
-        }
-    }
-    catch (cookieError) {
-        console.warn(`[${courseName}] Warning: Could not copy cookies for isolation:`, cookieError);
-    }
-    // Create isolated client for this request
-    const axiosCookieJarSupport = await eval('import("axios-cookiejar-support")');
-    const { wrapper } = axiosCookieJarSupport;
-    const isolatedClient = wrapper(axios_1.default.create({
-        jar: isolatedJar,
-        timeout: 30000,
-        maxRedirects: 5
-    }));
+    let lastError;
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-            const response = await isolatedClient.get(url, { headers: headers });
-            // Axios responses have status, not ok property
-            if (response.status >= 400) {
-                let errorBody = '';
+            // console.log(`Attempt ${attempt} for ${courseName}: ${url}`);
+            const data = await page.evaluate(async (url, headers) => {
                 try {
-                    // For axios, the response data is already parsed
-                    errorBody = typeof response.data.errors === 'string' ? response.data.errors : JSON.stringify(response.data.errors);
+                    const response = await fetch(url, {
+                        headers: headers,
+                        credentials: 'include' // Include cookies
+                    });
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return await response.json();
                 }
-                catch (bodyError) {
-                    errorBody = 'Unable to read response body';
+                catch (error) {
+                    throw new Error(`Fetch failed: ${error.message}`);
                 }
-                const errorMessage = `Error fetching ${courseName}: ${response.status} ${response.statusText} ${errorBody ? ` - ${errorBody}` : ''}`;
-                if (response.status === 422) {
-                    console.log(errorBody);
-                    Sentry.captureException(new Error(errorBody));
-                }
-                if (attempt === maxRetries) {
-                    Sentry.captureMessage(errorMessage);
-                    console.error(`Error status: ${response.status} [${courseName}] ${response.statusText} ${errorBody ? ` - ${errorBody}` : ''}`);
-                }
-                throw new Error(errorMessage);
-            }
-            return response;
+            }, url, headers);
+            return { data };
         }
         catch (error) {
-            if (attempt < maxRetries) {
-                const delay = Math.floor(Math.random() * maxDelay) + minDelay; // Random delay between 1000-15000ms
-                await new Promise(resolve => setTimeout(resolve, delay));
+            lastError = error;
+            // console.error(`Attempt ${attempt} failed for ${courseName}:`, error.message);
+            if (attempt === maxRetries) {
+                break;
             }
-            else {
-                const errorMessage = `[${courseName}] All ${maxRetries} attempts failed. Final error: ${JSON.stringify(error)}`;
-                console.error(errorMessage);
-                Sentry.captureException(new Error(errorMessage));
-            }
+            // Calculate delay between retries
+            const delay = Math.min(minDelay * Math.pow(2, attempt - 1) + Math.random() * 1000, maxDelay);
+            // console.log(`Retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
         }
     }
-    throw new Error(`[${courseName}] Failed to fetch after ${maxRetries} attempts`);
+    Sentry.captureException(lastError);
+    throw new Error(`Failed to fetch after ${maxRetries} attempts for ${courseName}. Last error: ${lastError?.message}`);
 }
 /**
  * Batch upsert tee times data to Supabase with conflict resolution

@@ -111,7 +111,14 @@ export async function fetchTeeTimesFromCPS(
       const holesArray = holesDisplay.includes("or") ? holesDisplay.split("or").map((s: string) => s.trim()) : [holesDisplay];
       
       for (const holesStr of holesArray) {
-        const price = teeTimeObject["shItemPrices"].find((priceObj: any) => priceObj.shItemCode === `GreenFee${holesStr}`)?.displayPrice;
+        const price = teeTimeObject["shItemPrices"].find((priceObj: any) => priceObj.shItemCode === `GreenFee${holesStr}`)?.currentPrice ||
+                      teeTimeObject["shItemPrices"].find((priceObj: any) => priceObj.shItemCode === `Package${holesStr}`)?.currentPrice ||
+                      teeTimeObject["shItemPrices"].find((priceObj: any) => priceObj.shItemCode === `GreenFee${holesStr}Online`)?.currentPrice;
+
+        if (!price) {
+          Sentry.captureException(new Error(`[${courseName}] No price found for ${holesStr}`));
+        }
+        
         const startDateTime = new Date(teeTimeObject["startTime"]);
         const playersAvailable = teeTimeObject["availableParticipantNo"].length;
         const holes = parseInt(holesStr);

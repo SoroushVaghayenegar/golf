@@ -2,16 +2,8 @@ import { Course } from "./Course"
 import { fetchCourseTeeTimes, batchUpsertTeeTimes, timeStringToMinutes } from "./utils"
 import { createClient } from "@supabase/supabase-js"
 import * as Sentry from "@sentry/aws-serverless"
-import axios from 'axios';
-import * as tough from 'tough-cookie';
-import type { CookieJar } from 'tough-cookie';
+import puppeteer from 'puppeteer';
 
-// Extend axios types to support jar property
-declare module 'axios' {
-  interface AxiosRequestConfig {
-    jar?: CookieJar;
-  }
-}
 
 Sentry.init({
   dsn: "https://baa965932d0a9dbd6f12c98dd937d526@o4509770601332736.ingest.us.sentry.io/4509778658000896",
@@ -33,34 +25,50 @@ export const handler = async (event: any) => {
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-  
-  const jar = new tough.CookieJar();
-  const axiosCookieJarSupport = await eval('import("axios-cookiejar-support")');
-  const { wrapper } = axiosCookieJarSupport;
-  const client = wrapper(axios.create({ 
-    jar,
-    timeout: 30000, // 30 second timeout
-    maxRedirects: 5
-  }));
+  // Create browser and page once
+  const browser = await puppeteer.launch({
+    args: [
+      '--disable-blink-features=AutomationControlled',
+      '--hide-scrollbars',
+      '--disable-web-security',
+      '--disable-features=VizDisplayCompositor',
+      '--disable-gpu',
+      '--disable-dev-shm-usage',
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-webgl',
+      '--disable-gpu-compositing',
+      '--disable-gpu-sandbox',
+    ],
+    defaultViewport: null,
+    headless: true,
+  });
 
-  // Establish initial session to get CloudFlare and session cookies
-  console.log('Establishing session with Chronogolf...');
-  await client.get('https://www.chronogolf.ca', {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      'Accept-Language': 'en-CA,en-US;q=0.9,en;q=0.8',
-      'Accept-Encoding': 'gzip, deflate, br',
-      'Connection': 'keep-alive',
-      'Upgrade-Insecure-Requests': '1',
-      'Sec-Fetch-Dest': 'document',
-      'Sec-Fetch-Mode': 'navigate',
-      'Sec-Fetch-Site': 'none'
+  console.log(`Browser launched in ${performance.now() - startTime}ms`)
+
+  const page = await browser.newPage();
+
+  // Set realistic browser headers
+  await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15');
+  
+  await page.setRequestInterception(true);
+
+  page.on('request', (req) => {
+    const resourceType = req.resourceType();
+    const blocked = ['image', 'media', 'font', 'stylesheet', 'other'];
+
+    if (blocked.includes(resourceType)) {
+      req.abort();
+    } else {
+      req.continue();
     }
   });
 
-  // Add a small delay to ensure cookies are set
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  await page.goto('https://www.chronogolf.ca', {
+    waitUntil: 'domcontentloaded',
+  });
+
+  console.log(`Chrono page loaded in ${performance.now() - startTime}ms`)
 
   // Fetch courses from the database with city name
   const { data: coursesData, error } = await supabase
@@ -72,7 +80,7 @@ export const handler = async (event: any) => {
   .eq('external_api', 'CHRONO_LIGHTSPEED')
 
   if (error) {
-  throw new Error(`Error fetching courses: ${error.message}`)
+    throw new Error(`Error fetching courses: ${error.message}`)
   }
 
   // Convert to Course objects
@@ -108,7 +116,7 @@ export const handler = async (event: any) => {
       }
       const searchDate = new Date(startDate)
       searchDate.setDate(searchDate.getDate() + i)
-      return fetchCourseTeeTimes(client, course, searchDate)
+      return fetchCourseTeeTimes(page, course, searchDate)
     })
   }).filter(promise => promise !== null)
   
@@ -126,6 +134,10 @@ export const handler = async (event: any) => {
 
   const results = await Promise.all(trackedPromises)
   const teeTimes = results.flat()
+
+  await page.close();
+  await browser.close();
+
 
   // Batch upsert all results to database
   console.log(`Saving ${results.length} course/date combinations to database`)
@@ -165,5 +177,15 @@ export const handler = async (event: any) => {
     }),
   };
   return response;
-  };
-  
+};
+
+// Allow direct execution when running the file directly
+if (require.main === module) {
+  handler({}).then(result => {
+    console.log('Direct execution completed');
+    console.log('Result:', JSON.stringify(result, null, 2));
+  }).catch(error => {
+    console.error('Direct execution failed:', error);
+    process.exit(1);
+  });
+}
