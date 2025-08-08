@@ -1,6 +1,6 @@
 import { Course } from "./Course";
 import { TeeTime } from "./TeeTime";
-  import * as Sentry from "@sentry/aws-serverless";
+import * as Sentry from "@sentry/node";
 
 
 const CHRONO_LIGHTSPEED = "CHRONO_LIGHTSPEED"
