@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from "react"
 import Select, { MultiValue, StylesConfig } from 'react-select'
+import posthog from 'posthog-js'
 import {
   Dialog,
   DialogContent,
@@ -147,7 +148,7 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
     };
   });
 
-  // Custom styles for React Select with black colors
+  // Custom styles for React Select with green colors
   const selectStyles: StylesConfig<SelectOption, true> = {
     control: (provided) => ({
       ...provided,
@@ -160,8 +161,8 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
         borderColor: '#cbd5e0'
       },
       '&:focus-within': {
-        borderColor: '#000000',
-        boxShadow: '0 0 0 2px rgba(0, 0, 0, 0.1)'
+        borderColor: '#166534', // green-800
+        boxShadow: '0 0 0 2px rgba(22, 101, 52, 0.1)' // green-800 with opacity
       }
     }),
     placeholder: (provided) => ({
@@ -170,7 +171,7 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
     }),
     multiValue: (provided) => ({
       ...provided,
-      backgroundColor: '#000000',
+      backgroundColor: '#166534', // green-800
       borderRadius: '4px'
     }),
     multiValueLabel: (provided) => ({
@@ -182,7 +183,7 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
       ...provided,
       color: 'white',
       '&:hover': {
-        backgroundColor: '#374151',
+        backgroundColor: '#15803d', // green-700
         color: 'white'
       }
     }),
@@ -192,9 +193,9 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
       backgroundColor: state.isDisabled 
         ? '#f9fafb' 
         : state.isSelected 
-          ? '#000000' 
+          ? '#166534' // green-800
           : state.isFocused 
-            ? '#f3f4f6' 
+            ? '#f0fdf4' // green-50
             : 'white',
       cursor: state.isDisabled ? 'not-allowed' : 'pointer',
       opacity: state.isDisabled ? 0.6 : 1,
@@ -202,8 +203,8 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
         backgroundColor: state.isDisabled 
           ? '#f9fafb' 
           : state.isSelected 
-            ? '#000000' 
-            : '#f3f4f6'
+            ? '#166534' // green-800
+            : '#f0fdf4' // green-50
       }
     })
   };
@@ -279,6 +280,14 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
   };
 
   const handleNoThanks = () => {
+    posthog.capture('subscription-form-dismissed', {
+      region: localSelectedRegion,
+      golf_days_count: golfDays.length,
+      selected_cities_count: selectedCities.length,
+      selected_courses_count: selectedCourses.length,
+      email_days_count: emailDays.length,
+      email_field_filled: email.trim().length > 0,
+    })
     sessionStorage.setItem('subscription-dismissed', 'true')
     if (onDismiss) {
       onDismiss()
@@ -288,7 +297,7 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
 
   const handleSubmit = async () => {
     // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    const emailRegex = /^[^\[s@]+@\[^\s@]+\.\[^\s@]+$/
     if (!email || !emailRegex.test(email)) {
       alert("Please enter a valid email address")
       return
@@ -312,6 +321,16 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
         region: localSelectedRegion,
       })
       
+      posthog.capture('subscription-created', {
+        region: localSelectedRegion,
+        golf_days_count: golfDays.length,
+        selected_cities_count: selectedCities.length,
+        selected_courses_count: selectedCourses.length,
+        email_days_count: emailDays.length,
+        time_from: timeFrom,
+        time_to: timeTo,
+      })
+
       // Set sessionStorage to dismiss the subscription dialog
       sessionStorage.setItem('subscription-dismissed', 'true')
       

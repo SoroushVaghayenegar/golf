@@ -1,3 +1,4 @@
+import posthog from 'posthog-js';
 import { parseDateTimeInVancouver } from "../services/timezoneService";
 import { TeeTime } from "../services/teeTimeService";
 import { StarIcon } from "@heroicons/react/24/outline";
@@ -108,7 +109,7 @@ const WeatherInfo = ({ teeTime }: { teeTime: TeeTime }) => {
   const iconColor = getWeatherIconColor(teeTime.weather_code);
 
   return (
-    <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+    <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-slate-50 to-indigo-50 rounded-lg border border-blue-100">
       {/* Weather Icon */}
       <div className="flex-shrink-0">
         <WeatherIcon className={`w-6 h-6 ${iconColor}`} />
@@ -215,6 +216,10 @@ export default function TeeTimeCard({ teeTime, index, onRemoveCourse, onVisibili
   const handleRemoveCourse = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    posthog.capture('course_removed_from_filters', {
+      course_name: teeTime.course_name,
+      city: teeTime.city,
+    });
     onRemoveCourse(teeTime.course_name);
   };
 
@@ -262,7 +267,7 @@ export default function TeeTimeCard({ teeTime, index, onRemoveCourse, onVisibili
                 })}
               </p>
               <div className="flex items-center gap-2 sm:gap-4 text-sm text-slate-600 flex-wrap">
-                <span className="bg-slate-100 px-2 py-1 rounded-full whitespace-nowrap">
+                <span className="bg-blue-100 px-2 py-1 rounded-full whitespace-nowrap">
                   {teeTime.holes} holes
                 </span>
                 <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full whitespace-nowrap">
@@ -271,7 +276,7 @@ export default function TeeTimeCard({ teeTime, index, onRemoveCourse, onVisibili
               </div>
             </div>
             <div className="text-right flex-shrink-0">
-              <p className="text-xl sm:text-2xl font-bold text-blue-600">
+              <p className="text-xl sm:text-2xl font-bold text-green-700">
                 ${Number(teeTime.price).toFixed(2)}
               </p>
               <p className="text-xs text-slate-500 whitespace-nowrap">per person</p>
@@ -286,6 +291,15 @@ export default function TeeTimeCard({ teeTime, index, onRemoveCourse, onVisibili
               href={teeTime.booking_link}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => {
+                posthog.capture('booking_link_clicked', {
+                  course_name: teeTime.course_name,
+                  booking_link: teeTime.booking_link,
+                  price: teeTime.price,
+                  players_available: teeTime.players_available,
+                  booking_source: teeTime.booking_link?.includes('cps') ? 'Course Website' : 'ChronoGolf'
+                });
+              }}
               className={`w-full px-4 py-3 font-semibold rounded-lg transition-all duration-200 text-center block transform hover:scale-[1.02] active:scale-[0.98] max-w-full overflow-hidden ${
                 teeTime.booking_link.includes('cps')
                   ? 'bg-black hover:bg-gray-800 text-white shadow-lg hover:shadow-xl'

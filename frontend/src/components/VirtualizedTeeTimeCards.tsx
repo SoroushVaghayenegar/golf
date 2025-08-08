@@ -320,7 +320,7 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
             <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase flex-shrink-0">Sort By</span>
             <Listbox value={sortBy} onChange={setSortBy}>
               <div className="relative flex-shrink-0">
-                <Listbox.Button className="px-3 sm:px-4 py-2 text-left bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-blue-200 transition-colors w-full sm:min-w-[180px] max-w-[200px]">
+                <Listbox.Button className="px-3 sm:px-4 py-2 text-left bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary hover:border-primary transition-colors w-full sm:min-w-[180px] max-w-[200px]">
                   <div className="flex items-center justify-between">
                     <span className="font-medium text-slate-700 text-xs sm:text-sm truncate">
                       {sortBy === 'startTime' && 'Start Time'}
@@ -342,7 +342,7 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
                     value="startTime"
                     className={({ active }) =>
                       `px-4 py-2.5 cursor-pointer flex items-center justify-between text-sm ${
-                        active ? 'bg-blue-50 text-blue-600' : 'text-slate-700'
+                        active ? 'bg-primary text-primary-foreground' : 'text-slate-700'
                       }`
                     }
                   >
@@ -351,7 +351,7 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
                         <span className="font-medium">Start Time</span>
                         <div className="flex items-center gap-1">
                           <ArrowUp className="w-3 h-3" />
-                          {selected && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
+                          {selected && <div className="w-2 h-2 bg-white rounded-full" />}
                         </div>
                       </>
                     )}
@@ -360,7 +360,7 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
                     value="priceAsc"
                     className={({ active }) =>
                       `px-4 py-2.5 cursor-pointer flex items-center justify-between text-sm ${
-                        active ? 'bg-blue-50 text-blue-600' : 'text-slate-700'
+                        active ? 'bg-primary text-primary-foreground' : 'text-slate-700'
                       }`
                     }
                   >
@@ -369,7 +369,7 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
                         <span className="font-medium">Price (Low to High)</span>
                         <div className="flex items-center gap-1">
                           <ArrowUp className="w-3 h-3" />
-                          {selected && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
+                          {selected && <div className="w-2 h-2 bg-white rounded-full" />}
                         </div>
                       </>
                     )}
@@ -378,7 +378,7 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
                     value="priceDesc"
                     className={({ active }) =>
                       `px-4 py-2.5 cursor-pointer flex items-center justify-between text-sm ${
-                        active ? 'bg-blue-50 text-blue-600' : 'text-slate-700'
+                        active ? 'bg-primary text-primary-foreground' : 'text-slate-700'
                       }`
                     }
                   >
@@ -387,7 +387,7 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
                         <span className="font-medium">Price (High to Low)</span>
                         <div className="flex items-center gap-1">
                           <ArrowDown className="w-3 h-3" />
-                          {selected && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
+                          {selected && <div className="w-2 h-2 bg-white rounded-full" />}
                         </div>
                       </>
                     )}
@@ -396,7 +396,7 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
                     value="rating"
                     className={({ active }) =>
                       `px-4 py-2.5 cursor-pointer flex items-center justify-between text-sm ${
-                        active ? 'bg-blue-50 text-blue-600' : 'text-slate-700'
+                        active ? 'bg-primary text-primary-foreground' : 'text-slate-700'
                       }`
                     }
                   >
@@ -405,7 +405,7 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
                         <span className="font-medium">Rating</span>
                         <div className="flex items-center gap-1">
                           <ArrowDown className="w-3 h-3" />
-                          {selected && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
+                          {selected && <div className="w-2 h-2 bg-white rounded-full" />}
                         </div>
                       </>
                     )}
@@ -434,7 +434,7 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
         {!loading && !error && !hasSearched && !isMobile && (
           <div className="flex-1 flex flex-col items-center justify-center relative w-full h-full min-h-[600px]">
             <div 
-              className="fixed inset-0 w-screen h-screen bg-cover bg-center opacity-40 z-0"
+              className="fixed inset-0 w-screen h-screen bg-cover bg-center opacity-60 z-0"
               style={{
                 backgroundImage: 'url(/golf-course.png)',
                 backgroundRepeat: 'no-repeat',
@@ -446,7 +446,7 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
               <h2 className="text-2xl font-semibold text-slate-700 mb-2">
                 Click &quot;Get Tee Times&quot; to find your ideal tee time
               </h2>
-              <p className="text-white">
+              <p className="text-white font-semibold">
                 Select your preferences and discover available tee times
               </p>
             </div>

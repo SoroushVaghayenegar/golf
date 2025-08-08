@@ -1,0 +1,28 @@
+{
+  "name": "fetch-tee-times",
+  "version": "1.0.0",
+  "description": "Lambda function to fetch tee times from golf courses",
+  "main": "index.ts",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "deploy": "npm run build && zip -r function.zip .",
+    "test": "ts-node test-local.ts",
+    "test-js": "ts-node test-local.js",
+    "start": "ts-node index.ts"
+  },
+  "dependencies": {
+    "@sentry/node": "^10.1.0",
+    "@sparticuz/chromium": "^138.0.2",
+    "@supabase/supabase-js": "^2.51.0",
+    "puppeteer": "^24.15.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "dotenv": "^17.2.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  },
+  "ts-node": {
+    "esm": false
+  }
+}

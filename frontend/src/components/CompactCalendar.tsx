@@ -1,5 +1,6 @@
 "use client";
 
+import posthog from 'posthog-js';
 import { useState, useEffect, useRef } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon, X } from "lucide-react";
@@ -73,6 +74,10 @@ export default function CompactCalendar({
 
   const handleDateSelect = (dates: Date[] | undefined) => {
     setSelectedDates(dates);
+    posthog.capture('calendar_date_selected', {
+      selected_dates_count: dates?.length || 0,
+      selected_dates: dates?.map(d => d.toISOString().split('T')[0])
+    });
     // Keep calendar open for multiple date selection
   };
 
@@ -82,6 +87,10 @@ export default function CompactCalendar({
         date.toDateString() !== dateToRemove.toDateString()
       );
       setSelectedDates(newDates.length > 0 ? newDates : undefined);
+      posthog.capture('calendar_date_removed', {
+        removed_date: dateToRemove.toISOString().split('T')[0],
+        remaining_dates_count: newDates.length
+      });
     }
   };
 
@@ -94,9 +103,9 @@ export default function CompactCalendar({
         onClick={() => setIsExpanded(true)}
         className={`
           min-h-[3rem] p-3 border border-slate-200 rounded-lg bg-white cursor-pointer 
-          transition-all duration-200 hover:border-blue-300 hover:shadow-sm
-          focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20
-          ${isExpanded ? 'border-blue-500 shadow-md' : ''}
+          transition-all duration-200 hover:border-primary hover:shadow-sm
+          focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20
+          ${isExpanded ? 'border-primary shadow-md' : ''}
         `}
         tabIndex={0}
         onKeyDown={(e) => {
@@ -120,7 +129,7 @@ export default function CompactCalendar({
                 {sortedDates.slice(0, 3).map((date, index) => (
                   <div
                     key={index}
-                    className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs font-medium"
+                    className="inline-flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground rounded-md text-xs font-medium"
                   >
                     <span>{formatDate(date)}</span>
                     <button
@@ -128,7 +137,7 @@ export default function CompactCalendar({
                         e.stopPropagation();
                         removeDateFromSelection(date);
                       }}
-                      className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                      className="hover:bg-primary/80 rounded-full p-0.5 transition-colors"
                       aria-label={`Remove ${formatDate(date)}`}
                     >
                       <X className="w-3 h-3" />
@@ -147,7 +156,7 @@ export default function CompactCalendar({
                 {sortedDates.slice(0, 4).map((date, index) => (
                   <div
                     key={index}
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-blue-100 text-blue-800 rounded text-xs font-medium"
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-primary text-primary-foreground rounded text-xs font-medium"
                   >
                     <span>{formatDateShort(date)}</span>
                     <button
@@ -155,7 +164,7 @@ export default function CompactCalendar({
                         e.stopPropagation();
                         removeDateFromSelection(date);
                       }}
-                      className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                      className="hover:bg-primary/80 rounded-full p-0.5 transition-colors"
                       aria-label={`Remove ${formatDate(date)}`}
                     >
                       <X className="w-2.5 h-2.5" />
@@ -202,8 +211,8 @@ export default function CompactCalendar({
                 classNames={{
                   root: "!w-full",
                   table: "w-full border-collapse",
-                  day: "relative w-full h-full p-0 text-center group/day aspect-square select-none [&_button[data-selected-single=true]]:bg-blue-500 [&_button[data-selected-single=true]]:text-white [&_button:hover]:bg-blue-50 [&_button:hover]:text-blue-900",
-                  today: "bg-green-100 text-green-800 rounded-md [&_button]:bg-green-100 [&_button]:text-green-800 [&_button[data-selected-single=true]]:!bg-blue-500 [&_button[data-selected-single=true]]:!text-white"
+                  day: "relative w-full h-full p-0 text-center group/day aspect-square select-none [&_button[data-selected-single=true]]:bg-primary [&_button[data-selected-single=true]]:text-primary-foreground [&_button:hover]:bg-primary/10 [&_button:hover]:text-primary",
+                  today: "bg-green-100 text-green-800 rounded-md [&_button]:bg-green-100 [&_button]:text-green-800 [&_button[data-selected-single=true]]:!bg-primary [&_button[data-selected-single=true]]:!text-primary-foreground"
                 }}
                 modifiers={{
                   past: (date: Date) => isPastDateInVancouver(date),
@@ -229,7 +238,7 @@ export default function CompactCalendar({
                   {sortedDates.map((date, index) => (
                     <div
                       key={index}
-                      className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs"
+                      className="inline-flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground rounded text-xs"
                     >
                       {formatDate(date)}
                     </div>

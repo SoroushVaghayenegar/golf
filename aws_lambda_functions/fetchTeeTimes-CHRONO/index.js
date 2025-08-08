@@ -32,27 +32,57 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.handler = void 0;
 const Course_1 = require("./Course");
 const utils_1 = require("./utils");
 const supabase_js_1 = require("@supabase/supabase-js");
 const Sentry = __importStar(require("@sentry/aws-serverless"));
+const axios_1 = __importDefault(require("axios"));
+const tough = __importStar(require("tough-cookie"));
 Sentry.init({
-    dsn: "https://1dc02eb43236272edaca0faba6c990c6@o4509770601332736.ingest.us.sentry.io/4509770808819712",
+    dsn: "https://baa965932d0a9dbd6f12c98dd937d526@o4509770601332736.ingest.us.sentry.io/4509778658000896",
     // Send structured logs to Sentry
     enableLogs: true,
     // Setting this option to true will send default PII data to Sentry.
     // For example, automatic IP address collection on events
     sendDefaultPii: true,
 });
-exports.handler = Sentry.wrapHandler(async (event, context) => {
+const handler = async (event) => {
     // Start timer
     const startTime = performance.now();
     // Create Supabase client
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const supabase = (0, supabase_js_1.createClient)(supabaseUrl, supabaseServiceKey);
+    const jar = new tough.CookieJar();
+    const axiosCookieJarSupport = await eval('import("axios-cookiejar-support")');
+    const { wrapper } = axiosCookieJarSupport;
+    const client = wrapper(axios_1.default.create({
+        jar,
+        timeout: 30000, // 30 second timeout
+        maxRedirects: 5
+    }));
+    // Establish initial session to get CloudFlare and session cookies
+    console.log('Establishing session with Chronogolf...');
+    await client.get('https://www.chronogolf.ca', {
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-CA,en-US;q=0.9,en;q=0.8',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none'
+        }
+    });
+    // Add a small delay to ensure cookies are set
+    await new Promise(resolve => setTimeout(resolve, 1000));
     // Fetch courses from the database with city name
     const { data: coursesData, error } = await supabase
         .from('courses')
@@ -68,25 +98,39 @@ exports.handler = Sentry.wrapHandler(async (event, context) => {
     const courses = coursesData.map(courseData => Course_1.Course.fromObject(courseData));
     console.log(`Fetched ${courses.length} courses`);
     // Get current date in Vancouver timezone 
-    const getVancouverDate = () => {
-        const vancouverTime = new Date(new Date().toLocaleString('en', { timeZone: 'America/Vancouver' }).split(",")[0]);
-        return vancouverTime;
+    const getDate = (timezone) => {
+        const date = new Date(new Date().toLocaleString('en', { timeZone: timezone }).split(",")[0]);
+        return date;
     };
-    const startDate = getVancouverDate();
+    const get24HourFormat = (timezone) => {
+        const time = new Date(new Date().toLocaleString('en', { timeZone: timezone }));
+        const hours = time.getHours().toString().padStart(2, '0');
+        const minutes = time.getMinutes().toString().padStart(2, '0');
+        return `${hours}:${minutes}`;
+    };
     // Process all courses and dates in parallel
     const promises = courses.flatMap(course => {
+        const startDate = getDate(course.timezone);
         return Array.from({ length: course.booking_visibility_days + 1 }, (_, i) => {
+            if (i === course.booking_visibility_days && course.booking_visibility_start_time) {
+                const bookingVisibilityStartTime = (0, utils_1.timeStringToMinutes)(course.booking_visibility_start_time);
+                const currentTime = (0, utils_1.timeStringToMinutes)(get24HourFormat(course.timezone));
+                if (currentTime < bookingVisibilityStartTime) {
+                    // Return null to be filtered out later, instead of invalid structure
+                    return null;
+                }
+            }
             const searchDate = new Date(startDate);
             searchDate.setDate(searchDate.getDate() + i);
-            return (0, utils_1.fetchCourseTeeTimes)(course, searchDate);
+            return (0, utils_1.fetchCourseTeeTimes)(client, course, searchDate);
         });
-    });
+    }).filter(promise => promise !== null);
     console.log(`Fetching tee times for ${promises.length} dates`);
     // Add progress tracking with zero performance impact
     let completed = 0;
     const total = promises.length;
     const trackedPromises = promises.map((promise, index) => promise.then(result => {
-        console.log(`Progress: ${++completed}/${total} (${Math.round((completed / total) * 100)}%)`);
+        // console.log(`Progress: ${++completed}/${total} (${Math.round((completed/total)*100)}%)`)
         return result;
     }));
     const results = await Promise.all(trackedPromises);
@@ -125,4 +169,5 @@ exports.handler = Sentry.wrapHandler(async (event, context) => {
         }),
     };
     return response;
-});
+};
+exports.handler = handler;

@@ -1,11 +1,21 @@
 import { Course } from "./Course";
 import { TeeTime } from "./TeeTime";
 import * as Sentry from "@sentry/aws-serverless";
+import axios from 'axios';
+import * as tough from 'tough-cookie';
+import type { CookieJar } from 'tough-cookie';
+
+// Extend axios types to support jar property
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    jar?: CookieJar;
+  }
+}
 
 
 const CHRONO_LIGHTSPEED = "CHRONO_LIGHTSPEED"
 
-export async function fetchCourseTeeTimes(course: Course, searchDate: Date): Promise<{courseId: number, date: string, teeTimes: TeeTime[]}> {
+export async function fetchCourseTeeTimes(client: any, course: Course, searchDate: Date): Promise<{courseId: number, date: string, teeTimes: TeeTime[]}> {
     if (course.external_api !== CHRONO_LIGHTSPEED) {
       throw new Error(`Unsupported external API: ${course.external_api}`)
     }
@@ -20,6 +30,7 @@ export async function fetchCourseTeeTimes(course: Course, searchDate: Date): Pro
     // Parallelize fetching for each course holes value
     const teeTimesPromises = courseHolesArray.map(holes => 
         fetchTeeTimesFromChronoLightspeed(
+            client,
             course.name,
             clubId,
             courseId,
@@ -41,10 +52,10 @@ export async function fetchCourseTeeTimes(course: Course, searchDate: Date): Pro
 }
 
 
-export async function fetchTeeTimesFromChronoLightspeed(courseName: string, club_id: number, course_id: number, affiliation_type_id: number, course_holes: number, searchDate: Date, clubLinkName: string): Promise<TeeTime[]> {
+export async function fetchTeeTimesFromChronoLightspeed(client: any, courseName: string, club_id: number, course_id: number, affiliation_type_id: number, course_holes: number, searchDate: Date, clubLinkName: string): Promise<TeeTime[]> {
    // format to '%Y-%m-%d'
    const dateString = searchDate.toISOString().split('T')[0]
-   const baseUrl = `https://www.chronogolf.com/marketplace/clubs/${club_id}/teetimes?date=${dateString}&course_id=${course_id}&nb_holes=${course_holes}`
+   const baseUrl = `https://www.chronogolf.ca/marketplace/clubs/${club_id}/teetimes?date=${dateString}&course_id=${course_id}&nb_holes=${course_holes}`
     
    const teeTimesMap: Map<string, Map<string, any>> = new Map();
 
@@ -56,9 +67,10 @@ export async function fetchTeeTimesFromChronoLightspeed(courseName: string, club
            fullUrl += `&affiliation_type_ids%5B%5D=${affiliation_type_id}`;
        }
        
-       try {
-           const response = await fetchWithRetry(courseName, club_id, fullUrl, {}, 5, 6000, 1000);
-           const teeTimes = await response.json();
+      try {
+           const response = await fetchWithRetry(client, courseName, club_id, fullUrl, {}, 3, 3000, 1000);
+           // For axios, the data is already parsed
+           const teeTimes = response.data;
            return { players, teeTimes };
        } catch (error) {
            console.error(error);
@@ -86,7 +98,7 @@ export async function fetchTeeTimesFromChronoLightspeed(courseName: string, club
    
    const teeTimes: TeeTime[] = []
    for (const teeTime of teeTimesMap.values()) {
-    const startDateTime = new Date(teeTime["date"] + "T" + teeTime["start_time"])
+    const startDateTime = teeTime["date"] + "T" + teeTime["start_time"]
     const playersAvailable = teeTime["green_fees"].length
     const price = teeTime["green_fees"][0]["green_fee"]
     const bookingLink = getChronoLightspeedBookingLink(clubLinkName, course_id, course_holes, searchDate, affiliation_type_id, playersAvailable, teeTime["id"])
@@ -109,39 +121,58 @@ function getChronoLightspeedBookingLink(
     return `https://www.chronogolf.ca/club/${clubLinkName}/booking/?source=club&medium=widget#/teetime/review?course_id=${courseId}&nb_holes=${nbHoles}&date=${dateStr}&affiliation_type_ids=${affiliationTypeIds}&teetime_id=${teetimeId}&is_deal=false&new_user=false`;
 }
 
-async function fetchWithRetry(courseName: string, clubId: number, url: string, headers: Record<string, string>, maxRetries: number = 5, maxDelay: number = 19000, minDelay: number = 2000): Promise<Response> {
+async function fetchWithRetry(client: any, courseName: string, clubId: number, url: string, headers: Record<string, string>, maxRetries: number = 5, maxDelay: number = 19000, minDelay: number = 2000): Promise<any> {
   // Add to headers to pretend this is from a safari browser
   headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15";
   headers["Accept"] = "application/json";
-  headers["Content-Type"] = "application/json";
   headers["Accept-Language"] = "en-CA,en-US;q=0.9,en;q=0.8";
   headers["Accept-Encoding"] = "gzip, deflate, br";
   headers["Connection"] = "keep-alive";
   headers["Sec-Fetch-Dest"] = "empty";
   headers["Sec-Fetch-Mode"] = "cors";
-  headers["referer"] = `https://www.chronogolf.ca/en/club/${clubId}/widget?medium=widget&source=club`;
-  headers["cookie"] = `__cf_bm=3OuOH.CupPbfALo7qfMwZmgIwKkC1U5fAlmQlBSUvUg-1754073952-1.0.1.1-h8fDWjQ2banh2hyiFyIAGRTgf.SxBQgQ_yOiA0HGjOE5wSZGbdiNKNTeBtNrI1U3rKaat_2p3zUG9PcD8KEUN_8f80BViGsgRsXRCp8CxNc; cf_clearance=OBACPqL0StpzKJQiqzvo4nigiEHIloCwcEJXS0RLsZA-1754073957-1.2.1.1-1THq6g5DG2O6qHkE1v6yB_Kl8.AlGyituOX3_7F6SK0rP2AdW0_4.1j9ttzUdVi5nvGq0GGYHGLTBdyeuifeTOt6pu3mmWOljg1cXcr36bI5ASYJSD.o0CRdFrzcz6LCNmkYX5d0KuVKOk0xotzSX1I.WXePdTGrkcz6plJ.6TwOd_UFWjyu_kq0akbi.7d0R5ocZ5NnyeoNfpBDzOm8jDmLvUaI674GiPyxTf1vZbc; _chronogolf_session=X4xS%2BBTwZWgnjHkhClbwztpT5KNT9857YIR8vjH2bzL9PG3WMy1bFmrS1VY0V2cdF04UL8LhOsOmTvViLaNe19gNIoc5RbLmUv7hMdN%2BLAhLUDGtN9v7uJ3btL6oJLCH3EUsZ5%2Bx5hk5PIL1N%2FWBDpfA7y2loMmDHp4U78m7C%2FsLRiBsHw7pjiJvKfqAH1LHzXJwtq44hea3qtkviTx%2FIcyWo1ozJ8DS808Je2pzvxGwxWH8LlwNbd298Q118bZU%2FR9%2B1BldLdPep1BvknzAnpuvPtJLrCzQxpnkTdTB34aT96mXHThB5o7qrBOkewB5NS1KXbHFv%2BgWACMt0xqcL0akK0ICdFCGFRNxLXjiLIBHup7WFackqBLR8xN16T6h6CV6GtkH%2BaHtTAM%3D--FEDLYYU3hKYnauuF--z5jiqLQCUzt1cxktPfhSpA%3D%3D`;
-  headers["x-csrf-token"] = "fMW9yPZCtZgtCAk5u3OecSnwokDYOnEbyLDdnw2nkkhNno_HNYJSK0PKdbK0MZz3A3t8vS54EfIHwQ0EfqI_g";
+  headers["Referer"] = `https://www.chronogolf.com/en/club/${clubId}/widget?medium=widget&source=club`;
+  
+  // Create isolated client to prevent shared state corruption
+  const originalJar = client.defaults.jar;
+  const isolatedJar = new tough.CookieJar();
+  
+  // Copy cookies from the shared client to isolated jar
+  try {
+    const cookies = await originalJar.getCookies('https://www.chronogolf.ca');
+    for (const cookie of cookies) {
+      await isolatedJar.setCookie(cookie.toString(), 'https://www.chronogolf.ca');
+    }
+  } catch (cookieError) {
+    console.warn(`[${courseName}] Warning: Could not copy cookies for isolation:`, cookieError);
+  }
+  
+  // Create isolated client for this request
+  const axiosCookieJarSupport = await eval('import("axios-cookiejar-support")');
+  const { wrapper } = axiosCookieJarSupport;
+  const isolatedClient = wrapper(axios.create({
+    jar: isolatedJar,
+    timeout: 30000,
+    maxRedirects: 5
+  }));
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-          const response = await fetch(url, { headers: headers });
-          if (!response.ok) {
+          const response = await isolatedClient.get(url, { headers: headers });
+          // Axios responses have status, not ok property
+          if (response.status >= 400) {
               let errorBody = '';
               try {
-                  // Try to read the response body for error details
-                  errorBody = await response.text();
-                  // Limit error body length to avoid huge logs
-                  // if (errorBody.length > 500) {
-                  //     errorBody = errorBody.substring(0, 500) + '...';
-                  // }
+                  // For axios, the response data is already parsed
+                  errorBody = typeof response.data.errors === 'string' ? response.data.errors : JSON.stringify(response.data.errors);
               } catch (bodyError) {
                   errorBody = 'Unable to read response body';
               }
               
               const errorMessage = `Error fetching ${courseName}: ${response.status} ${response.statusText} ${errorBody ? ` - ${errorBody}` : ''}`;
-              
-              
+              if (response.status === 422) {
+                console.log(errorBody);
+                Sentry.captureException(new Error(errorBody));
+              }
               if (attempt === maxRetries) {
                 Sentry.captureMessage(errorMessage);
                 console.error(`Error status: ${response.status} [${courseName}] ${response.statusText} ${errorBody ? ` - ${errorBody}` : ''}`);
@@ -149,13 +180,14 @@ async function fetchWithRetry(courseName: string, clubId: number, url: string, h
               throw new Error(errorMessage);
           }
           return response;
-      } catch (error) {
+      } catch (error) { 
           if (attempt < maxRetries) {
               const delay = Math.floor(Math.random() * maxDelay) + minDelay; // Random delay between 1000-15000ms
               await new Promise(resolve => setTimeout(resolve, delay));
-          }
-          else{
-            Sentry.captureException(error);
+          } else {
+            const errorMessage = `[${courseName}] All ${maxRetries} attempts failed. Final error: ${JSON.stringify(error)}`;
+            console.error(errorMessage);
+            Sentry.captureException(new Error(errorMessage));
           }
       }
   }
@@ -232,4 +264,9 @@ export async function batchUpsertTeeTimes(
   console.log(`Batch upsert completed: ${totalRecords} records processed, ${errors.length} batches with errors`)
   
   return result
+}
+
+export function timeStringToMinutes(timeStr: string): number {
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  return hours * 60 + minutes;
 }
