@@ -297,7 +297,7 @@ export default function TeeTimeCard({ teeTime, index, onRemoveCourse, onVisibili
                   booking_link: teeTime.booking_link,
                   price: teeTime.price,
                   players_available: teeTime.players_available,
-                  booking_source: teeTime.booking_link.includes('cps') ? 'Course Website' : 'ChronoGolf'
+                  booking_source: teeTime.booking_link?.includes('cps') ? 'Course Website' : 'ChronoGolf'
                 });
               }}
               className={`w-full px-4 py-3 font-semibold rounded-lg transition-all duration-200 text-center block transform hover:scale-[1.02] active:scale-[0.98] max-w-full overflow-hidden ${

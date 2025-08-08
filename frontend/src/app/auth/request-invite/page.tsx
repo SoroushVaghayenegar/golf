@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { SignUpForm } from '@/components/sign-up-form'
+import { RequestInviteForm } from '@/components/request-invite-form'
 
 export default function Page() {
   return (
@@ -11,7 +11,7 @@ export default function Page() {
             <Image src="/logo.png" alt="Golf logo" width={120} height={120} priority />
           </Link>
         </div>
-        <SignUpForm />
+        <RequestInviteForm />
       </div>
     </div>
   )

@@ -37,8 +37,8 @@ export default function Navbar() {
           <LogoutButton />
         ) : (
           <div className="flex items-center gap-3 text-sm">
-            <Link href="/auth/sign-up" className="hover:underline" onClick={() => posthog.capture('navbar-signup-clicked')}>Sign up</Link>
-            <span className="text-gray-600">|</span>
+            {/* <Link href="/auth/sign-up" className="hover:underline" onClick={() => posthog.capture('navbar-signup-clicked')}>Sign up</Link>
+            <span className="text-gray-600">|</span> */}
             <Link href="/auth/login" className="hover:underline" onClick={() => posthog.capture('navbar-login-clicked')}>Login</Link>
           </div>
         )}
