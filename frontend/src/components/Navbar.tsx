@@ -26,7 +26,7 @@ export default function Navbar() {
   }, [])
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-white backdrop-blur rounded-2xl lg:rounded-none">
+    <nav className="sticky top-0 z-50 w-full bg-amber-100 backdrop-blur rounded-2xl lg:rounded-none">
       <div className="flex items-center justify-between py-3 px-10 lg:px-25">
         <Link href="/" className="flex items-center gap-2">
           <Image src="/logo.png" alt="TeeClub" width={100} height={100} />
