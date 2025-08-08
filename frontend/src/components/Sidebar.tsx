@@ -241,8 +241,8 @@ export default function Sidebar({
         borderColor: '#cbd5e0'
       },
       '&:focus-within': {
-        borderColor: '#3b82f6',
-        boxShadow: '0 0 0 2px rgba(59, 130, 246, 0.1)'
+        borderColor: '#166534', // green-800
+        boxShadow: '0 0 0 2px rgba(22, 101, 52, 0.1)' // green-800 with opacity
       }
     }),
     valueContainer: (provided) => ({
@@ -257,7 +257,7 @@ export default function Sidebar({
     }),
     multiValue: (provided) => ({
       ...provided,
-      backgroundColor: '#3b82f6',
+      backgroundColor: '#166534', // green-800
       borderRadius: '4px',
       margin: '2px 4px 2px 0',
       maxWidth: 'calc(100% - 8px)'
@@ -271,7 +271,7 @@ export default function Sidebar({
       ...provided,
       color: 'white',
       '&:hover': {
-        backgroundColor: '#2563eb',
+        backgroundColor: '#15803d', // green-700
         color: 'white'
       }
     }),
@@ -281,9 +281,9 @@ export default function Sidebar({
       backgroundColor: state.isDisabled 
         ? '#f9fafb' 
         : state.isSelected 
-          ? '#3b82f6' 
+          ? '#166534' // green-800
           : state.isFocused 
-            ? '#eff6ff' 
+            ? '#f0fdf4' // green-50
             : 'white',
       cursor: state.isDisabled ? 'not-allowed' : 'pointer',
       opacity: state.isDisabled ? 0.6 : 1,
@@ -291,8 +291,8 @@ export default function Sidebar({
         backgroundColor: state.isDisabled 
           ? '#f9fafb' 
           : state.isSelected 
-            ? '#3b82f6' 
-            : '#eff6ff'
+            ? '#166534' // green-800
+            : '#f0fdf4' // green-50
       }
     })
   };
@@ -330,8 +330,8 @@ export default function Sidebar({
                   onClick={() => setNumOfPlayers(option)}
                   className={`flex-1 px-3 py-2 rounded-lg border text-sm transition-all duration-200 ${
                     numOfPlayers === option
-                      ? 'bg-blue-500 text-white border-blue-500 shadow-md'
-                      : 'bg-white hover:bg-blue-50 border-slate-200 text-slate-700 hover:border-blue-200'
+                      ? 'bg-sidebar-primary text-white border-sidebar-primary shadow-md'
+                      : 'bg-white hover:bg-green-200 border-slate-200 text-slate-700 hover:border-sidebar-primary'
                   }`}
                 >
                   {option === "any" ? "Any" : option}
@@ -358,7 +358,7 @@ export default function Sidebar({
             </div>
             <Listbox value={holes} onChange={setHoles}>
               <div className="relative">
-                <Listbox.Button className="w-full px-4 py-2 text-left bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-blue-200 transition-colors font-medium text-slate-700">
+                <Listbox.Button className="w-full px-4 py-2 text-left bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sidebar-primary hover:border-sidebar-primary transition-colors font-medium text-slate-700">
                   <span>{holes === "any" ? "Any" : holes}</span>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 </Listbox.Button>
@@ -369,7 +369,7 @@ export default function Sidebar({
                       value={option.value}
                       className={({ active }) =>
                         `px-4 py-2 cursor-pointer font-medium ${
-                          active ? 'bg-blue-50 text-blue-600' : 'text-slate-700'
+                          active ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-slate-700'
                         }`
                       }
                     >
@@ -403,7 +403,7 @@ export default function Sidebar({
                   }}
                 >
                   <div
-                    className="h-2 bg-blue-500 rounded-full"
+                    className="h-2 bg-sidebar-primary rounded-full"
                     style={{
                       width: `${((timeRange[1] - timeRange[0]) / (22 - 5)) * 100}%`,
                       left: `${((timeRange[0] - 5) / (22 - 5)) * 100}%`,
@@ -419,7 +419,7 @@ export default function Sidebar({
                   <div
                     key={key}
                     {...otherProps}
-                    className="w-6 h-6 bg-blue-500 rounded-full shadow-lg flex items-center justify-center cursor-pointer"
+                    className="w-6 h-6 bg-sidebar-primary rounded-full shadow-lg flex items-center justify-center cursor-pointer"
                     style={{
                       ...otherProps.style,
                       transform: 'translateY(-50%)',
@@ -445,7 +445,7 @@ export default function Sidebar({
           </div>
           <Listbox value={selectedRegion} onChange={setSelectedRegion}>
             <div className="relative">
-              <Listbox.Button className="w-full px-4 py-2 text-left bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-blue-200 transition-colors font-medium text-slate-700">
+              <Listbox.Button className="w-full px-4 py-2 text-left bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sidebar-primary hover:border-sidebar-primary transition-colors font-medium text-slate-700">
                 <span>{regions.find(r => r.value === selectedRegion)?.label || 'Select Region'}</span>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
               </Listbox.Button>
@@ -456,7 +456,7 @@ export default function Sidebar({
                     value={region.value}
                     className={({ active }) =>
                       `px-4 py-2 cursor-pointer font-medium ${
-                        active ? 'bg-blue-50 text-blue-600' : 'text-slate-700'
+                        active ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-slate-700'
                       }`
                     }
                   >
@@ -480,10 +480,10 @@ export default function Sidebar({
               {!showCitySelector && <span className="text-xs font-medium text-slate-600">All</span>}
               <button
                 onClick={handleCityToggle}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-sidebar-primary focus:ring-offset-2 ${
                   showCitySelector
-                    ? 'bg-slate-300 hover:bg-slate-400'
-                    : 'bg-blue-500 hover:bg-blue-600'
+                    ? 'bg-sidebar-primary hover:bg-sidebar-primary-hover'
+                    : 'bg-slate-300 hover:bg-slate-400'
                 }`}
                 role="switch"
                 aria-checked={showCitySelector}
@@ -544,10 +544,10 @@ export default function Sidebar({
               {!showCourseSelector && <span className="text-xs font-medium text-slate-600">All</span>}
               <button
                 onClick={handleCourseToggle}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-sidebar-primary focus:ring-offset-2 ${
                   showCourseSelector
-                    ? 'bg-slate-400 hover:bg-slate-500'
-                    : 'bg-blue-500 hover:bg-blue-600'
+                    ? 'bg-sidebar-primary hover:bg-sidebar-primary-hover'
+                    : 'bg-slate-300 hover:bg-slate-400'
                 }`}
                 role="switch"
                 aria-checked={showCourseSelector}
@@ -604,7 +604,7 @@ export default function Sidebar({
         className={`mt-8 lg:mt-0 px-6 py-3 rounded-lg font-semibold text-white transition-all duration-200 ${
           loading || !selectedDates || selectedDates.length === 0
             ? 'bg-slate-300 cursor-not-allowed'
-            : 'bg-blue-500 hover:bg-blue-600 shadow-md hover:shadow-lg'
+            : 'bg-sidebar-primary hover:bg-sidebar-primary-hover shadow-md hover:shadow-lg'
         }`}
       >
         {loading ? 'Searching...' : 'Get Tee Times'}

@@ -108,7 +108,7 @@ const WeatherInfo = ({ teeTime }: { teeTime: TeeTime }) => {
   const iconColor = getWeatherIconColor(teeTime.weather_code);
 
   return (
-    <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+    <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-slate-50 to-indigo-50 rounded-lg border border-blue-100">
       {/* Weather Icon */}
       <div className="flex-shrink-0">
         <WeatherIcon className={`w-6 h-6 ${iconColor}`} />
@@ -262,7 +262,7 @@ export default function TeeTimeCard({ teeTime, index, onRemoveCourse, onVisibili
                 })}
               </p>
               <div className="flex items-center gap-2 sm:gap-4 text-sm text-slate-600 flex-wrap">
-                <span className="bg-slate-100 px-2 py-1 rounded-full whitespace-nowrap">
+                <span className="bg-blue-100 px-2 py-1 rounded-full whitespace-nowrap">
                   {teeTime.holes} holes
                 </span>
                 <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full whitespace-nowrap">
@@ -271,7 +271,7 @@ export default function TeeTimeCard({ teeTime, index, onRemoveCourse, onVisibili
               </div>
             </div>
             <div className="text-right flex-shrink-0">
-              <p className="text-xl sm:text-2xl font-bold text-blue-600">
+              <p className="text-xl sm:text-2xl font-bold text-green-700">
                 ${Number(teeTime.price).toFixed(2)}
               </p>
               <p className="text-xs text-slate-500 whitespace-nowrap">per person</p>

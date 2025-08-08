@@ -158,6 +158,7 @@ async function getAccessTokenWithRetry(courseName: string, url: string, body: Re
       }
     }
   }
+  Sentry.captureException(new Error(`[${courseName}] Failed to get access token after ${maxRetries} attempts`));
   throw new Error(`[${courseName}] Failed to get access token after ${maxRetries} attempts`);
 }
 
