@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { LogoutButton } from '@/components/logout-button'
+import posthog from 'posthog-js'
 
 export default function Navbar() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
@@ -28,7 +29,7 @@ export default function Navbar() {
   return (
     <nav className="sticky top-0 z-50 w-full bg-amber-100 backdrop-blur rounded-2xl lg:rounded-none">
       <div className="flex items-center justify-between py-3 px-10 lg:px-25">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2" onClick={() => posthog.capture('navbar-logo-clicked')}>
           <Image src="/logo.png" alt="TeeClub" width={100} height={100} />
         </Link>
 
@@ -36,14 +37,12 @@ export default function Navbar() {
           <LogoutButton />
         ) : (
           <div className="flex items-center gap-3 text-sm">
-            <Link href="/auth/sign-up" className="hover:underline">Sign up</Link>
+            <Link href="/auth/sign-up" className="hover:underline" onClick={() => posthog.capture('navbar-signup-clicked')}>Sign up</Link>
             <span className="text-gray-600">|</span>
-            <Link href="/auth/login" className="hover:underline">Login</Link>
+            <Link href="/auth/login" className="hover:underline" onClick={() => posthog.capture('navbar-login-clicked')}>Login</Link>
           </div>
         )}
       </div>
     </nav>
   )
 }
-
-

@@ -1,4 +1,5 @@
 "use client";
+import posthog from 'posthog-js';
 import { useState, useEffect, useRef } from "react";
 import { fetchTeeTimes, type TeeTime } from "../services/teeTimeService";
 import { 
@@ -26,6 +27,10 @@ const useRegionWithStorage = (defaultRegion: string = 'Metro Vancouver') => {
 
   // Save to localStorage whenever region changes
   const setRegionWithStorage = (region: string) => {
+    posthog.capture('region_changed', {
+      new_region: region,
+      previous_region: selectedRegion
+    });
     setSelectedRegion(region);
     localStorage.setItem('selectedRegion', region);
   };
@@ -129,6 +134,17 @@ export default function Home() {
       setError('Please select at least one date');
       return;
     }
+
+    posthog.capture('tee_times_searched', {
+      dates_count: selectedDates.length,
+      num_of_players: numOfPlayers,
+      holes: holes,
+      region: selectedRegion,
+      start_time_filter: timeRange[0],
+      end_time_filter: timeRange[1],
+      selected_cities_count: selectedCities.length,
+      selected_courses_count: selectedCourses.length,
+    });
     
     const startTime = Date.now();
     setLoading(true);

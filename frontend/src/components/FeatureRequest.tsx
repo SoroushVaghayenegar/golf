@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import posthog from 'posthog-js';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -39,6 +40,7 @@ export default function FeatureRequest() {
       return;
     }
     
+    posthog.capture('feature_request_submitted', { request_type: requestType });
     setIsSubmitting(true);
     setError("");
     
@@ -72,6 +74,7 @@ export default function FeatureRequest() {
       return;
     }
     
+    posthog.capture('bug_report_submitted');
     setIsSubmitting(true);
     setError("");
     
@@ -282,3 +285,4 @@ export default function FeatureRequest() {
     </>
   );
 } 
+      

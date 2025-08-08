@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from "react"
 import Select, { MultiValue, StylesConfig } from 'react-select'
+import posthog from 'posthog-js'
 import {
   Dialog,
   DialogContent,
@@ -279,6 +280,14 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
   };
 
   const handleNoThanks = () => {
+    posthog.capture('subscription-form-dismissed', {
+      region: localSelectedRegion,
+      golf_days_count: golfDays.length,
+      selected_cities_count: selectedCities.length,
+      selected_courses_count: selectedCourses.length,
+      email_days_count: emailDays.length,
+      email_field_filled: email.trim().length > 0,
+    })
     sessionStorage.setItem('subscription-dismissed', 'true')
     if (onDismiss) {
       onDismiss()
@@ -288,7 +297,7 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
 
   const handleSubmit = async () => {
     // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    const emailRegex = /^[^\[s@]+@\[^\s@]+\.\[^\s@]+$/
     if (!email || !emailRegex.test(email)) {
       alert("Please enter a valid email address")
       return
@@ -312,6 +321,16 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
         region: localSelectedRegion,
       })
       
+      posthog.capture('subscription-created', {
+        region: localSelectedRegion,
+        golf_days_count: golfDays.length,
+        selected_cities_count: selectedCities.length,
+        selected_courses_count: selectedCourses.length,
+        email_days_count: emailDays.length,
+        time_from: timeFrom,
+        time_to: timeTo,
+      })
+
       // Set sessionStorage to dismiss the subscription dialog
       sessionStorage.setItem('subscription-dismissed', 'true')
       

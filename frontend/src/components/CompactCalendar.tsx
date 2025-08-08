@@ -1,5 +1,6 @@
 "use client";
 
+import posthog from 'posthog-js';
 import { useState, useEffect, useRef } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon, X } from "lucide-react";
@@ -73,6 +74,10 @@ export default function CompactCalendar({
 
   const handleDateSelect = (dates: Date[] | undefined) => {
     setSelectedDates(dates);
+    posthog.capture('calendar_date_selected', {
+      selected_dates_count: dates?.length || 0,
+      selected_dates: dates?.map(d => d.toISOString().split('T')[0])
+    });
     // Keep calendar open for multiple date selection
   };
 
@@ -82,6 +87,10 @@ export default function CompactCalendar({
         date.toDateString() !== dateToRemove.toDateString()
       );
       setSelectedDates(newDates.length > 0 ? newDates : undefined);
+      posthog.capture('calendar_date_removed', {
+        removed_date: dateToRemove.toISOString().split('T')[0],
+        remaining_dates_count: newDates.length
+      });
     }
   };
 
