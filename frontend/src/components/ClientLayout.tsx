@@ -9,11 +9,12 @@ import Toaster from '@/components/ui/sonner'
 export default function ClientLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const isAuthRoute = pathname?.startsWith('/auth')
+  const isHome = pathname === '/'
 
   return (
     <>
-      {!isAuthRoute && <Navbar />}
-      <div className={!isAuthRoute ? 'pt-16' : ''}>
+      {!isAuthRoute && <Navbar variant={isHome ? 'home' : 'sticky'} />}
+      <div className={!isAuthRoute ? 'lg:pt-16' : ''}>
         {children}
       </div>
       <FeatureRequest />
