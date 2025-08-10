@@ -8,8 +8,6 @@ import {
 } from "../services/timezoneService";
 import VirtualizedTeeTimeCards, { VirtualizedTeeTimeCardsRef } from "@/components/VirtualizedTeeTimeCards";
 import Sidebar from "@/components/Sidebar";
-import FeatureRequest from "@/components/FeatureRequest";
-import Navbar from "@/components/Navbar";
 
 // Custom hook for managing region with localStorage persistence
 const useRegionWithStorage = (defaultRegion: string = 'Metro Vancouver') => {
@@ -203,9 +201,8 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-100 p-4 sm:p-10 lg:p-0 font-[family-name:var(--font-geist-sans)] w-full max-w-full overflow-x-hidden">
-      <Navbar />
-      <main className="w-full max-w-full flex flex-col lg:flex-row lg:h-[calc(100vh-64px)] gap-8 lg:gap-0 overflow-x-hidden">
+    <div className="min-h-screen lg:min-h-[calc(100vh-64px)] bg-gradient-to-br from-blue-50 to-slate-100 p-4 sm:p-10 lg:p-0 font-[family-name:var(--font-geist-sans)] w-full max-w-full overflow-x-hidden lg:overflow-y-hidden">
+      <main className="w-full max-w-full flex flex-col lg:flex-row lg:h-[calc(100vh-64px)] lg:min-h-[calc(100vh-64px)] gap-8 lg:gap-0 overflow-x-hidden">
         {isInitialized && (
           <Sidebar
             selectedDates={selectedDates}
@@ -235,7 +232,7 @@ export default function Home() {
         {/* On mobile, only show results section if there are results, loading, or error */}
         {/* On desktop, always show to display initial state */}
         {(!isMobile || teeTimes.length > 0 || loading || !!error) && (
-          <div className="flex-1 lg:p-10 lg:pl-0 lg:pr-10 lg:py-10 px-4 sm:px-10 lg:px-0 w-full max-w-full overflow-x-hidden">
+          <div className="flex-1 lg:p-10 lg:pl-0 lg:pr-10 lg:py-10 px-4 sm:px-10 lg:px-0 w-full max-w-full overflow-x-hidden lg:h-[calc(100vh-64px)] lg:min-h-[calc(100vh-64px)]">
             <VirtualizedTeeTimeCards
               ref={resultsSectionRef}
               teeTimes={teeTimes}
@@ -263,9 +260,6 @@ export default function Home() {
           </div>
         )}
       </main>
-      
-      {/* Feature Request Component */}
-      <FeatureRequest />
     </div>
   );
 }

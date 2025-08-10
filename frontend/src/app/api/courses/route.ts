@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server" 
-import { supabaseClient } from "@/services/supabaseClient"
+import { createClient } from "@/lib/supabase/server"
 
 
 export async function GET(request: NextRequest) {
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: "region parameter is required" }, { status: 400 })
         }
         
-        const { data: coursesData, error } = await supabaseClient
+        const { data: coursesData, error } = await (await createClient())
         .from('courses_view')
         .select('*')
         .eq('region_name', regionParam);

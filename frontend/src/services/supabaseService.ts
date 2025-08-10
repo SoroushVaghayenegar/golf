@@ -1,4 +1,4 @@
-import { supabaseClient } from "./supabaseClient";
+import { createClient } from "@/lib/supabase/client";
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -66,6 +66,9 @@ export const unsubscribe = async (email: string, token: string) => {
 
 export const fetchCourseDisplayNamesAndTheirCities = async (region: string) => {
     try {
+        if (!region) {
+            return {};
+        }
         const response = await fetch(`/api/courses?region=${region}`)
         
         if (!response.ok) {
@@ -83,7 +86,7 @@ export const fetchCourseDisplayNamesAndTheirCities = async (region: string) => {
 
 export const fetchRegions = async () => {
     try {
-        const { data, error } = await supabaseClient
+        const { data, error } = await createClient()
         .from('regions')
         .select('*')
         
