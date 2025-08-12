@@ -231,35 +231,56 @@ export default function CompactCalendar({
             </div>
             
             {isClient ? (
-              <Calendar
-                mode={selectionMode}
-                selected={selectionMode === 'single' ? selectedDates?.[0] : selectedDates}
-                onSelect={(value: any) => {
-                  if (selectionMode === 'single') {
-                    const date: Date | undefined = value as Date | undefined;
+              selectionMode === 'single' ? (
+                <Calendar
+                  mode="single"
+                  selected={selectedDates?.[0]}
+                  onSelect={(date?: Date) => {
                     handleDateSelect(date ? [date] : undefined);
-                  } else {
-                    const dates: Date[] | undefined = value as Date[] | undefined;
+                  }}
+                  fromDate={getMinSelectableDateInVancouver()}
+                  disabled={isDateDisabledInVancouver}
+                  className="w-full"
+                  classNames={{
+                    root: "!w-full",
+                    table: "w-full border-collapse",
+                    day: "relative w-full h-full p-0 text-center group/day aspect-square select-none [&_button[data-selected-single=true]]:bg-sidebar-primary [&_button[data-selected-single=true]]:text-sidebar-primary-foreground [&_button:hover]:bg-sidebar-primary/10 [&_button:hover]:text-sidebar-primary",
+                    today: "bg-green-100 text-green-800 rounded-md [&_button]:bg-green-100 [&_button]:text-green-800 [&_button[data-selected-single=true]]:!bg-sidebar-primary [&_button[data-selected-single=true]]:!text-sidebar-primary-foreground"
+                  }}
+                  modifiers={{
+                    past: (date: Date) => isPastDateInVancouver(date),
+                    today: (date: Date) => todayDate ? (date.toDateString() === todayDate.toDateString()) : false
+                  }}
+                  modifiersStyles={{
+                    past: { color: '#9ca3af', opacity: 0.5 }
+                  }}
+                />
+              ) : (
+                <Calendar
+                  mode="multiple"
+                  required={false}
+                  selected={selectedDates}
+                  onSelect={(dates?: Date[]) => {
                     handleDateSelect(dates);
-                  }
-                }}
-                fromDate={getMinSelectableDateInVancouver()}
-                disabled={isDateDisabledInVancouver}
-                className="w-full"
-                classNames={{
-                  root: "!w-full",
-                  table: "w-full border-collapse",
-                  day: "relative w-full h-full p-0 text-center group/day aspect-square select-none [&_button[data-selected-single=true]]:bg-sidebar-primary [&_button[data-selected-single=true]]:text-sidebar-primary-foreground [&_button:hover]:bg-sidebar-primary/10 [&_button:hover]:text-sidebar-primary",
-                  today: "bg-green-100 text-green-800 rounded-md [&_button]:bg-green-100 [&_button]:text-green-800 [&_button[data-selected-single=true]]:!bg-sidebar-primary [&_button[data-selected-single=true]]:!text-sidebar-primary-foreground"
-                }}
-                modifiers={{
-                  past: (date: Date) => isPastDateInVancouver(date),
-                  today: (date: Date) => todayDate ? (date.toDateString() === todayDate.toDateString()) : false
-                }}
-                modifiersStyles={{
-                  past: { color: '#9ca3af', opacity: 0.5 }
-                }}
-              />
+                  }}
+                  fromDate={getMinSelectableDateInVancouver()}
+                  disabled={isDateDisabledInVancouver}
+                  className="w-full"
+                  classNames={{
+                    root: "!w-full",
+                    table: "w-full border-collapse",
+                    day: "relative w-full h-full p-0 text-center group/day aspect-square select-none [&_button[data-selected-single=true]]:bg-sidebar-primary [&_button[data-selected-single=true]]:text-sidebar-primary-foreground [&_button:hover]:bg-sidebar-primary/10 [&_button:hover]:text-sidebar-primary",
+                    today: "bg-green-100 text-green-800 rounded-md [&_button]:bg-green-100 [&_button]:text-green-800 [&_button[data-selected-single=true]]:!bg-sidebar-primary [&_button[data-selected-single=true]]:!text-sidebar-primary-foreground"
+                  }}
+                  modifiers={{
+                    past: (date: Date) => isPastDateInVancouver(date),
+                    today: (date: Date) => todayDate ? (date.toDateString() === todayDate.toDateString()) : false
+                  }}
+                  modifiersStyles={{
+                    past: { color: '#9ca3af', opacity: 0.5 }
+                  }}
+                />
+              )
             ) : (
               <div className="w-full h-64 flex items-center justify-center text-slate-500">
                 Loading calendar...
