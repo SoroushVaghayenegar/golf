@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { useState } from 'react'
-import { supabaseClient } from '@/services/supabaseClient'
+import { createClient } from '@/lib/supabase/client'
 
 
 export function RequestInviteForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
@@ -28,7 +28,7 @@ export function RequestInviteForm({ className, ...props }: React.ComponentPropsW
     setError(null)
 
     try {
-      const { error } = await supabaseClient
+      const { error } = await createClient()
         .from('signup_invites')
         .insert({email})
 

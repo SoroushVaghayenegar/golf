@@ -16,6 +16,9 @@ interface CompactCalendarProps {
   isClient: boolean;
   todayDate: Date | null;
   className?: string;
+  expandedContainerClassName?: string;
+  closeOnSelect?: boolean;
+  selectionMode?: 'single' | 'multiple';
 }
 
 export default function CompactCalendar({
@@ -23,7 +26,10 @@ export default function CompactCalendar({
   setSelectedDates,
   isClient,
   todayDate,
-  className = ""
+  className = "",
+  expandedContainerClassName,
+  closeOnSelect = false,
+  selectionMode = 'multiple'
 }: CompactCalendarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -73,12 +79,15 @@ export default function CompactCalendar({
   };
 
   const handleDateSelect = (dates: Date[] | undefined) => {
-    setSelectedDates(dates);
+    const next = dates && dates.length > 0 ? [...dates] : undefined;
+    setSelectedDates(next);
     posthog.capture('calendar_date_selected', {
-      selected_dates_count: dates?.length || 0,
-      selected_dates: dates?.map(d => d.toISOString().split('T')[0])
+      selected_dates_count: next?.length || 0,
+      selected_dates: next?.map(d => d.toISOString().split('T')[0])
     });
-    // Keep calendar open for multiple date selection
+    if (closeOnSelect && next && next.length > 0) {
+      setIsExpanded(false);
+    }
   };
 
   const removeDateFromSelection = (dateToRemove: Date) => {
@@ -94,7 +103,7 @@ export default function CompactCalendar({
     }
   };
 
-  const sortedDates = selectedDates?.sort((a, b) => a.getTime() - b.getTime()) || [];
+  const sortedDates = selectedDates ? [...selectedDates].sort((a, b) => a.getTime() - b.getTime()) : [];
 
   return (
     <div ref={containerRef} className={`relative ${className}`}>
@@ -121,62 +130,83 @@ export default function CompactCalendar({
           <CalendarIcon className="w-4 h-4 text-slate-500 flex-shrink-0" />
           
           {!selectedDates || selectedDates.length === 0 ? (
-            <span className="text-slate-500 text-sm">Select dates...</span>
+            <span className="text-slate-500 text-sm">Select date...</span>
           ) : (
             <div className="flex flex-wrap gap-1.5 flex-1">
-              {/* Show first few dates with full formatting on larger screens */}
-              <div className="hidden sm:flex flex-wrap gap-1.5">
-                {sortedDates.slice(0, 3).map((date, index) => (
-                  <div
-                    key={index}
-                    className="inline-flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground rounded-md text-xs font-medium"
-                  >
-                    <span>{formatDate(date)}</span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeDateFromSelection(date);
-                      }}
-                      className="hover:bg-primary/80 rounded-full p-0.5 transition-colors"
-                      aria-label={`Remove ${formatDate(date)}`}
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
+              {selectionMode === 'multiple' ? (
+                <>
+                  {/* Desktop: show all selected dates */}
+                  <div className="hidden sm:flex flex-wrap gap-1.5">
+                    {sortedDates.map((d) => (
+                      <div key={d.toISOString()} className="inline-flex items-center gap-1 px-2 py-1 bg-sidebar-primary text-sidebar-primary-foreground rounded-md text-xs font-medium">
+                        <span>{formatDate(d)}</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeDateFromSelection(d);
+                          }}
+                          className="hover:bg-sidebar-primary/80 rounded-full p-0.5 transition-colors"
+                          aria-label={`Remove ${formatDate(d)}`}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                ))}
-                {sortedDates.length > 3 && (
-                  <div className="inline-flex items-center px-2 py-1 bg-slate-100 text-slate-600 rounded-md text-xs font-medium">
-                    +{sortedDates.length - 3} more
+                  {/* Mobile: show all selected dates (short labels) */}
+                  <div className="flex sm:hidden flex-wrap gap-1">
+                    {sortedDates.map((d) => (
+                      <div key={d.toISOString()} className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-sidebar-primary text-sidebar-primary-foreground rounded text-xs font-medium">
+                        <span>{formatDateShort(d)}</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeDateFromSelection(d);
+                          }}
+                          className="hover:bg-sidebar-primary/80 rounded-full p-0.5 transition-colors"
+                          aria-label={`Remove ${formatDate(d)}`}
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                )}
-              </div>
-
-              {/* Compact view for mobile */}
-              <div className="flex sm:hidden flex-wrap gap-1">
-                {sortedDates.slice(0, 4).map((date, index) => (
-                  <div
-                    key={index}
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-primary text-primary-foreground rounded text-xs font-medium"
-                  >
-                    <span>{formatDateShort(date)}</span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeDateFromSelection(date);
-                      }}
-                      className="hover:bg-primary/80 rounded-full p-0.5 transition-colors"
-                      aria-label={`Remove ${formatDate(date)}`}
-                    >
-                      <X className="w-2.5 h-2.5" />
-                    </button>
+                </>
+              ) : (
+                <>
+                  {/* Single selection mode - show one date */}
+                  <div className="hidden sm:flex flex-wrap gap-1.5">
+                    <div className="inline-flex items-center gap-1 px-2 py-1 bg-sidebar-primary text-sidebar-primary-foreground rounded-md text-xs font-medium">
+                      <span>{formatDate(sortedDates[0])}</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeDateFromSelection(sortedDates[0]);
+                        }}
+                        className="hover:bg-sidebar-primary/80 rounded-full p-0.5 transition-colors"
+                        aria-label={`Remove ${formatDate(sortedDates[0])}`}
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
                   </div>
-                ))}
-                {sortedDates.length > 4 && (
-                  <div className="inline-flex items-center px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-xs font-medium">
-                    +{sortedDates.length - 4}
+                  <div className="flex sm:hidden flex-wrap gap-1">
+                    <div className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-sidebar-primary text-sidebar-primary-foreground rounded text-xs font-medium">
+                      <span>{formatDateShort(sortedDates[0])}</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeDateFromSelection(sortedDates[0]);
+                        }}
+                        className="hover:bg-sidebar-primary/80 rounded-full p-0.5 transition-colors"
+                        aria-label={`Remove ${formatDate(sortedDates[0])}`}
+                      >
+                        <X className="w-2.5 h-2.5" />
+                      </button>
+                    </div>
                   </div>
-                )}
-              </div>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -187,7 +217,7 @@ export default function CompactCalendar({
         <div className="absolute top-full left-0 right-0 z-50 mt-2">
           <div 
             ref={calendarRef}
-            className="bg-white border border-slate-200 rounded-lg shadow-xl p-4 max-w-fit mx-auto lg:max-w-none"
+            className={`bg-white border border-slate-200 rounded-lg shadow-xl ${expandedContainerClassName ?? 'p-3 max-w-sm mx-auto'}`}
           >
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-sm font-semibold text-slate-800">Select Dates</h3>
@@ -201,27 +231,56 @@ export default function CompactCalendar({
             </div>
             
             {isClient ? (
-              <Calendar
-                mode="multiple"
-                selected={selectedDates}
-                onSelect={handleDateSelect}
-                fromDate={getMinSelectableDateInVancouver()}
-                disabled={isDateDisabledInVancouver}
-                className="w-full"
-                classNames={{
-                  root: "!w-full",
-                  table: "w-full border-collapse",
-                  day: "relative w-full h-full p-0 text-center group/day aspect-square select-none [&_button[data-selected-single=true]]:bg-primary [&_button[data-selected-single=true]]:text-primary-foreground [&_button:hover]:bg-primary/10 [&_button:hover]:text-primary",
-                  today: "bg-green-100 text-green-800 rounded-md [&_button]:bg-green-100 [&_button]:text-green-800 [&_button[data-selected-single=true]]:!bg-primary [&_button[data-selected-single=true]]:!text-primary-foreground"
-                }}
-                modifiers={{
-                  past: (date: Date) => isPastDateInVancouver(date),
-                  today: (date: Date) => todayDate ? (date.toDateString() === todayDate.toDateString()) : false
-                }}
-                modifiersStyles={{
-                  past: { color: '#9ca3af', opacity: 0.5 }
-                }}
-              />
+              selectionMode === 'single' ? (
+                <Calendar
+                  mode="single"
+                  selected={selectedDates?.[0]}
+                  onSelect={(date?: Date) => {
+                    handleDateSelect(date ? [date] : undefined);
+                  }}
+                  fromDate={getMinSelectableDateInVancouver()}
+                  disabled={isDateDisabledInVancouver}
+                  className="w-full"
+                  classNames={{
+                    root: "!w-full",
+                    table: "w-full border-collapse",
+                    day: "relative w-full h-full p-0 text-center group/day aspect-square select-none [&_button[data-selected-single=true]]:bg-sidebar-primary [&_button[data-selected-single=true]]:text-sidebar-primary-foreground [&_button:hover]:bg-sidebar-primary/10 [&_button:hover]:text-sidebar-primary",
+                    today: "bg-green-100 text-green-800 rounded-md [&_button]:bg-green-100 [&_button]:text-green-800 [&_button[data-selected-single=true]]:!bg-sidebar-primary [&_button[data-selected-single=true]]:!text-sidebar-primary-foreground"
+                  }}
+                  modifiers={{
+                    past: (date: Date) => isPastDateInVancouver(date),
+                    today: (date: Date) => todayDate ? (date.toDateString() === todayDate.toDateString()) : false
+                  }}
+                  modifiersStyles={{
+                    past: { color: '#9ca3af', opacity: 0.5 }
+                  }}
+                />
+              ) : (
+                <Calendar
+                  mode="multiple"
+                  required={false}
+                  selected={selectedDates}
+                  onSelect={(dates?: Date[]) => {
+                    handleDateSelect(dates);
+                  }}
+                  fromDate={getMinSelectableDateInVancouver()}
+                  disabled={isDateDisabledInVancouver}
+                  className="w-full"
+                  classNames={{
+                    root: "!w-full",
+                    table: "w-full border-collapse",
+                    day: "relative w-full h-full p-0 text-center group/day aspect-square select-none [&_button[data-selected-single=true]]:bg-sidebar-primary [&_button[data-selected-single=true]]:text-sidebar-primary-foreground [&_button:hover]:bg-sidebar-primary/10 [&_button:hover]:text-sidebar-primary",
+                    today: "bg-green-100 text-green-800 rounded-md [&_button]:bg-green-100 [&_button]:text-green-800 [&_button[data-selected-single=true]]:!bg-sidebar-primary [&_button[data-selected-single=true]]:!text-sidebar-primary-foreground"
+                  }}
+                  modifiers={{
+                    past: (date: Date) => isPastDateInVancouver(date),
+                    today: (date: Date) => todayDate ? (date.toDateString() === todayDate.toDateString()) : false
+                  }}
+                  modifiersStyles={{
+                    past: { color: '#9ca3af', opacity: 0.5 }
+                  }}
+                />
+              )
             ) : (
               <div className="w-full h-64 flex items-center justify-center text-slate-500">
                 Loading calendar...
@@ -232,15 +291,19 @@ export default function CompactCalendar({
             {selectedDates && selectedDates.length > 0 && (
               <div className="mt-4 pt-4 border-t border-slate-200">
                 <div className="text-xs font-medium text-slate-600 mb-2">
-                  Selected Dates ({selectedDates.length})
+                  {selectedDates.length > 1 ? 'Selected Dates' : 'Selected Date'}
                 </div>
-                <div className="flex flex-wrap gap-1">
-                  {sortedDates.map((date, index) => (
-                    <div
-                      key={index}
-                      className="inline-flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground rounded text-xs"
-                    >
-                      {formatDate(date)}
+                <div className="flex flex-wrap gap-1.5">
+                  {sortedDates.map((d) => (
+                    <div key={d.toISOString()} className="inline-flex items-center gap-1 px-2 py-1 bg-sidebar-primary text-sidebar-primary-foreground rounded text-xs">
+                      <span>{formatDate(d)}</span>
+                      <button
+                        onClick={() => removeDateFromSelection(d)}
+                        className="hover:bg-sidebar-primary/80 rounded-full p-0.5 transition-colors"
+                        aria-label={`Remove ${formatDate(d)}`}
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
                     </div>
                   ))}
                 </div>

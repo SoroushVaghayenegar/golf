@@ -4,10 +4,14 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { LogoutButton } from '@/components/logout-button'
 import posthog from 'posthog-js'
+import UserDropdown from '@/components/UserDropdown'
 
-export default function Navbar() {
+type NavbarProps = {
+  variant?: 'home' | 'sticky'
+}
+
+export default function Navbar({ variant = 'home' }: NavbarProps) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
 
   useEffect(() => {
@@ -26,23 +30,31 @@ export default function Navbar() {
     }
   }, [])
 
-  return (
-    <nav className="sticky top-0 z-50 w-full bg-amber-100 backdrop-blur rounded-2xl lg:rounded-none">
-      <div className="flex items-center justify-between py-3 px-10 lg:px-25">
-        <Link href="/" className="flex items-center gap-2" onClick={() => posthog.capture('navbar-logo-clicked')}>
-          <Image src="/logo.png" alt="TeeClub" width={100} height={100} />
-        </Link>
+  const wrapperClass = variant === 'home' ? 'py-1 lg:py-0 bg-slate-100' : 'bg-slate-100'
+  const navClass =
+    variant === 'home'
+      ? 'z-50 bg-amber-100 backdrop-blur border-amber-200 mx-3 mt-3 rounded-2xl border shadow-sm sm:mx-0 sm:mt-0 sm:fixed sm:left-0 sm:right-0 sm:top-0 sm:rounded-none sm:border-none sm:border-b'
+      : 'sticky top-0 z-50 bg-amber-100 backdrop-blur border-amber-200 border-b shadow-sm'
 
-        {isAuthenticated ? (
-          <LogoutButton />
-        ) : (
-          <div className="flex items-center gap-3 text-sm">
-            <Link href="/auth/request-invite" className="hover:underline" onClick={() => posthog.capture('navbar-signup-clicked')}>Waitlist</Link>
-            <span className="text-gray-600">|</span>
-            <Link href="/auth/login" className="hover:underline" onClick={() => posthog.capture('navbar-login-clicked')}>Login</Link>
-          </div>
-        )}
-      </div>
-    </nav>
+  return (
+    <div className={wrapperClass}>
+      <nav className={navClass}>
+        <div className="h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link href="/" className="flex items-center gap-2" onClick={() => posthog.capture('navbar-logo-clicked')}>
+            <Image src="/logo.png" alt="TeeClub" width={100} height={100} className="h-10 w-auto" />
+          </Link>
+
+          {isAuthenticated ? (
+            <UserDropdown />
+          ) : (
+            <div className="flex items-center gap-3 text-sm">
+              <Link href="/auth/request-invite" className="hover:underline" onClick={() => posthog.capture('navbar-signup-clicked')}>Waitlist</Link>
+              <span className="text-gray-600">|</span>
+              <Link href="/auth/login" className="hover:underline" onClick={() => posthog.capture('navbar-login-clicked')}>Login</Link>
+            </div>
+          )}
+        </div>
+      </nav>
+    </div>
   )
 }

@@ -1,4 +1,4 @@
-import { supabaseClient } from "./supabaseClient"
+import { createClient } from "@/lib/supabase/client"
 
 export interface FeatureRequest {
     type: string;
@@ -7,7 +7,7 @@ export interface FeatureRequest {
 }
 
 export const sendFeatureRequest = async (featureRequest: FeatureRequest) => {
-    const { data, error } = await supabaseClient
+    const { data, error } = await createClient()
         .from('feature_requests')
         .insert({ 
             type: featureRequest.type, 
