@@ -9,6 +9,7 @@ import {
   Droplets, X
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
+import { getTeeTime } from '@/utils/DateAndTime';
 
 // Weather icon mapping utility
 const getWeatherIcon = (weatherCode: string | null) => {
@@ -260,11 +261,7 @@ export default function TeeTimeCard({ teeTime, index, onRemoveCourse, onVisibili
           <div className="flex items-center justify-between gap-2">
             <div className="flex flex-col gap-1 flex-1 min-w-0">
               <p className="text-xl font-bold text-slate-900">
-                {parseDateTimeInVancouver(teeTime.start_datetime).toLocaleTimeString([], {
-                  hour: 'numeric',
-                  minute: '2-digit',
-                  timeZone: 'America/Vancouver'
-                })}
+                {getTeeTime(teeTime.start_datetime)}
               </p>
               <div className="flex items-center gap-2 sm:gap-4 text-sm text-slate-600 flex-wrap">
                 <span className="bg-blue-100 px-2 py-1 rounded-full whitespace-nowrap">

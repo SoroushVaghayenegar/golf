@@ -332,6 +332,7 @@ export default function WatchlistFilters({
               todayDate={todayDate}
               className="w-full"
               expandedContainerClassName={calendarExpandedClassName}
+              selectionMode="single"
               closeOnSelect
             />
 
