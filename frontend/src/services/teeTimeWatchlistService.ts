@@ -43,6 +43,7 @@ export const getTeeTimeWatchlists = async () => {
         .from('tee_time_watchlists')
         .select('*')
         .eq('notification_sent', false)
+        .gte('date', new Date().toISOString())
 
     if (error) {
         throw error
