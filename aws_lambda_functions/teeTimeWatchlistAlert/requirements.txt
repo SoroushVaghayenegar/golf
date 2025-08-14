@@ -1,0 +1,6 @@
+boto3
+requests
+supabase
+python-dotenv
+
+

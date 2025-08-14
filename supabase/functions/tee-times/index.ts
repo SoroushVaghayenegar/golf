@@ -26,6 +26,8 @@ Deno.serve(async (req)=>{
     
     // get query params
     const datesParam = url.searchParams.get('dates')
+    const startTime = url.searchParams.get('startTime')
+    const endTime = url.searchParams.get('endTime')
     const numOfPlayers = url.searchParams.get('numOfPlayers')
     const holes = url.searchParams.get('holes')
     const courseIdsParam = url.searchParams.get('courseIds')
@@ -57,7 +59,7 @@ Deno.serve(async (req)=>{
     const courseIds = courseIdsParam ? courseIdsParam.split(',').map(id => parseInt(id.trim())) : []
 
     // Get tee times with forecast data
-    const { data, error } = await getTeeTimes(supabase, dates, numOfPlayers, holes, courseIds, region)
+    const { data, error } = await getTeeTimes(supabase, dates, startTime, endTime, numOfPlayers, holes, courseIds, region)
 
     const headers = {
       "access-control-allow-origin": allowedOrigin,
