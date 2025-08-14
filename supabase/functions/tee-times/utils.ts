@@ -62,7 +62,7 @@ export interface TeeTime {
     precipitation: number | null;
 }
 
-export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[], numOfPlayers: string | null, holes: string | null, courseIds: number[], region: string) {
+export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[], startTime: string | null, endTime: string | null, numOfPlayers: string | null, holes: string | null, courseIds: number[], region: string) {
     if (courseIds.length === 0) {
         const { data: coursesData, error } = await supabaseClient
         .from('courses_view')
@@ -144,14 +144,18 @@ export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[
                 return;
             }
             
-            const startTimeString = teeTime.start_datetime.replace(".000Z", "")
-            const startDatetime = new Date(startTimeString)
-            const startTime = startDatetime.toTimeString().slice(0, 5) // HH:MM format
-            
+            const teeTimeStartTimeString = teeTime.start_datetime.replace(".000Z", "")
+            const teeTimeStartDatetime = new Date(teeTimeStartTimeString)
+            const teetimeStartTime = teeTimeStartDatetime.toTimeString().slice(0, 5) // HH:MM format
+
+            if (!isTeeTimeInTimeRange(teetimeStartTime, startTime, endTime)) {
+                return;
+            }
+
             const teeTimeObj: TeeTime = {
                 start_date: typedCourseTeeTimes.date,
-                start_time: startTime,
-                start_datetime: startTimeString,
+                start_time: teetimeStartTime,
+                start_datetime: teeTimeStartTimeString,
                 players_available: typeof teeTime.players_available === 'string' ? parseInt(teeTime.players_available) : teeTime.players_available,
                 course_name: typedCourseTeeTimes.courses.display_name,
                 rating: typedCourseTeeTimes.courses.rating,
@@ -159,14 +163,14 @@ export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[
                 price: teeTime.price,
                 city: typedCourseTeeTimes.courses.cities.name,
                 booking_link: teeTime.booking_link,
-                temperature: getForecastNumber(forecast, 'temperature_2m', startTime),
-                precipitation_probability: getForecastNumber(forecast, 'precipitation_probability', startTime),
-                weather_code: getWeatherDescription(getForecastNumber(forecast, 'weather_code', startTime)),
-                wind_speed: getForecastNumber(forecast, 'wind_speed_10m', startTime),
-                wind_gusts: getForecastNumber(forecast, 'wind_gusts_10m', startTime),
-                cloud_cover: getForecastNumber(forecast, 'cloud_cover', startTime),
-                uv_index: getForecastNumber(forecast, 'uv_index', startTime),
-                precipitation: getForecastNumber(forecast, 'precipitation', startTime)
+                temperature: getForecastNumber(forecast, 'temperature_2m', teetimeStartTime),
+                precipitation_probability: getForecastNumber(forecast, 'precipitation_probability', teetimeStartTime),
+                weather_code: getWeatherDescription(getForecastNumber(forecast, 'weather_code', teetimeStartTime)),
+                wind_speed: getForecastNumber(forecast, 'wind_speed_10m', teetimeStartTime),
+                wind_gusts: getForecastNumber(forecast, 'wind_gusts_10m', teetimeStartTime),
+                cloud_cover: getForecastNumber(forecast, 'cloud_cover', teetimeStartTime),
+                uv_index: getForecastNumber(forecast, 'uv_index', teetimeStartTime),
+                precipitation: getForecastNumber(forecast, 'precipitation', teetimeStartTime)
             }
             
             result.push(teeTimeObj)
@@ -260,4 +264,45 @@ function getWeatherDescription(weatherCode: number | null): string | null {
     };
 
     return weatherCodeMap[weatherCode] || `Unknown weather code: ${weatherCode}`;
+}
+
+function isTeeTimeInTimeRange(teeTimeTime: string, startTime: string | null, endTime: string | null): boolean {
+    // teeTimeTime is in format HH:MM
+    // startTime and endTime are in format HH:MM
+    const parseToMinutes = (timeStr: string | null): number | null => {
+        if (!timeStr) return null;
+        const parts = timeStr.split(":");
+        if (parts.length !== 2) return null;
+        const hour = Number(parts[0]);
+        const minute = Number(parts[1]);
+        if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null;
+        if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+        return hour * 60 + minute;
+    };
+
+    const teeMinutes = parseToMinutes(teeTimeTime);
+    if (teeMinutes === null) return false;
+
+    const startMinutes = parseToMinutes(startTime);
+    const endMinutes = parseToMinutes(endTime);
+
+    // If neither bound provided, include all tee times
+    if (startMinutes === null && endMinutes === null) return true;
+
+    // Only start bound provided: tee >= start
+    if (startMinutes !== null && endMinutes === null) {
+        return teeMinutes >= startMinutes;
+    }
+
+    // Only end bound provided: tee <= end
+    if (startMinutes === null && endMinutes !== null) {
+        return teeMinutes <= endMinutes;
+    }
+
+    // Both bounds provided within the same day
+    if ((startMinutes as number) > (endMinutes as number)) {
+        // Invalid range for same-day window
+        return false;
+    }
+    return teeMinutes >= (startMinutes as number) && teeMinutes <= (endMinutes as number);
 }
