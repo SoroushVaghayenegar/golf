@@ -10,15 +10,15 @@ import VirtualizedTeeTimeCards, { VirtualizedTeeTimeCardsRef } from "@/component
 import Sidebar from "@/components/Sidebar";
 
 // Custom hook for managing region with localStorage persistence
-const useRegionWithStorage = (defaultRegion: string = 'Metro Vancouver') => {
-  const [selectedRegion, setSelectedRegion] = useState<string>(defaultRegion);
+const useRegionIdWithStorage = (defaultRegionId: string = '1') => {
+  const [selectedRegionId, setSelectedRegionId] = useState<string>(defaultRegionId);
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Load from localStorage on mount
   useEffect(() => {
     const savedRegion = localStorage.getItem('selectedRegion');
     if (savedRegion) {
-      setSelectedRegion(savedRegion);
+      setSelectedRegionId(savedRegion);
     }
     setIsInitialized(true);
   }, []);
@@ -27,13 +27,13 @@ const useRegionWithStorage = (defaultRegion: string = 'Metro Vancouver') => {
   const setRegionWithStorage = (region: string) => {
     posthog.capture('region_changed', {
       new_region: region,
-      previous_region: selectedRegion
+      previous_region: selectedRegionId
     });
-    setSelectedRegion(region);
+    setSelectedRegionId(region);
     localStorage.setItem('selectedRegion', region);
   };
 
-  return { selectedRegion, setSelectedRegion: setRegionWithStorage, isInitialized };
+  return { selectedRegionId, setSelectedRegionId: setRegionWithStorage, isInitialized };
 };
 
 export default function Home() {
@@ -46,7 +46,7 @@ export default function Home() {
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
   const [removedCourses, setRemovedCourses] = useState<string[]>([]);
-  const { selectedRegion, setSelectedRegion, isInitialized } = useRegionWithStorage();
+  const { selectedRegionId, setSelectedRegionId, isInitialized } = useRegionIdWithStorage();
   const [sortBy, setSortBy] = useState<'startTime' | 'priceAsc' | 'priceDesc' | 'rating'>('startTime');
   const [teeTimes, setTeeTimes] = useState<TeeTime[]>([]);
   const [loading, setLoading] = useState(false);
@@ -137,7 +137,7 @@ export default function Home() {
       dates_count: selectedDates.length,
       num_of_players: numOfPlayers,
       holes: holes,
-      region: selectedRegion,
+      region: selectedRegionId,
       start_time_filter: timeRange[0],
       end_time_filter: timeRange[1],
       selected_cities_count: selectedCities.length,
@@ -157,7 +157,7 @@ export default function Home() {
         dates: formattedDates, // Array of YYYY-MM-DD strings
         numOfPlayers,
         holes,
-        region: selectedRegion
+        regionId: selectedRegionId
       });
       setTeeTimes(data);
       setFetchedDates(selectedDates);
@@ -223,8 +223,8 @@ export default function Home() {
             isClient={isClient}
             todayDate={todayDate}
             setCourseCityMapping={setCourseCityMapping}
-            selectedRegion={selectedRegion}
-            setSelectedRegion={setSelectedRegion}
+            selectedRegionId={selectedRegionId}
+            setSelectedRegionId={setSelectedRegionId}
           />
         )}
 
@@ -255,7 +255,7 @@ export default function Home() {
               hasSearched={teeTimes.length > 0 || loading || !!error}
               courseCityMapping={courseCityMapping}
               onTeeTimeVisibilityChange={setVisibleTeeTimeCount}
-              selectedRegion={selectedRegion}
+              selectedRegionId={selectedRegionId}
             />
           </div>
         )}

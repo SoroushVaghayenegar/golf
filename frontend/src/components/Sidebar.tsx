@@ -34,8 +34,8 @@ interface SidebarProps {
   isClient: boolean;
   todayDate: Date | null;
   setCourseCityMapping: (mapping: Record<string, string>) => void;
-  selectedRegion: string;
-  setSelectedRegion: (region: string) => void;
+  selectedRegionId: string;
+  setSelectedRegionId: (regionId: string) => void;
 }
 
 export default function Sidebar({
@@ -57,8 +57,8 @@ export default function Sidebar({
   isClient,
   todayDate,
   setCourseCityMapping,
-  selectedRegion,
-  setSelectedRegion
+  selectedRegionId,
+  setSelectedRegionId
 }: SidebarProps) {
   const [cities, setCities] = useState<string[]>([]);
   const [citiesLoading, setCitiesLoading] = useState(false);
@@ -74,8 +74,8 @@ export default function Sidebar({
   useEffect(() => {
     const loadRegions = async () => {
       const regions = await fetchRegions();
-      setRegions(regions.map((region: { value: string; label: string }) => ({
-        value: region.value,
+      setRegions(regions.map((region: { value: number; label: string }) => ({
+        value: region.value.toString(),
         label: region.label
       })));
     };
@@ -92,7 +92,7 @@ export default function Sidebar({
       setSelectedCourses([]);
       
       try {
-        const courseCityData = await fetchCourseDisplayNamesAndTheirCities(selectedRegion);
+        const courseCityData = await fetchCourseDisplayNamesAndTheirCities(selectedRegionId);
         
         if (!courseCityData || typeof courseCityData !== 'object') {
           throw new Error('Invalid data format received from API');
@@ -125,7 +125,7 @@ export default function Sidebar({
     };
 
     loadCitiesAndCourses();
-  }, [selectedRegion, setCourseCityMapping, setSelectedCities, setSelectedCourses]);
+  }, [selectedRegionId, setCourseCityMapping, setSelectedCities, setSelectedCourses]);
 
   // Close tooltip when clicking outside
   useEffect(() => {
@@ -443,10 +443,10 @@ export default function Sidebar({
             <MapPin className="w-5 h-5 text-slate-600" />
             <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase">Region</span>
           </div>
-          <Listbox value={selectedRegion} onChange={setSelectedRegion}>
+          <Listbox value={selectedRegionId} onChange={setSelectedRegionId}>
             <div className="relative">
               <Listbox.Button className="w-full px-4 py-2 text-left bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sidebar-primary hover:border-sidebar-primary transition-colors font-medium text-slate-700">
-                <span>{regions.find(r => r.value === selectedRegion)?.label || 'Select Region'}</span>
+                <span>{regions.find(r => r.value === selectedRegionId)?.label || 'Select Region'}</span>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
               </Listbox.Button>
               <Listbox.Options className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg focus:outline-none">

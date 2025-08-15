@@ -35,10 +35,10 @@ interface SubscriptionSignupProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
   onDismiss?: () => void
-  selectedRegion: string
+  selectedRegionId: string
 }
 
-export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRegion }: SubscriptionSignupProps) {
+export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRegionId }: SubscriptionSignupProps) {
   const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
   const [golfDays, setGolfDays] = useState<string[]>([])
@@ -51,7 +51,7 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
   const [isSubmitting, setIsSubmitting] = useState(false)
   
   // Region and data loading states (initialize with prop value)
-  const [localSelectedRegion, setLocalSelectedRegion] = useState<string>(selectedRegion)
+  const [localSelectedRegionId, setLocalSelectedRegionId] = useState<string>(selectedRegionId)
   const [regions, setRegions] = useState<{ value: string; label: string }[]>([])
   const [cities, setCities] = useState<string[]>([])
   const [courseCityMapping, setCourseCityMapping] = useState<Record<string, string>>({})
@@ -76,15 +76,15 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
 
   // Update local region when prop changes
   useEffect(() => {
-    setLocalSelectedRegion(selectedRegion);
-  }, [selectedRegion]);
+    setLocalSelectedRegionId(selectedRegionId);
+  }, [selectedRegionId]);
 
   // Fetch regions on component mount
   useEffect(() => {
     const loadRegions = async () => {
       const regions = await fetchRegions();
-      setRegions(regions.map((region: { value: string; label: string }) => ({
-        value: region.value,
+      setRegions(regions.map((region: { value: number; label: string }) => ({
+        value: region.value.toString(),
         label: region.label
       })));
     };
@@ -102,7 +102,7 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
       setSelectedCourses([]);
       
       try {
-        const courseCityData = await fetchCourseDisplayNamesAndTheirCities(localSelectedRegion);
+        const courseCityData = await fetchCourseDisplayNamesAndTheirCities(localSelectedRegionId);
         
         if (!courseCityData || typeof courseCityData !== 'object') {
           throw new Error('Invalid data format received from API');
@@ -129,7 +129,7 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
     };
 
     loadCitiesAndCourses();
-  }, [localSelectedRegion]);
+  }, [localSelectedRegionId]);
 
   // Convert cities and courses to react-select format
   const cityOptions = cities.map(city => ({
@@ -281,7 +281,7 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
 
   const handleNoThanks = () => {
     posthog.capture('subscription-form-dismissed', {
-      region: localSelectedRegion,
+      region: localSelectedRegionId,
       golf_days_count: golfDays.length,
       selected_cities_count: selectedCities.length,
       selected_courses_count: selectedCourses.length,
@@ -318,11 +318,11 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
         city_list: selectedCities,
         course_list: selectedCourses,
         broadcast_day_list: emailDays,
-        region: localSelectedRegion,
+        region_id: localSelectedRegionId,
       })
       
       posthog.capture('subscription-created', {
-        region: localSelectedRegion,
+        region: regions.find(region => region.value === localSelectedRegionId)?.label || '',
         golf_days_count: golfDays.length,
         selected_cities_count: selectedCities.length,
         selected_courses_count: selectedCourses.length,
@@ -408,7 +408,7 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
               <MapPin className="w-5 h-5 text-gray-600" />
               <label className="font-semibold">Region</label>
             </div>
-            <ShadcnSelect value={localSelectedRegion} onValueChange={setLocalSelectedRegion}>
+            <ShadcnSelect value={localSelectedRegionId} onValueChange={setLocalSelectedRegionId}>
               <SelectTrigger>
                 <SelectValue placeholder="Select Region" />
               </SelectTrigger>

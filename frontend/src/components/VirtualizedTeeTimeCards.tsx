@@ -40,7 +40,7 @@ interface VirtualizedTeeTimeCardsProps {
   hasSearched: boolean;
   courseCityMapping: Record<string, string>;
   onTeeTimeVisibilityChange?: (visibleCount: number) => void;
-  selectedRegion: string;
+  selectedRegionId: string;
 }
 
 export interface VirtualizedTeeTimeCardsRef {
@@ -68,7 +68,7 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
   isMobile,
   hasSearched,
   onTeeTimeVisibilityChange,
-  selectedRegion
+  selectedRegionId
 }, ref) => {
   
   const sectionRef = useRef<HTMLElement>(null);
@@ -549,7 +549,7 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
                 isOpen={showSubscription} 
                 onOpenChange={setShowSubscription}
                 onDismiss={handleSubscriptionDismiss}
-                selectedRegion={selectedRegion}
+                selectedRegionId={selectedRegionId}
               />
             </div>
           </div>

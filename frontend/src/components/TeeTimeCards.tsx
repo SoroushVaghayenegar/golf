@@ -39,7 +39,7 @@ interface TeeTimeCardsProps {
   hasSearched: boolean;
   courseCityMapping: Record<string, string>;
   onTeeTimeVisibilityChange?: (visibleCount: number) => void;
-  selectedRegion: string;
+  selectedRegionId: string;
 }
 
 export interface TeeTimeCardsRef {
@@ -67,7 +67,7 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
   isMobile,
   hasSearched,
   onTeeTimeVisibilityChange,
-  selectedRegion
+  selectedRegionId
 }, ref) => {
   
   const sectionRef = useRef<HTMLElement>(null);
@@ -445,7 +445,7 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
                 isOpen={showSubscription} 
                 onOpenChange={setShowSubscription}
                 onDismiss={handleSubscriptionDismiss}
-                selectedRegion={selectedRegion}
+                selectedRegionId={selectedRegionId}
               />
             </div>
           </div>

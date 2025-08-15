@@ -31,7 +31,7 @@ Deno.serve(async (req)=>{
     const numOfPlayers = url.searchParams.get('numOfPlayers')
     const holes = url.searchParams.get('holes')
     const courseIdsParam = url.searchParams.get('courseIds')
-    const region = url.searchParams.get('region')
+    const region_id = url.searchParams.get('region_id')
 
     if (!datesParam) {
       return new Response("Dates are required", {
@@ -41,8 +41,8 @@ Deno.serve(async (req)=>{
         }
       })
     }
-    if (!region) {
-      return new Response("Region is required", {
+    if (!region_id) {
+      return new Response("Region ID is required", {
         status: 400,
         headers: {
           "access-control-allow-origin": allowedOrigin
@@ -59,7 +59,7 @@ Deno.serve(async (req)=>{
     const courseIds = courseIdsParam ? courseIdsParam.split(',').map(id => parseInt(id.trim())) : []
 
     // Get tee times with forecast data
-    const { data, error } = await getTeeTimes(supabase, dates, startTime, endTime, numOfPlayers, holes, courseIds, region)
+    const { data, error } = await getTeeTimes(supabase, dates, startTime, endTime, numOfPlayers, holes, courseIds, region_id)
 
     const headers = {
       "access-control-allow-origin": allowedOrigin,
