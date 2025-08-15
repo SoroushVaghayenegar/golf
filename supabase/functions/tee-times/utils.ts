@@ -62,12 +62,12 @@ export interface TeeTime {
     precipitation: number | null;
 }
 
-export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[], startTime: string | null, endTime: string | null, numOfPlayers: string | null, holes: string | null, courseIds: number[], region: string) {
+export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[], startTime: string | null, endTime: string | null, numOfPlayers: string | null, holes: string | null, courseIds: number[], region_id: string) {
     if (courseIds.length === 0) {
         const { data: coursesData, error } = await supabaseClient
         .from('courses_view')
         .select('*')
-        .ilike('region_name', region);
+        .eq('region_id', parseInt(region_id));
 
         if (error) {
             return { data: null, error: error }

@@ -7,15 +7,15 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url)
         
         // Parse query parameters
-        const regionParam = searchParams.get("region")
-        if (!regionParam) {
-            return NextResponse.json({ error: "region parameter is required" }, { status: 400 })
+        const regionIdParam = searchParams.get("region_id")
+        if (!regionIdParam) {
+            return NextResponse.json({ error: "region_id parameter is required" }, { status: 400 })
         }
         
         const { data: coursesData, error } = await (await createClient())
         .from('courses_view')
         .select('*')
-        .eq('region_name', regionParam);
+        .eq('region_id', regionIdParam);
 
         if (error) {
             throw new Error(`Error fetching courses: ${error.message}`)

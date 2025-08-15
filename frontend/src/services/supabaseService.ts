@@ -12,7 +12,7 @@ export interface Subscription {
     city_list: string[];
     course_list: string[];
     broadcast_day_list: string[];
-    region: string;
+    region_id: string;
 }
 
 export const createSubscription = async (subscription: Subscription) => {
@@ -64,12 +64,12 @@ export const unsubscribe = async (email: string, token: string) => {
 }
 
 
-export const fetchCourseDisplayNamesAndTheirCities = async (region: string) => {
+export const fetchCourseDisplayNamesAndTheirCities = async (regionId: string) => {
     try {
-        if (!region) {
+        if (!regionId) {
             return {};
         }
-        const response = await fetch(`/api/courses?region=${region}`)
+        const response = await fetch(`/api/courses?region_id=${regionId}`)
         
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}))
@@ -94,8 +94,8 @@ export const fetchRegions = async () => {
             throw new Error(error.message)
         }
         
-        return data.map((region: { name: string }) => ({
-            value: region.name,
+        return data.map((region: { id: number, name: string }) => ({
+            value: region.id,
             label: region.name
         }))
     } catch (error) {
