@@ -46,7 +46,7 @@ export default function Home() {
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
   const [removedCourses, setRemovedCourses] = useState<string[]>([]);
-  const { selectedRegionId, setSelectedRegionId, isInitialized } = useRegionIdWithStorage();
+  const {selectedRegionId, setSelectedRegionId, isInitialized } = useRegionIdWithStorage();
   const [sortBy, setSortBy] = useState<'startTime' | 'priceAsc' | 'priceDesc' | 'rating'>('startTime');
   const [teeTimes, setTeeTimes] = useState<TeeTime[]>([]);
   const [loading, setLoading] = useState(false);
@@ -133,11 +133,16 @@ export default function Home() {
       return;
     }
 
+    if (!selectedRegionId) {
+      setError('Please select a region');
+      return;
+    }
+
     posthog.capture('tee_times_searched', {
       dates_count: selectedDates.length,
       num_of_players: numOfPlayers,
       holes: holes,
-      region: selectedRegionId,
+      region: "TO-DO",
       start_time_filter: timeRange[0],
       end_time_filter: timeRange[1],
       selected_cities_count: selectedCities.length,
