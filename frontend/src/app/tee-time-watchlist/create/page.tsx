@@ -25,7 +25,7 @@ export default function CreateTeeTimeWatchlistPage() {
   const [loading, setLoading] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [todayDate, setTodayDate] = useState<Date | null>(null);
-  const [selectedRegion, setSelectedRegion] = useState<string>("");
+  const [selectedRegionId, setSelectedRegionId] = useState<string>("");
   const [, setCourseCityMapping] = useState<Record<string, string>>({});
   const [courseIdMapping, setCourseIdMapping] = useState<Record<string, number>>({});
 
@@ -36,21 +36,21 @@ export default function CreateTeeTimeWatchlistPage() {
 
   useEffect(() => {
     try {
-      const savedRegion = typeof window !== 'undefined' ? localStorage.getItem('selectedRegion') : null;
-      if (savedRegion) {
-        setSelectedRegion(savedRegion);
+      const savedRegionId = typeof window !== 'undefined' ? localStorage.getItem('selectedRegionId') : null;
+      if (savedRegionId) {
+        setSelectedRegionId(savedRegionId);
       }
     } catch {}
   }, []);
 
   useEffect(() => {
-    if (!selectedRegion) return;
+    if (!selectedRegionId) return;
     try {
       if (typeof window !== 'undefined') {
-        localStorage.setItem('selectedRegion', selectedRegion);
+        localStorage.setItem('selectedRegionId', selectedRegionId);
       }
     } catch {}
-  }, [selectedRegion]);
+  }, [selectedRegionId]);
 
   const handleCreateWatchlist = async () => {
     setLoading(true);
@@ -86,7 +86,7 @@ export default function CreateTeeTimeWatchlistPage() {
         end_time,
         num_of_players: numOfPlayers,
         holes,
-        region: selectedRegion,
+        regionId: selectedRegionId,
         courses: resolvedCourses,
       };
       console.log(filters);
@@ -140,8 +140,8 @@ export default function CreateTeeTimeWatchlistPage() {
           todayDate={todayDate}
           setCourseCityMapping={setCourseCityMapping}
           setCourseIdMapping={setCourseIdMapping}
-          selectedRegion={selectedRegion}
-          setSelectedRegion={setSelectedRegion}
+          selectedRegionId={selectedRegionId}
+          setSelectedRegionId={setSelectedRegionId}
           calendarExpandedClassName="p-2 max-w-[18rem] mx-auto"
         />
       </div>

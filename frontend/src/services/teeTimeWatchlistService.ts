@@ -10,7 +10,7 @@ export interface TeeTimeWatchlistFilters {
     end_time: string;
     num_of_players: string;
     holes: string;
-    region: string;
+    regionId: string;
     courses: Course[];
 }
 
@@ -24,7 +24,7 @@ export const createTeeTimeWatchlist = async (filters: TeeTimeWatchlistFilters) =
             end_time: filters.end_time,
             num_of_players: filters.num_of_players,
             holes: filters.holes,
-            region: filters.region,
+            region_id: filters.regionId,
             courses: filters.courses,
         })
         .select()
