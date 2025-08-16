@@ -1,7 +1,7 @@
 "use client";
 import { forwardRef, useRef, useImperativeHandle, useState, useEffect } from "react";
 import { Listbox } from "@headlessui/react";
-import { ChevronDown, ArrowUp, ArrowDown } from "lucide-react";
+import { ChevronDown, ArrowUp, ArrowDown, HeartCrack } from "lucide-react";
 import { type TeeTime } from "../services/teeTimeService";
 import { 
   parseDateTimeInVancouver,
@@ -377,7 +377,10 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
           </div>
         )}
         {!loading && !error && hasSearched && filteredTeeTimes(teeTimes).length === 0 && (
-          <div className="text-center py-8 text-slate-600">No tee times available for the selected criteria.</div>
+          <div className="flex flex-col items-center justify-center py-12 text-slate-600">
+            <HeartCrack className="w-10 h-10 text-slate-400 mb-2" />
+            <p className="font-medium">Unfortunately, no tee times found.</p>
+          </div>
         )}
       
         {!loading && !error && (() => {

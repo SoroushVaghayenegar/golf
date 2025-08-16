@@ -69,6 +69,7 @@ export default function SearchPage() {
   const [urlFiltersApplied, setUrlFiltersApplied] = useState<boolean>(false);
   const [courseIdToName, setCourseIdToName] = useState<Record<string, string>>({});
   const [forceShowCourseSelector, setForceShowCourseSelector] = useState<boolean | null>(null);
+  const [forceShowCitySelector, setForceShowCitySelector] = useState<boolean | null>(null);
   const [rawCourseIdsCSV, setRawCourseIdsCSV] = useState<string | null>(null);
   const [hasParsedURL, setHasParsedURL] = useState<boolean>(false);
   
@@ -228,9 +229,19 @@ export default function SearchPage() {
         setPendingCourseIdsFromURL(courseIdsParam.split(',').map((c) => c.trim()).filter(Boolean));
         setHadCourseIdsParam(true);
         setRawCourseIdsCSV(courseIdsParam);
+        // Ensure course selector is visible when courseIds are present
+        setForceShowCourseSelector(true);
       } else {
         setHadCourseIdsParam(false);
         setRawCourseIdsCSV(null);
+      }
+
+      // Ensure city and course selectors are visible when corresponding URL params are present
+      if (citiesParam) {
+        setForceShowCitySelector(true);
+      }
+      if (coursesParam) {
+        setForceShowCourseSelector(true);
       }
 
     } catch (e) {
@@ -269,7 +280,7 @@ export default function SearchPage() {
         appliedSomething = true;
         if (hadCourseIdsParam) setForceShowCourseSelector(true);
       } else {
-        if (hadCourseIdsParam) setForceShowCourseSelector(false);
+        if (hadCourseIdsParam) setForceShowCourseSelector(true);
       }
       setPendingCourseIdsFromURL(null);
     }
@@ -420,7 +431,9 @@ export default function SearchPage() {
       
       const formattedDates = selectedDates.map(date => formatDateForAPI(date));
       console.log('Formatted dates:', formattedDates);
-      // Build optional courseIds when cities or courses are selected
+      // Build optional courseIds with precedence:
+      // 1) If explicit courses are selected, ONLY include those
+      // 2) Else, if cities are selected, include all courses in those cities
       let courseIds: string[] | undefined = undefined;
       const nameToId: Record<string, string> = {};
       if (courseIdToName && Object.keys(courseIdToName).length > 0) {
@@ -428,17 +441,16 @@ export default function SearchPage() {
           nameToId[name] = id;
         }
       }
-      if ((selectedCities.length > 0 || selectedCourses.length > 0) && Object.keys(nameToId).length > 0) {
+      if (Object.keys(nameToId).length > 0) {
         const idsSet = new Set<string>();
-        // From selected course names
         if (selectedCourses.length > 0) {
+          // Honor explicit course selections only
           selectedCourses.forEach((courseName) => {
             const id = nameToId[courseName];
             if (id) idsSet.add(id);
           });
-        }
-        // From selected cities -> include all courses whose city matches
-        if (selectedCities.length > 0 && courseCityMapping && Object.keys(courseCityMapping).length > 0) {
+        } else if (selectedCities.length > 0 && courseCityMapping && Object.keys(courseCityMapping).length > 0) {
+          // Fall back to city-based inclusion if no explicit courses were selected
           Object.entries(courseCityMapping).forEach(([courseName, cityName]) => {
             if (selectedCities.includes(cityName)) {
               const id = nameToId[courseName];
@@ -552,6 +564,7 @@ export default function SearchPage() {
             setSelectedRegionId={setSelectedRegionId}
             setCourseIdToName={setCourseIdToName}
             forceShowCourseSelector={forceShowCourseSelector}
+            forceShowCitySelector={forceShowCitySelector}
             hideSubmitButton
           />
         )}
@@ -559,7 +572,7 @@ export default function SearchPage() {
         {/* Tee Times Results Section - Scrollable */}
         {/* On mobile, only show results section if there are results, loading, or error */}
         {/* On desktop, always show to display initial state */}
-        {(!isMobile || teeTimes.length > 0 || loading || !!error) && (
+        {(!isMobile || teeTimes.length > 0 || loading || !!error || hasEverSearched) && (
           <div className="flex-1 lg:p-10 lg:pl-10 lg:pr-10 lg:py-10 px-4 sm:px-10 lg:px-0 w-full max-w-full overflow-x-hidden lg:h-[calc(100vh-64px)] lg:min-h-[calc(100vh-64px)]">
             <VirtualizedTeeTimeCards
               ref={resultsSectionRef}
@@ -575,7 +588,7 @@ export default function SearchPage() {
               setShowSubscription={setShowSubscription}
               handleSubscriptionDismiss={handleSubscriptionDismiss}
               isMobile={isMobile}
-              hasSearched={teeTimes.length > 0 || loading || !!error}
+              hasSearched={hasEverSearched}
               courseCityMapping={courseCityMapping}
               onTeeTimeVisibilityChange={setVisibleTeeTimeCount}
               selectedRegionId={selectedRegionId}

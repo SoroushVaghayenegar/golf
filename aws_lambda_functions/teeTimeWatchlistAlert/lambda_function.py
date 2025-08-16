@@ -14,10 +14,13 @@ def lambda_handler(event, context):
     emails_sent = 0
     for watchlist in watchlists:
         course_ids = ",".join([str(course["id"]) for course in watchlist["courses"]])
+        # time is in format 12:00:00, remove the last :00
+        start_time = watchlist["start_time"].split(":")[0] + ":" + watchlist["start_time"].split(":")[1]
+        end_time = watchlist["end_time"].split(":")[0] + ":" + watchlist["end_time"].split(":")[1]
         tee_times = supabase_service.get_tee_times(
             date=watchlist["date"],
-            start_time=watchlist["start_time"],
-            end_time=watchlist["end_time"],
+            start_time=start_time,
+            end_time=end_time,
             course_ids=course_ids,
             num_of_players=watchlist["num_of_players"],
             holes=watchlist["holes"],
@@ -31,8 +34,8 @@ def lambda_handler(event, context):
             try:
                 params = {
                     "date": watchlist.get("date"),
-                    "start_time": watchlist.get("start_time"),
-                    "end_time": watchlist.get("end_time"),
+                    "start_time": start_time,
+                    "end_time": end_time,
                     "courses": ",".join([str(course["name"]) for course in watchlist["courses"]]),
                     "region_id": watchlist.get("region_id"),
                     "num_of_players": watchlist.get("num_of_players"),
@@ -40,8 +43,8 @@ def lambda_handler(event, context):
                     # Provide courseIds explicitly for constructing /search URL
                     "courseIds": course_ids
                 }
-                send_watchlist_email(email=email, full_name=full_name, count=len(tee_times), params=params)
-                supabase_service.update_tee_time_watchlist_as_sent(watchlist.get("id"))
+                # send_watchlist_email(email=email, full_name=full_name, count=len(tee_times), params=params)
+                # supabase_service.update_tee_time_watchlist_as_sent(watchlist.get("id"))
                 emails_sent += 1
             except Exception as e:
                 print(f"Failed to send watchlist email for watchlist {watchlist.get('id')}: {e}")

@@ -40,6 +40,8 @@ interface SidebarProps {
   setCourseIdToName?: (mapping: Record<string, string>) => void;
   // Allow parent to force show/hide course selector (used for URL hydration)
   forceShowCourseSelector?: boolean | null;
+  // Allow parent to force show/hide city selector (used for URL hydration)
+  forceShowCitySelector?: boolean | null;
   // When true, hide the submit button (used on search page)
   hideSubmitButton?: boolean;
 }
@@ -67,6 +69,7 @@ export default function Sidebar({
   setSelectedRegionId,
   setCourseIdToName,
   forceShowCourseSelector,
+  forceShowCitySelector,
   hideSubmitButton
 }: SidebarProps) {
   const [cities, setCities] = useState<string[]>([]);
@@ -89,6 +92,15 @@ export default function Sidebar({
       setShowCourseSelector(false);
     }
   }, [forceShowCourseSelector]);
+
+  // Respect parent instruction to show/hide city selector (once)
+  useEffect(() => {
+    if (forceShowCitySelector === true) {
+      setShowCitySelector(true);
+    } else if (forceShowCitySelector === false) {
+      setShowCitySelector(false);
+    }
+  }, [forceShowCitySelector]);
 
   // Fetch cities and courses on component mount and when region changes
   useEffect(() => {
