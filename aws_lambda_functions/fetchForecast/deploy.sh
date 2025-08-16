@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -Eeuo pipefail
+trap 'echo "Error: command failed at line $LINENO" >&2' ERR
+
 # Disable AWS CLI pager to avoid interactive prompts
 export AWS_PAGER=""
 

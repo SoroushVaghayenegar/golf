@@ -62,7 +62,7 @@ export interface TeeTime {
     precipitation: number | null;
 }
 
-export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[], startTime: string | null, endTime: string | null, numOfPlayers: string | null, holes: string | null, courseIds: number[], region_id: string) {
+export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[], startTime: string | null, endTime: string | null, numOfPlayers: string | null, holes: string | null, courseIds: number[], region_id: string, regionTimeZone: string) {
     if (courseIds.length === 0) {
         const { data: coursesData, error } = await supabaseClient
         .from('courses_view')
@@ -148,7 +148,7 @@ export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[
             const teeTimeStartDatetime = new Date(teeTimeStartTimeString)
             const teetimeStartTime = teeTimeStartDatetime.toTimeString().slice(0, 5) // HH:MM format
 
-            if (!isTeeTimeInTimeRange(teetimeStartTime, startTime, endTime)) {
+            if (!isTeeTimeInTimeRange(regionTimeZone, teetimeStartTime, startTime, endTime)) {
                 return;
             }
 
@@ -266,7 +266,7 @@ function getWeatherDescription(weatherCode: number | null): string | null {
     return weatherCodeMap[weatherCode] || `Unknown weather code: ${weatherCode}`;
 }
 
-function isTeeTimeInTimeRange(teeTimeTime: string, startTime: string | null, endTime: string | null): boolean {
+function isTeeTimeInTimeRange(regionTimeZone: string, teeTimeTime: string, startTime: string | null, endTime: string | null): boolean {
     // teeTimeTime is in format HH:MM
     // startTime and endTime are in format HH:MM
     const parseToMinutes = (timeStr: string | null): number | null => {
@@ -279,6 +279,15 @@ function isTeeTimeInTimeRange(teeTimeTime: string, startTime: string | null, end
         if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
         return hour * 60 + minute;
     };
+    
+    // If startTime is present, choose startTime as the smaller of startTime and CurrentTime in the regionTimeZone, otherwise choose startTime as CurrentTime in the regionTimeZone
+    const currentTime = new Date().toLocaleTimeString('en-US', { timeZone: regionTimeZone, hour: '2-digit', minute: '2-digit' });
+    const currentTimeMinutes = parseToMinutes(currentTime);
+
+    if (startTime && currentTimeMinutes > parseToMinutes(startTime)) {
+        startTime = currentTime;
+    }
+
 
     const teeMinutes = parseToMinutes(teeTimeTime);
     if (teeMinutes === null) return false;

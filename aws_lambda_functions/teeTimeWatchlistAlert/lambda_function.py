@@ -21,7 +21,7 @@ def lambda_handler(event, context):
             course_ids=course_ids,
             num_of_players=watchlist["num_of_players"],
             holes=watchlist["holes"],
-            region=watchlist["region"]
+            region_id=watchlist["region_id"]
         )
         if len(tee_times) > 0:
             # Determine recipient email and full name
@@ -34,9 +34,11 @@ def lambda_handler(event, context):
                     "start_time": watchlist.get("start_time"),
                     "end_time": watchlist.get("end_time"),
                     "courses": ",".join([str(course["name"]) for course in watchlist["courses"]]),
-                    "region": watchlist.get("region"),
+                    "region_id": watchlist.get("region_id"),
                     "num_of_players": watchlist.get("num_of_players"),
-                    "holes": watchlist.get("holes")
+                    "holes": watchlist.get("holes"),
+                    # Provide courseIds explicitly for constructing /search URL
+                    "courseIds": course_ids
                 }
                 send_watchlist_email(email=email, full_name=full_name, count=len(tee_times), params=params)
                 supabase_service.update_tee_time_watchlist_as_sent(watchlist.get("id"))

@@ -58,8 +58,26 @@ Deno.serve(async (req)=>{
     const dates = datesParam.split(',').map(date => date.trim())
     const courseIds = courseIdsParam ? courseIdsParam.split(',').map(id => parseInt(id.trim())) : []
 
+    // Get region timezone
+    const { data: regionData, error: regionError } = await supabase
+      .from('regions')
+      .select('timezone')
+      .eq('id', region_id)
+      .single()
+
+    if (regionError) {
+      return new Response("Region not found", {
+        status: 400,
+        headers: {
+          "access-control-allow-origin": allowedOrigin
+        }
+      })
+    }
+
+    const regionTimeZone = regionData.timezone
+
     // Get tee times with forecast data
-    const { data, error } = await getTeeTimes(supabase, dates, startTime, endTime, numOfPlayers, holes, courseIds, region_id)
+    const { data, error } = await getTeeTimes(supabase, dates, startTime, endTime, numOfPlayers, holes, courseIds, region_id, regionTimeZone)
 
     const headers = {
       "access-control-allow-origin": allowedOrigin,
