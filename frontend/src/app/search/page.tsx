@@ -63,7 +63,6 @@ export default function SearchPage() {
   const [pendingCitiesFromURL, setPendingCitiesFromURL] = useState<string[] | null>(null);
   const [pendingCoursesFromURL, setPendingCoursesFromURL] = useState<string[] | null>(null);
   const [pendingCourseIdsFromURL, setPendingCourseIdsFromURL] = useState<string[] | null>(null);
-  const [autoSearchFromURL, setAutoSearchFromURL] = useState<boolean>(false);
   const [hadDatesInURL, setHadDatesInURL] = useState<boolean>(false);
   const [hadRegionInURL, setHadRegionInURL] = useState<boolean>(false);
   const [hadCourseIdsParam, setHadCourseIdsParam] = useState<boolean>(false);
@@ -124,7 +123,7 @@ export default function SearchPage() {
           map[String(r.value)] = { label: r.label, timezone: r.timezone };
         });
         setRegionsMap(map);
-      } catch (e) {
+      } catch {
         // noop – fallback to default timezone downstream
       }
     };
@@ -234,9 +233,6 @@ export default function SearchPage() {
         setRawCourseIdsCSV(null);
       }
 
-      // Auto search
-      const autoParam = params.get('auto') || params.get('autosearch');
-      setAutoSearchFromURL(autoParam === '1' || autoParam === 'true');
     } catch (e) {
       console.error('Failed to parse URL params', e);
     } finally {
@@ -344,9 +340,6 @@ export default function SearchPage() {
         // Fallback to course names if ids are not available
         params.set('courses', selectedCourses.join(','));
       }
-    } else if (hadCourseIdsParam && rawCourseIdsCSV) {
-      // Preserve original courseIds from URL until mapping/selection is applied
-      params.set('courseIds', rawCourseIdsCSV);
     }
 
     if (selectedCities.length > 0) {
@@ -573,11 +566,6 @@ export default function SearchPage() {
               teeTimes={teeTimes}
               loading={loading}
               error={error}
-              timeRange={timeRange}
-              citiesFilterEnabled={true}
-              selectedCities={selectedCities}
-              coursesFilterEnabled={true}
-              selectedCourses={selectedCourses}
               removedCourses={removedCourses}
               onRemoveCourse={handleRemoveCourse}
               fetchedDates={fetchedDates}

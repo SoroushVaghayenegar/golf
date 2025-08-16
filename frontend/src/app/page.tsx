@@ -43,7 +43,7 @@ export default function Home() {
   const [timeRange, setTimeRange] = useState<number[]>([5, 22]); // 5am to 10pm
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
-  const [removedCourses, setRemovedCourses] = useState<string[]>([]);
+  const [removedCourses] = useState<string[]>([]);
   const {selectedRegionId, setSelectedRegionId, isInitialized } = useRegionIdWithStorage();
   const [loading] = useState(false);
   const [isClient, setIsClient] = useState(false);

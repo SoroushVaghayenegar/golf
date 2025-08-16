@@ -244,11 +244,8 @@ export default function Sidebar({
 
   const handleCourseToggle = () => {
     if (showCourseSelector) {
-      // Switching from "Custom" to "All" 
-      // Only clear course filters if city toggle is also on "All"
-      if (!showCitySelector) {
-        setSelectedCourses([]);
-      }
+      // Switching from "Custom" to "All" – clear selected courses
+      setSelectedCourses([]);
     }
     setShowCourseSelector(!showCourseSelector);
   };

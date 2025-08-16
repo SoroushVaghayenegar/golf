@@ -19,11 +19,6 @@ interface VirtualizedTeeTimeCardsProps {
   teeTimes: TeeTime[];
   loading: boolean;
   error: string | null;
-  timeRange: number[];
-  citiesFilterEnabled: boolean;
-  selectedCities: string[];
-  coursesFilterEnabled: boolean;
-  selectedCourses: string[];
   removedCourses: string[];
   onRemoveCourse: (courseName: string) => void;
   fetchedDates: Date[] | undefined;
@@ -54,11 +49,6 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
   teeTimes,
   loading,
   error,
-  timeRange,
-  citiesFilterEnabled,
-  selectedCities,
-  coursesFilterEnabled,
-  selectedCourses,
   removedCourses,
   onRemoveCourse,
   fetchedDates,
