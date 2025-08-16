@@ -24,6 +24,7 @@ interface TeeTimeWatchlistRow {
     region_id: string;
     courses: Course[];
     notification_sent?: boolean;
+    created_at?: string;
     regions?: { name: string } | null;
 }
 
