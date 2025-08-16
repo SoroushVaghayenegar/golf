@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     siteName: 'TeeClub',
     images: [
       {
-        url: '/bg1.png',
+        url: '/bg1.png?v=2',
         width: 1200,
         height: 630,
         alt: 'BC Golf Course - TeeClub',
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "TeeClub - #1 Tee Times finder in Canada",
     description: "Canada's number 1 golf tee times platform. Discover the best golf deals across Canada.",
-    images: ['/bg1.png'],
+    images: ['/bg1.png?v=2'],
   },
   robots: {
     index: true,
