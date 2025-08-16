@@ -628,7 +628,7 @@ export default function Sidebar({
         <button
           onClick={onGetTeeTimes}
           disabled={loading || !selectedDates || selectedDates.length === 0}
-          className={`mt-8 lg:mt-0 px-6 py-3 rounded-lg font-semibold text-white transition-all duration-200 ${
+          className={`mt-[100px] lg:mt-0 px-6 py-3 rounded-lg font-semibold text-white transition-all duration-200 ${
             loading || !selectedDates || selectedDates.length === 0
               ? 'bg-slate-300 cursor-not-allowed'
               : 'bg-sidebar-primary hover:bg-sidebar-primary-hover shadow-md hover:shadow-lg'
