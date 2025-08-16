@@ -9,7 +9,7 @@ import Toaster from '@/components/ui/sonner'
 export default function ClientLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const isAuthRoute = pathname?.startsWith('/auth')
-  const isHome = pathname === '/'
+  const isHome = pathname === '/' || pathname === '/search'
 
   return (
     <>

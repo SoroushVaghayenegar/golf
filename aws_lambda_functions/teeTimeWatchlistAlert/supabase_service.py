@@ -24,8 +24,8 @@ class SupabaseService:
     def update_tee_time_watchlist_as_sent(self, watchlist_id: str):
         self.supabase.table("tee_time_watchlists").update({"notification_sent": True}).eq("id", watchlist_id).execute()
     
-    def get_tee_times(self, date: str, start_time: str, end_time: str, course_ids: str, num_of_players: str, holes: str, region: str):
-        url = f"{self.base_url}/functions/v1/tee-times?dates={date}&startTime={start_time}&endTime={end_time}&courseIds={course_ids}&numOfPlayers={num_of_players}&holes={holes}&region={region}"
+    def get_tee_times(self, date: str, start_time: str, end_time: str, course_ids: str, num_of_players: str, holes: str, region_id: str):
+        url = f"{self.base_url}/functions/v1/tee-times?dates={date}&startTime={start_time}&endTime={end_time}&courseIds={course_ids}&numOfPlayers={num_of_players}&holes={holes}&region_id={region_id}"
         response = requests.get(url, headers=self.headers)
         response.raise_for_status()
         return response.json()

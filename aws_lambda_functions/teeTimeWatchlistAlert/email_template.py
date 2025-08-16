@@ -1,10 +1,61 @@
 from typing import Optional, Dict, Any
+from urllib.parse import urlencode
 
 
 def _first_name_from_full_name(full_name: Optional[str]) -> str:
     if not full_name:
         return "there"
     return full_name.split(" ")[0].strip() or "there"
+
+
+def _extract_hour_component(time_str: Optional[str]) -> Optional[int]:
+    if not time_str:
+        return None
+    try:
+        parts = str(time_str).split(":")
+        hour = int(parts[0])
+        if 0 <= hour <= 23:
+            return hour
+    except Exception:
+        return None
+    return None
+
+
+def _build_search_url(params: Dict[str, Any]) -> str:
+    base_url = "https://www.teeclub.golf/search"
+
+    date = params.get("date")
+
+    start_hour = _extract_hour_component(params.get("start_time") or params.get("startTime"))
+    end_hour = _extract_hour_component(params.get("end_time") or params.get("endTime"))
+    time_range = None
+    if start_hour is not None and end_hour is not None:
+        time_range = f"{start_hour}-{end_hour}"
+
+    region = params.get("region") or params.get("region_id") or params.get("regionId")
+    players = params.get("num_of_players") or params.get("players")
+    holes = params.get("holes")
+    course_ids = params.get("courseIds")
+    courses = params.get("courses")
+
+    query: Dict[str, Any] = {}
+    if date:
+        query["dates"] = str(date)
+    if players:
+        query["players"] = str(players)
+    if holes:
+        query["holes"] = str(holes)
+    if region:
+        query["region"] = str(region)
+    if time_range:
+        query["timeRange"] = time_range
+    if course_ids:
+        query["courseIds"] = str(course_ids)
+    elif courses:
+        query["courses"] = str(courses)
+
+    query_string = urlencode(query)
+    return f"{base_url}?{query_string}" if query_string else base_url
 
 
 def generate_watchlist_email_html(full_name: Optional[str], count: int, params: Dict[str, Any]) -> str:
@@ -15,9 +66,10 @@ def generate_watchlist_email_html(full_name: Optional[str], count: int, params: 
     start_time = params.get("start_time") or "—"
     end_time = params.get("end_time") or params.get("endTime") or "—"
     course_names = params.get("courses") or "—"
-    region = params.get("region") or "—"
+    region = params.get("region") or params.get("region_id") or "—"
     num_of_players = params.get("num_of_players") or params.get("players") or "—"
     holes = params.get("holes") or "—"
+    search_url = _build_search_url(params)
 
     return f"""
     <!doctype html>
@@ -137,7 +189,7 @@ def generate_watchlist_email_html(full_name: Optional[str], count: int, params: 
             <p class=\"subtitle\">Your tee time watchlist just matched <strong>{count}</strong> {plural}. Jump in now before they’re gone.</p>
             <span class=\"badge\">{count} {plural} found</span>
             <div class=\"cta\">
-              <a href=\"https://www.teeclub.golf\" target=\"_blank\" rel=\"noopener noreferrer\">View tee times on TeeClub</a>
+              <a href=\"{search_url}\" target=\"_blank\" rel=\"noopener noreferrer\">View tee times on TeeClub</a>
             </div>
             <div class=\"details\">
               <h3>Watchlist filters</h3>
@@ -150,7 +202,7 @@ def generate_watchlist_email_html(full_name: Optional[str], count: int, params: 
                 <li><strong>Holes</strong>: {holes}</li>
               </ul>
             </div>
-            <p class=\"subtitle\" style=\"margin-top: 8px; font-size: 13px; color: #475569;\">If the button doesn’t work, copy and paste this link into your browser: <span style=\"color:#0ea5e9; word-break: break-all;\">https://www.teeclub.golf</span></p>
+            <p class=\"subtitle\" style=\"margin-top: 8px; font-size: 13px; color: #475569;\">If the button doesn’t work, copy and paste this link into your browser: <span style=\"color:#0ea5e9; word-break: break-all;\">{search_url}</span></p>
           </div>
           <div class=\"footer\">© {__import__('datetime').datetime.now().year} TeeClub. All rights reserved.</div>
         </div>
@@ -166,9 +218,10 @@ def generate_watchlist_email_text(full_name: Optional[str], count: int, params: 
     start_time = params.get("start_time") or "—"
     end_time = params.get("end_time") or params.get("endTime") or "—"
     course_names = params.get("courses") or "—"
-    region = params.get("region") or "—"
+    region = params.get("region") or params.get("region_id") or "—"
     num_of_players = params.get("num_of_players") or params.get("players") or "—"
     holes = params.get("holes") or "—"
+    search_url = _build_search_url(params)
 
     return (
         f"Hi {first_name},\n\n"
@@ -180,7 +233,7 @@ def generate_watchlist_email_text(full_name: Optional[str], count: int, params: 
         f"- Region: {region}\n"
         f"- Players: {num_of_players}\n"
         f"- Holes: {holes}\n\n"
-        f"Open TeeClub to view them: https://www.teeclub.golf\n\n"
+        f"Open TeeClub to view them: {search_url}\n\n"
         f"— TeeClub"
     )
 

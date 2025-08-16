@@ -1,7 +1,7 @@
 "use client";
 import { forwardRef, useRef, useImperativeHandle, useState, useEffect } from "react";
 import { Listbox } from "@headlessui/react";
-import { ChevronDown, ArrowUp, ArrowDown } from "lucide-react";
+import { ChevronDown, ArrowUp, ArrowDown, HeartCrack } from "lucide-react";
 import { type TeeTime } from "../services/teeTimeService";
 import { 
   parseDateTimeInVancouver,
@@ -27,8 +27,8 @@ interface TeeTimeCardsProps {
   selectedCities: string[];
   coursesFilterEnabled: boolean;
   selectedCourses: string[];
-  removedCourses: string[];
-  onRemoveCourse: (courseName: string) => void;
+  removedCourseIds: number[];
+  onRemoveCourse: (courseId: number) => void;
   fetchedDates: Date[] | undefined;
   sortBy: 'startTime' | 'priceAsc' | 'priceDesc' | 'rating';
   setSortBy: (sortBy: 'startTime' | 'priceAsc' | 'priceDesc' | 'rating') => void;
@@ -56,7 +56,7 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
   selectedCities,
   coursesFilterEnabled,
   selectedCourses,
-  removedCourses,
+  removedCourseIds,
   onRemoveCourse,
   fetchedDates,
   sortBy,
@@ -130,9 +130,9 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
       filtered = filtered.filter(teeTime => selectedCourses.includes(teeTime.course_name));
     }
     
-    // Filter out removed courses
-    if (removedCourses.length > 0) {
-      filtered = filtered.filter(teeTime => !removedCourses.includes(teeTime.course_name));
+    // Filter out removed courses by numeric id
+    if (removedCourseIds.length > 0) {
+      filtered = filtered.filter(teeTime => !removedCourseIds.includes(Number(teeTime.course_id)));
     }
     
     // If any of the fetched dates is today, filter out tee times that are earlier than now
@@ -360,7 +360,7 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
             <div 
               className="fixed inset-0 w-screen h-screen bg-cover bg-center opacity-40 z-0"
               style={{
-                backgroundImage: 'url(/golf-course.png)',
+                backgroundImage: 'url(/bg1.png)',
                 backgroundRepeat: 'no-repeat',
                 backgroundSize: 'cover',
                 backgroundAttachment: 'fixed'
@@ -377,7 +377,10 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
           </div>
         )}
         {!loading && !error && hasSearched && filteredTeeTimes(teeTimes).length === 0 && (
-          <div className="text-center py-8 text-slate-600">No tee times available for the selected criteria.</div>
+          <div className="flex flex-col items-center justify-center py-12 text-slate-600">
+            <HeartCrack className="w-10 h-10 text-slate-400 mb-2" />
+            <p className="font-medium">Unfortunately, no tee times found.</p>
+          </div>
         )}
       
         {!loading && !error && (() => {

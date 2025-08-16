@@ -2,22 +2,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { getTeeTimeWatchlists, deleteTeeTimeWatchlist, Course } from "@/services/teeTimeWatchlistService";
+import { getTeeTimeWatchlists, deleteTeeTimeWatchlist, type TeeTimeWatchlist } from "@/services/teeTimeWatchlistService";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Trash, Info } from "lucide-react";
 import { toast } from "sonner";
-
-interface TeeTimeWatchlist {
-  id: number;
-  date: string;
-  start_time: string;
-  end_time: string;
-  num_of_players: string;
-  holes: string;
-  region: string;
-  courses: Course[];
-  created_at?: string;
-}
 
 export default function TeeTimeWatchlistPage() {
   const formatDateMonthDay = (dateStr: string | null | undefined) => {
@@ -154,7 +142,7 @@ export default function TeeTimeWatchlistPage() {
       try {
         const data = await getTeeTimeWatchlists();
         if (!isMounted) return;
-        setWatchlists((data ?? []) as TeeTimeWatchlist[]);
+        setWatchlists(data ?? []);
       } catch {
         if (!isMounted) return;
         setError("Failed to load watchlists");
