@@ -449,7 +449,7 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
             <div 
               className="fixed inset-0 w-screen h-screen bg-cover bg-center opacity-60 z-0"
               style={{
-                backgroundImage: 'url(/golf-course.png)',
+                backgroundImage: 'url(/bg1.png)',
                 backgroundRepeat: 'no-repeat',
                 backgroundSize: 'cover',
                 backgroundAttachment: 'fixed'
