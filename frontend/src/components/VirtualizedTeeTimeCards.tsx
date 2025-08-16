@@ -287,6 +287,17 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
   // Calculate total rows needed
   const totalRows = Math.ceil(flatTeeTimes.length / columns);
 
+  // Build share text from fetched dates in format like "Aug 12"
+  const shareText = useMemo(() => {
+    if (fetchedDates && fetchedDates.length > 0) {
+      const formatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
+      const formattedUniqueDates = Array.from(new Set(fetchedDates.map((d) => formatter.format(d))));
+      const datesStr = formattedUniqueDates.join(', ');
+      return `Found some good tee times for ${datesStr}`;
+    }
+    return 'Found some good tee times';
+  }, [fetchedDates]);
+
   // Cell renderer for virtual grid
   const cellRenderer = useCallback(({ columnIndex, rowIndex, style }: GridChildComponentProps) => {
     const index = rowIndex * columns + columnIndex;
@@ -322,7 +333,7 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
       {!loading && !error && filteredTeeTimes.length > 0 && (
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-7 w-full max-w-full mb-4 px-2">
           {shareUrl && (
-            <ShareButton url={shareUrl} buttonLabel="Share tee times" className="px-6 py-6 text-lg lg:text-base" text="Look at these tee times!"/>
+            <ShareButton url={shareUrl} buttonLabel="Share tee times" className="px-6 py-6 text-lg lg:text-base" text={shareText}/>
           )}
           <div className="bg-white rounded-lg shadow p-3 flex-shrink-0 w-full sm:w-auto">
             <div className="flex items-center justify-between gap-4 w-full sm:w-auto">
