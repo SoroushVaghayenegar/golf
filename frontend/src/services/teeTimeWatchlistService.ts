@@ -14,6 +14,23 @@ export interface TeeTimeWatchlistFilters {
     courses: Course[];
 }
 
+interface TeeTimeWatchlistRow {
+    id: number;
+    date: string;
+    start_time: string;
+    end_time: string;
+    num_of_players: string;
+    holes: string;
+    region_id: string;
+    courses: Course[];
+    notification_sent?: boolean;
+    regions?: { name: string } | null;
+}
+
+export type TeeTimeWatchlist = Omit<TeeTimeWatchlistRow, "regions"> & {
+    region: string | null;
+}
+
 export const createTeeTimeWatchlist = async (filters: TeeTimeWatchlistFilters) => {
     const client = createClient()
     const { data, error } = await client
@@ -35,7 +52,8 @@ export const createTeeTimeWatchlist = async (filters: TeeTimeWatchlistFilters) =
     }
 
     // Flatten region name for convenience in UI
-    return data ? { ...data, region: (data as any).regions?.name ?? null } : data
+    const typed: TeeTimeWatchlistRow | null = data as unknown as TeeTimeWatchlistRow | null
+    return typed ? { ...typed, region: typed.regions?.name ?? null } as TeeTimeWatchlist : null
 }
 
 export const getTeeTimeWatchlists = async () => {
@@ -51,10 +69,11 @@ export const getTeeTimeWatchlists = async () => {
     }
 
     // Map nested region to flat string to match UI expectations
-    return (data ?? []).map((row: any) => ({
+    const rows: TeeTimeWatchlistRow[] = (data ?? []) as unknown as TeeTimeWatchlistRow[]
+    return rows.map((row) => ({
         ...row,
         region: row.regions?.name ?? null,
-    }))
+    })) as TeeTimeWatchlist[]
 }
 
 export const deleteTeeTimeWatchlist = async (id: number) => {
