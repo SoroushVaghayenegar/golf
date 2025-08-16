@@ -283,14 +283,14 @@ export default function SearchPage() {
     if (initialAutoSearchTriggeredRef.current) return;
     if (!(hadDatesInURL && (hadRegionInURL || !!selectedRegionId))) return;
     if (!selectedDates || selectedDates.length === 0) return;
-    if (urlFiltersApplied || (!pendingCitiesFromURL && !pendingCoursesFromURL)) {
+    if (urlFiltersApplied || (!pendingCitiesFromURL && !pendingCoursesFromURL && !pendingCourseIdsFromURL)) {
       initialAutoSearchTriggeredRef.current = true;
       const id = setTimeout(() => {
         handleGetTeeTimes();
       }, 0);
       return () => clearTimeout(id);
     }
-  }, [hadDatesInURL, hadRegionInURL, selectedRegionId, selectedDates, urlFiltersApplied, pendingCitiesFromURL, pendingCoursesFromURL]);
+  }, [hadDatesInURL, hadRegionInURL, selectedRegionId, selectedDates, urlFiltersApplied, pendingCitiesFromURL, pendingCoursesFromURL, pendingCourseIdsFromURL]);
 
   // Helper to format a Date as YYYY-MM-DD without timezone shifts
   const formatDateLocal = (date: Date) => {
