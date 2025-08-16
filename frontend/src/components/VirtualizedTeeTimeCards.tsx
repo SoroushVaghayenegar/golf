@@ -8,6 +8,7 @@ import { type TeeTime } from "../services/teeTimeService";
 import { SubscriptionSignup } from "@/components/SubscriptionSignup";
 import LottiePlayer from "@/components/LottiePlayer";
 import TeeTimeCard from "@/components/TeeTimeCard";
+import ShareButton from "@/components/ShareButton";
 import {
   Accordion,
   AccordionContent,
@@ -38,6 +39,8 @@ interface VirtualizedTeeTimeCardsProps {
   useSkeletonWhileLoading?: boolean;
   // If true, do not render the initial empty-state background image/prompt
   disableInitialEmptyState?: boolean;
+  // Optional share URL for the Share button
+  shareUrl?: string;
 }
 
 export interface VirtualizedTeeTimeCardsRef {
@@ -63,7 +66,8 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
   selectedRegionId,
   regionTimeZone,
   useSkeletonWhileLoading,
-  disableInitialEmptyState
+  disableInitialEmptyState,
+  shareUrl
 }, ref) => {
   
   const DEFAULT_TIMEZONE = 'America/Vancouver';
@@ -314,106 +318,111 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
 
   return (
     <section ref={sectionRef} className="flex-1 flex flex-col lg:h-full lg:overflow-hidden w-full max-w-full">
-      {/* Sort By Component - Only show when there are results */}
+      {/* Sort row: white sort container + Share button as siblings */}
       {!loading && !error && filteredTeeTimes.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-4 mb-4 flex-shrink-0 w-full max-w-full">
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase flex-shrink-0">Sort By</span>
-            <Listbox value={sortBy} onChange={setSortBy}>
-              <div className="relative flex-shrink-0">
-                <Listbox.Button className="px-3 sm:px-4 py-2 text-left bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary hover:border-primary transition-colors w-full sm:min-w-[180px] max-w-[200px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-slate-700 text-xs sm:text-sm truncate">
-                      {sortBy === 'startTime' && 'Start Time'}
-                      {sortBy === 'priceAsc' && 'Price (Low to High)'}
-                      {sortBy === 'priceDesc' && 'Price (High to Low)'}
-                      {sortBy === 'rating' && 'Rating'}
-                    </span>
-                    <div className="flex items-center gap-1 flex-shrink-0 ml-2">
-                      {sortBy === 'startTime' && <ArrowUp className="w-3 h-3 text-slate-500" />}
-                      {sortBy === 'priceAsc' && <ArrowUp className="w-3 h-3 text-slate-500" />}
-                      {sortBy === 'priceDesc' && <ArrowDown className="w-3 h-3 text-slate-500" />}
-                      {sortBy === 'rating' && <ArrowDown className="w-3 h-3 text-slate-500" />}
-                      <ChevronDown className="w-4 h-4 text-slate-400" />
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-7 w-full max-w-full mb-4 px-2">
+          {shareUrl && (
+            <ShareButton url={shareUrl} buttonLabel="Share tee times" className="px-6 py-6 text-lg lg:text-base" text="Look at these tee times!"/>
+          )}
+          <div className="bg-white rounded-lg shadow p-3 flex-shrink-0 w-full sm:w-auto">
+            <div className="flex items-center justify-between gap-4 w-full sm:w-auto">
+              <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase flex-shrink-0">Sort By</span>
+              <Listbox value={sortBy} onChange={setSortBy}>
+                <div className="relative flex-shrink-0">
+                  <Listbox.Button className="px-3 sm:px-4 py-2 text-left bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary hover:border-primary transition-colors w-full sm:min-w-[180px] max-w-[200px]">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-slate-700 text-xs sm:text-sm truncate">
+                        {sortBy === 'startTime' && 'Start Time'}
+                        {sortBy === 'priceAsc' && 'Price (Low to High)'}
+                        {sortBy === 'priceDesc' && 'Price (High to Low)'}
+                        {sortBy === 'rating' && 'Rating'}
+                      </span>
+                      <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+                        {sortBy === 'startTime' && <ArrowUp className="w-3 h-3 text-slate-500" />}
+                        {sortBy === 'priceAsc' && <ArrowUp className="w-3 h-3 text-slate-500" />}
+                        {sortBy === 'priceDesc' && <ArrowDown className="w-3 h-3 text-slate-500" />}
+                        {sortBy === 'rating' && <ArrowDown className="w-3 h-3 text-slate-500" />}
+                        <ChevronDown className="w-4 h-4 text-slate-400" />
+                      </div>
                     </div>
-                  </div>
-                </Listbox.Button>
-                <Listbox.Options className="absolute z-10 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg overflow-auto focus:outline-none max-h-60 w-full sm:min-w-[200px] max-w-[250px]">
-                  <Listbox.Option
-                    value="startTime"
-                    className={({ active }) =>
-                      `px-4 py-2.5 cursor-pointer flex items-center justify-between text-sm ${
-                        active ? 'bg-primary text-primary-foreground' : 'text-slate-700'
-                      }`
-                    }
-                  >
-                    {({ selected }) => (
-                      <>
-                        <span className="font-medium">Start Time</span>
-                        <div className="flex items-center gap-1">
-                          <ArrowUp className="w-3 h-3" />
-                          {selected && <div className="w-2 h-2 bg-white rounded-full" />}
-                        </div>
-                      </>
-                    )}
-                  </Listbox.Option>
-                  <Listbox.Option
-                    value="priceAsc"
-                    className={({ active }) =>
-                      `px-4 py-2.5 cursor-pointer flex items-center justify-between text-sm ${
-                        active ? 'bg-primary text-primary-foreground' : 'text-slate-700'
-                      }`
-                    }
-                  >
-                    {({ selected }) => (
-                      <>
-                        <span className="font-medium">Price (Low to High)</span>
-                        <div className="flex items-center gap-1">
-                          <ArrowUp className="w-3 h-3" />
-                          {selected && <div className="w-2 h-2 bg-white rounded-full" />}
-                        </div>
-                      </>
-                    )}
-                  </Listbox.Option>
-                  <Listbox.Option
-                    value="priceDesc"
-                    className={({ active }) =>
-                      `px-4 py-2.5 cursor-pointer flex items-center justify-between text-sm ${
-                        active ? 'bg-primary text-primary-foreground' : 'text-slate-700'
-                      }`
-                    }
-                  >
-                    {({ selected }) => (
-                      <>
-                        <span className="font-medium">Price (High to Low)</span>
-                        <div className="flex items-center gap-1">
-                          <ArrowDown className="w-3 h-3" />
-                          {selected && <div className="w-2 h-2 bg-white rounded-full" />}
-                        </div>
-                      </>
-                    )}
-                  </Listbox.Option>
-                  <Listbox.Option
-                    value="rating"
-                    className={({ active }) =>
-                      `px-4 py-2.5 cursor-pointer flex items-center justify-between text-sm ${
-                        active ? 'bg-primary text-primary-foreground' : 'text-slate-700'
-                      }`
-                    }
-                  >
-                    {({ selected }) => (
-                      <>
-                        <span className="font-medium">Rating</span>
-                        <div className="flex items-center gap-1">
-                          <ArrowDown className="w-3 h-3" />
-                          {selected && <div className="w-2 h-2 bg-white rounded-full" />}
-                        </div>
-                      </>
-                    )}
-                  </Listbox.Option>
-                </Listbox.Options>
-              </div>
-            </Listbox>
+                  </Listbox.Button>
+                  <Listbox.Options className="absolute z-10 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg overflow-auto focus:outline-none max-h-60 w-full sm:min-w-[200px] max-w-[250px]">
+                    <Listbox.Option
+                      value="startTime"
+                      className={({ active }) =>
+                        `px-4 py-2.5 cursor-pointer flex items-center justify-between text-sm ${
+                          active ? 'bg-primary text-primary-foreground' : 'text-slate-700'
+                        }`
+                      }
+                    >
+                      {({ selected }) => (
+                        <>
+                          <span className="font-medium">Start Time</span>
+                          <div className="flex items-center gap-1">
+                            <ArrowUp className="w-3 h-3" />
+                            {selected && <div className="w-2 h-2 bg-white rounded-full" />}
+                          </div>
+                        </>
+                      )}
+                    </Listbox.Option>
+                    <Listbox.Option
+                      value="priceAsc"
+                      className={({ active }) =>
+                        `px-4 py-2.5 cursor-pointer flex items-center justify-between text-sm ${
+                          active ? 'bg-primary text-primary-foreground' : 'text-slate-700'
+                        }`
+                      }
+                    >
+                      {({ selected }) => (
+                        <>
+                          <span className="font-medium">Price (Low to High)</span>
+                          <div className="flex items-center gap-1">
+                            <ArrowUp className="w-3 h-3" />
+                            {selected && <div className="w-2 h-2 bg-white rounded-full" />}
+                          </div>
+                        </>
+                      )}
+                    </Listbox.Option>
+                    <Listbox.Option
+                      value="priceDesc"
+                      className={({ active }) =>
+                        `px-4 py-2.5 cursor-pointer flex items-center justify-between text-sm ${
+                          active ? 'bg-primary text-primary-foreground' : 'text-slate-700'
+                        }`
+                      }
+                    >
+                      {({ selected }) => (
+                        <>
+                          <span className="font-medium">Price (High to Low)</span>
+                          <div className="flex items-center gap-1">
+                            <ArrowDown className="w-3 h-3" />
+                            {selected && <div className="w-2 h-2 bg-white rounded-full" />}
+                          </div>
+                        </>
+                      )}
+                    </Listbox.Option>
+                    <Listbox.Option
+                      value="rating"
+                      className={({ active }) =>
+                        `px-4 py-2.5 cursor-pointer flex items-center justify-between text-sm ${
+                          active ? 'bg-primary text-primary-foreground' : 'text-slate-700'
+                        }`
+                      }
+                    >
+                      {({ selected }) => (
+                        <>
+                          <span className="font-medium">Rating</span>
+                          <div className="flex items-center gap-1">
+                            <ArrowDown className="w-3 h-3" />
+                            {selected && <div className="w-2 h-2 bg-white rounded-full" />}
+                          </div>
+                        </>
+                      )}
+                    </Listbox.Option>
+                  </Listbox.Options>
+                </div>
+              </Listbox>
+            </div>
           </div>
         </div>
       )}

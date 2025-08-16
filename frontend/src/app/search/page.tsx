@@ -41,6 +41,7 @@ const useRegionIdWithStorage = (defaultRegionId: string = '1') => {
 export default function SearchPage() {
   const router = useRouter();
   const pathname = usePathname();
+  const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
   // State for filters
   const [selectedDates, setSelectedDates] = useState<Date[] | undefined>(undefined);
   const [fetchedDates, setFetchedDates] = useState<Date[] | undefined>(undefined);
@@ -595,6 +596,7 @@ export default function SearchPage() {
               regionTimeZone={regionTimeZone}
               useSkeletonWhileLoading={hasEverSearched}
               disableInitialEmptyState
+              shareUrl={currentUrl}
             />
           </div>
         )}
