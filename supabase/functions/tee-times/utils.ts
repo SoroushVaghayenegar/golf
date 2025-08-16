@@ -46,6 +46,7 @@ export interface TeeTime {
     start_time: string;
     start_datetime: string;
     players_available: number;
+    course_id: number;
     course_name: string;
     holes: number;
     price: number;
@@ -157,6 +158,7 @@ export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[
                 start_time: teetimeStartTime,
                 start_datetime: teeTimeStartTimeString,
                 players_available: typeof teeTime.players_available === 'string' ? parseInt(teeTime.players_available) : teeTime.players_available,
+                course_id: typedCourseTeeTimes.course_id,
                 course_name: typedCourseTeeTimes.courses.display_name,
                 rating: typedCourseTeeTimes.courses.rating,
                 holes: teeTime.holes,

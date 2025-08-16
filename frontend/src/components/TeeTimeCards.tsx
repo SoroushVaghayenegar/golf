@@ -27,8 +27,8 @@ interface TeeTimeCardsProps {
   selectedCities: string[];
   coursesFilterEnabled: boolean;
   selectedCourses: string[];
-  removedCourses: string[];
-  onRemoveCourse: (courseName: string) => void;
+  removedCourseIds: number[];
+  onRemoveCourse: (courseId: number) => void;
   fetchedDates: Date[] | undefined;
   sortBy: 'startTime' | 'priceAsc' | 'priceDesc' | 'rating';
   setSortBy: (sortBy: 'startTime' | 'priceAsc' | 'priceDesc' | 'rating') => void;
@@ -56,7 +56,7 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
   selectedCities,
   coursesFilterEnabled,
   selectedCourses,
-  removedCourses,
+  removedCourseIds,
   onRemoveCourse,
   fetchedDates,
   sortBy,
@@ -130,9 +130,9 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
       filtered = filtered.filter(teeTime => selectedCourses.includes(teeTime.course_name));
     }
     
-    // Filter out removed courses
-    if (removedCourses.length > 0) {
-      filtered = filtered.filter(teeTime => !removedCourses.includes(teeTime.course_name));
+    // Filter out removed courses by numeric id
+    if (removedCourseIds.length > 0) {
+      filtered = filtered.filter(teeTime => !removedCourseIds.includes(Number(teeTime.course_id)));
     }
     
     // If any of the fetched dates is today, filter out tee times that are earlier than now

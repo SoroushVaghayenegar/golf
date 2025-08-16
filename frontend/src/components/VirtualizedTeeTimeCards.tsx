@@ -20,8 +20,8 @@ interface VirtualizedTeeTimeCardsProps {
   teeTimes: TeeTime[];
   loading: boolean;
   error: string | null;
-  removedCourses: string[];
-  onRemoveCourse: (courseName: string) => void;
+  removedCourseIds: number[];
+  onRemoveCourse: (courseId: number, courseName?: string) => void;
   fetchedDates: Date[] | undefined;
   sortBy: 'startTime' | 'priceAsc' | 'priceDesc' | 'rating';
   setSortBy: (sortBy: 'startTime' | 'priceAsc' | 'priceDesc' | 'rating') => void;
@@ -52,7 +52,7 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
   teeTimes,
   loading,
   error,
-  removedCourses,
+  removedCourseIds,
   onRemoveCourse,
   fetchedDates,
   sortBy,
@@ -141,9 +141,9 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
   const filteredTeeTimes = useMemo(() => {
     let filtered = teeTimes;
 
-    // Filter out removed courses (frontend-only)
-    if (removedCourses.length > 0) {
-      filtered = filtered.filter(teeTime => !removedCourses.includes(teeTime.course_name));
+    // Filter out removed courses (frontend-only) by numeric id
+    if (removedCourseIds.length > 0) {
+      filtered = filtered.filter(teeTime => !removedCourseIds.includes(Number(teeTime.course_id)));
     }
 
     // If any of the fetched dates is today, filter out tee times that are earlier than now (frontend-only safeguard)
@@ -168,7 +168,7 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
     }
 
     return filtered;
-  }, [teeTimes, removedCourses, fetchedDates, effectiveTimeZone]);
+  }, [teeTimes, removedCourseIds, fetchedDates, effectiveTimeZone]);
 
   // Sorting (separate from filtering for clarity)
   const sortedTeeTimes = useMemo(() => {

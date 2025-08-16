@@ -28,7 +28,7 @@ interface SidebarProps {
   setSelectedCities: (cities: string[]) => void;
   selectedCourses: string[];
   setSelectedCourses: (courses: string[]) => void;
-  removedCourses: string[];
+  removedCourseIds: number[];
   loading: boolean;
   onGetTeeTimes: () => void;
   isClient: boolean;
@@ -59,7 +59,7 @@ export default function Sidebar({
   setSelectedCities,
   selectedCourses,
   setSelectedCourses,
-  removedCourses,
+  removedCourseIds,
   loading,
   onGetTeeTimes,
   isClient,
@@ -77,6 +77,7 @@ export default function Sidebar({
   const [courses, setCourses] = useState<string[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(false);
   const [localCourseCityMapping, setLocalCourseCityMapping] = useState<Record<string, string>>({});
+  const [courseNameToIdMapping, setCourseNameToIdMapping] = useState<Record<string, number>>({});
   const [showCitySelector, setShowCitySelector] = useState(false);
   const [showCourseSelector, setShowCourseSelector] = useState(false);
   const [regions, setRegions] = useState<{ value: string; label: string }[]>([]);
@@ -137,13 +138,17 @@ export default function Sidebar({
         // Create simple course name to city name mapping for local use
         const simpleCityMapping: Record<string, string> = {};
         const idToNameMapping: Record<string, string> = {};
+        const nameToIdMapping: Record<string, number> = {};
         Object.entries(courseCityData).forEach(([courseName, courseData]) => {
+          const courseId = (courseData as { courseId: number; city: string }).courseId;
           simpleCityMapping[courseName] = (courseData as { courseId: number; city: string }).city;
-          idToNameMapping[(courseData as { courseId: number; city: string }).courseId.toString()] = courseName;
+          idToNameMapping[courseId.toString()] = courseName;
+          nameToIdMapping[courseName] = courseId;
         });
         
         setLocalCourseCityMapping(simpleCityMapping);
         setCourseCityMapping(simpleCityMapping);
+        setCourseNameToIdMapping(nameToIdMapping);
         if (setCourseIdToName) {
           setCourseIdToName(idToNameMapping);
         }
@@ -194,7 +199,10 @@ export default function Sidebar({
   }));
   
   const courseOptions = courses
-    .filter(course => !removedCourses.includes(course))
+    .filter(course => {
+      const courseId = courseNameToIdMapping[course];
+      return courseId ? !removedCourseIds.includes(courseId) : true;
+    })
     .map(course => {
       const courseCity = localCourseCityMapping[course];
       const isDisabled = selectedCities.length > 0 && !selectedCities.includes(courseCity);

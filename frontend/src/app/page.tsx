@@ -43,7 +43,7 @@ export default function Home() {
   const [timeRange, setTimeRange] = useState<number[]>([5, 22]); // 5am to 10pm
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
-  const [removedCourses] = useState<string[]>([]);
+  const [removedCourseIds] = useState<number[]>([]);
   const {selectedRegionId, setSelectedRegionId, isInitialized } = useRegionIdWithStorage();
   const [loading] = useState(false);
   const [isClient, setIsClient] = useState(false);
@@ -105,7 +105,7 @@ export default function Home() {
             setSelectedCities={setSelectedCities}
             selectedCourses={selectedCourses}
             setSelectedCourses={setSelectedCourses}
-            removedCourses={removedCourses}
+            removedCourseIds={removedCourseIds}
             loading={loading}
             onGetTeeTimes={handleNavigateToSearch}
             isClient={isClient}

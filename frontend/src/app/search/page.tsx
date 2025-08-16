@@ -50,7 +50,7 @@ export default function SearchPage() {
   const [timeRange, setTimeRange] = useState<number[]>([5, 22]); // 5am to 10pm
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
-  const [removedCourses, setRemovedCourses] = useState<string[]>([]);
+  const [removedCourseIds, setRemovedCourseIds] = useState<number[]>([]);
   const {selectedRegionId, setSelectedRegionId, isInitialized } = useRegionIdWithStorage();
   const [sortBy, setSortBy] = useState<'startTime' | 'priceAsc' | 'priceDesc' | 'rating'>('startTime');
   const [teeTimes, setTeeTimes] = useState<TeeTime[]>([]);
@@ -245,6 +245,15 @@ export default function SearchPage() {
         setForceShowCourseSelector(true);
       }
 
+      // Parse removedCourseIds from URL
+      const removedCourseIdsParam = params.get('removedCourseIds');
+      if (removedCourseIdsParam) {
+        const removedCourseIdsArray = removedCourseIdsParam.split(',')
+          .map((id) => parseInt(id.trim()))
+          .filter((id) => !isNaN(id));
+        setRemovedCourseIds(removedCourseIdsArray);
+      }
+
     } catch (e) {
       console.error('Failed to parse URL params', e);
     } finally {
@@ -358,11 +367,18 @@ export default function SearchPage() {
       params.set('cities', selectedCities.join(','));
     }
 
+    if (removedCourseIds.length > 0) {
+      const validRemovedIds = Array.from(new Set(removedCourseIds.filter((id) => Number.isFinite(id))));
+      if (validRemovedIds.length > 0) {
+        params.set('removedCourseIds', validRemovedIds.join(','));
+      }
+    }
+
     const queryString = params.toString();
     const url = queryString ? `${pathname}?${queryString}` : pathname;
     // Replace to avoid stacking history entries
     router.replace(url);
-  }, [pathname, router, hasParsedURL, selectedDates, numOfPlayers, holes, timeRange, selectedCities, selectedCourses, sortBy, selectedRegionId, courseIdToName, hadCourseIdsParam, rawCourseIdsCSV]);
+  }, [pathname, router, hasParsedURL, selectedDates, numOfPlayers, holes, timeRange, selectedCities, selectedCourses, removedCourseIds, sortBy, selectedRegionId, courseIdToName, hadCourseIdsParam, rawCourseIdsCSV]);
 
   // Tee time count-based subscription trigger
   useEffect(() => {
@@ -393,8 +409,28 @@ export default function SearchPage() {
   };
 
   // Handle removing a course from filters
-  const handleRemoveCourse = (courseName: string) => {
-    setRemovedCourses(prev => [...prev, courseName]);
+  const handleRemoveCourse = (courseId: number, courseName?: string) => {
+    if (typeof courseId === 'number' && Number.isFinite(courseId)) {
+      setRemovedCourseIds(prev => (prev.includes(courseId) ? prev : [...prev, courseId]));
+      return;
+    }
+    // Fallback: try to resolve id from course name using available mappings/data
+    if (courseName) {
+      // 1) Try reverse lookup from id->name map
+      const resolvedFromMap = Object.entries(courseIdToName || {}).find(([, name]) => name === courseName)?.[0];
+      const resolvedMapId = resolvedFromMap ? Number(resolvedFromMap) : NaN;
+      if (Number.isFinite(resolvedMapId)) {
+        setRemovedCourseIds(prev => (prev.includes(resolvedMapId) ? prev : [...prev, resolvedMapId]));
+        return;
+      }
+      // 2) Try to find any tee time with the same course name that has a valid id
+      const resolvedFromData = teeTimes.find(t => t.course_name === courseName && Number.isFinite(Number(t.course_id)))?.course_id;
+      const resolvedDataId = Number(resolvedFromData);
+      if (Number.isFinite(resolvedDataId)) {
+        setRemovedCourseIds(prev => (prev.includes(resolvedDataId) ? prev : [...prev, resolvedDataId]));
+        return;
+      }
+    }
   };
 
   // Function to fetch tee times
@@ -426,7 +462,7 @@ export default function SearchPage() {
     lastQueryKeyRef.current = getQueryKey();
     setLoading(true);
     setError(null);
-    setRemovedCourses([]); // Clear removed courses when starting a new search
+    // Note: Don't clear removedCourseIds here as they should persist from URL params
     try {
       console.log('Selected dates:', selectedDates);
       
@@ -555,7 +591,7 @@ export default function SearchPage() {
             setSelectedCities={setSelectedCities}
             selectedCourses={selectedCourses}
             setSelectedCourses={setSelectedCourses}
-            removedCourses={removedCourses}
+            removedCourseIds={removedCourseIds}
             loading={loading}
             onGetTeeTimes={handleGetTeeTimes}
             isClient={isClient}
@@ -580,7 +616,7 @@ export default function SearchPage() {
               teeTimes={teeTimes}
               loading={loading}
               error={error}
-              removedCourses={removedCourses}
+              removedCourseIds={removedCourseIds}
               onRemoveCourse={handleRemoveCourse}
               fetchedDates={fetchedDates}
               sortBy={sortBy}

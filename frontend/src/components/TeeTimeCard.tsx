@@ -153,7 +153,7 @@ const WeatherInfo = ({ teeTime }: { teeTime: TeeTime }) => {
 interface TeeTimeCardProps {
   teeTime: TeeTime;
   index: number;
-  onRemoveCourse: (courseName: string) => void;
+  onRemoveCourse: (courseId: number, courseName?: string) => void;
   onVisibilityChange?: (isVisible: boolean) => void;
 }
 
@@ -220,7 +220,7 @@ export default function TeeTimeCard({ teeTime, index, onRemoveCourse, onVisibili
       course_name: teeTime.course_name,
       city: teeTime.city,
     });
-    onRemoveCourse(teeTime.course_name);
+    onRemoveCourse(Number(teeTime.course_id), teeTime.course_name);
   };
 
   return (
