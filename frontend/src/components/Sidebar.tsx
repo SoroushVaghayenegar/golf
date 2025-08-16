@@ -36,6 +36,12 @@ interface SidebarProps {
   setCourseCityMapping: (mapping: Record<string, string>) => void;
   selectedRegionId: string;
   setSelectedRegionId: (regionId: string) => void;
+  // Provide id->name mapping to parent so URLs can use courseIds
+  setCourseIdToName?: (mapping: Record<string, string>) => void;
+  // Allow parent to force show/hide course selector (used for URL hydration)
+  forceShowCourseSelector?: boolean | null;
+  // When true, hide the submit button (used on search page)
+  hideSubmitButton?: boolean;
 }
 
 export default function Sidebar({
@@ -58,7 +64,10 @@ export default function Sidebar({
   todayDate,
   setCourseCityMapping,
   selectedRegionId,
-  setSelectedRegionId
+  setSelectedRegionId,
+  setCourseIdToName,
+  forceShowCourseSelector,
+  hideSubmitButton
 }: SidebarProps) {
   const [cities, setCities] = useState<string[]>([]);
   const [citiesLoading, setCitiesLoading] = useState(false);
@@ -69,6 +78,17 @@ export default function Sidebar({
   const [showCourseSelector, setShowCourseSelector] = useState(false);
   const [regions, setRegions] = useState<{ value: string; label: string }[]>([]);
   const [showHolesTooltip, setShowHolesTooltip] = useState(false);
+  // Track slider drag state so we only commit on release
+  const [pendingTimeRange, setPendingTimeRange] = useState<number[] | null>(null);
+
+  // Respect parent instruction to show/hide course selector (once)
+  useEffect(() => {
+    if (forceShowCourseSelector === true) {
+      setShowCourseSelector(true);
+    } else if (forceShowCourseSelector === false) {
+      setShowCourseSelector(false);
+    }
+  }, [forceShowCourseSelector]);
 
   // Fetch cities and courses on component mount and when region changes
   useEffect(() => {
@@ -104,18 +124,26 @@ export default function Sidebar({
         
         // Create simple course name to city name mapping for local use
         const simpleCityMapping: Record<string, string> = {};
+        const idToNameMapping: Record<string, string> = {};
         Object.entries(courseCityData).forEach(([courseName, courseData]) => {
           simpleCityMapping[courseName] = (courseData as { courseId: number; city: string }).city;
+          idToNameMapping[(courseData as { courseId: number; city: string }).courseId.toString()] = courseName;
         });
         
         setLocalCourseCityMapping(simpleCityMapping);
         setCourseCityMapping(simpleCityMapping);
+        if (setCourseIdToName) {
+          setCourseIdToName(idToNameMapping);
+        }
         setCourses(courseNames);
         setCities(cityNames);
       } catch (error) {
         console.error('Failed to fetch cities or courses:', error);
         setLocalCourseCityMapping({});
         setCourseCityMapping({});
+        if (setCourseIdToName) {
+          setCourseIdToName({});
+        }
         setCities([]);
         setCourses([]);
       } finally {
@@ -190,8 +218,6 @@ export default function Sidebar({
         ])
       ];
       setSelectedCourses(updatedCourses);
-    } else {
-      setSelectedCourses([]);
     }
   };
 
@@ -210,9 +236,8 @@ export default function Sidebar({
 
   const handleCityToggle = () => {
     if (showCitySelector) {
-      // Switching to "Custom" - clear city filters
+      // Switching to "All" - clear city filters but preserve selected courses
       setSelectedCities([]);
-      setSelectedCourses([]);
     }
     setShowCitySelector(!showCitySelector);
   };
@@ -305,7 +330,7 @@ export default function Sidebar({
   };
 
   return (
-    <section className="w-full lg:w-80 flex-shrink-0 bg-white shadow p-5 flex flex-col gap-3 lg:gap-4 lg:h-[calc(100vh-64px)] lg:min-h-[calc(100vh-64px)] lg:sticky lg:top-0 lg:mr-8 rounded-xl lg:rounded-none justify-between relative z-20 mt-4 lg:mt-0 lg:overflow-hidden">
+    <section className="w-full lg:w-80 flex-shrink-0 bg-white shadow p-5 flex flex-col gap-3 lg:gap-4 lg:h-[calc(100vh-64px)] lg:min-h-[calc(100vh-64px)] lg:sticky lg:top-0 rounded-xl lg:rounded-none justify-between relative z-20 mt-4 lg:mt-0 lg:overflow-hidden">
       <div className="flex flex-col gap-4 lg:gap-4 flex-1 overflow-y-auto">
         
         
@@ -392,8 +417,12 @@ export default function Sidebar({
                 step={1}
                 min={5}
                 max={22}
-                values={timeRange}
-                onChange={(values) => setTimeRange(values)}
+                values={pendingTimeRange ?? timeRange}
+                onChange={(values) => setPendingTimeRange(values)}
+                onFinalChange={(values) => {
+                  setPendingTimeRange(null);
+                  setTimeRange(values);
+                }}
               renderTrack={({ props, children }) => (
                 <div
                   {...props}
@@ -405,8 +434,8 @@ export default function Sidebar({
                   <div
                     className="h-2 bg-sidebar-primary rounded-full"
                     style={{
-                      width: `${((timeRange[1] - timeRange[0]) / (22 - 5)) * 100}%`,
-                      left: `${((timeRange[0] - 5) / (22 - 5)) * 100}%`,
+                      width: `${(((pendingTimeRange ?? timeRange)[1] - (pendingTimeRange ?? timeRange)[0]) / (22 - 5)) * 100}%`,
+                      left: `${(((pendingTimeRange ?? timeRange)[0] - 5) / (22 - 5)) * 100}%`,
                       position: 'relative'
                     }}
                   />
@@ -432,8 +461,8 @@ export default function Sidebar({
               }}
             />
             <div className="flex justify-between mt-3 text-sm font-medium text-slate-600">
-              <span>{formatHour(timeRange[0])}</span>
-              <span>{formatHour(timeRange[1])}</span>
+              <span>{formatHour((pendingTimeRange ?? timeRange)[0])}</span>
+              <span>{formatHour((pendingTimeRange ?? timeRange)[1])}</span>
             </div>
           </div>
         </div>
@@ -598,17 +627,24 @@ export default function Sidebar({
         </div>
       </div>
 
-      <button
-        onClick={onGetTeeTimes}
-        disabled={loading || !selectedDates || selectedDates.length === 0}
-        className={`mt-8 lg:mt-0 px-6 py-3 rounded-lg font-semibold text-white transition-all duration-200 ${
-          loading || !selectedDates || selectedDates.length === 0
-            ? 'bg-slate-300 cursor-not-allowed'
-            : 'bg-sidebar-primary hover:bg-sidebar-primary-hover shadow-md hover:shadow-lg'
-        }`}
-      >
-        {loading ? 'Searching...' : 'Get Tee Times'}
-      </button>
+      {!hideSubmitButton && (
+        <button
+          onClick={onGetTeeTimes}
+          disabled={loading || !selectedDates || selectedDates.length === 0}
+          className={`mt-8 lg:mt-0 px-6 py-3 rounded-lg font-semibold text-white transition-all duration-200 ${
+            loading || !selectedDates || selectedDates.length === 0
+              ? 'bg-slate-300 cursor-not-allowed'
+              : 'bg-sidebar-primary hover:bg-sidebar-primary-hover shadow-md hover:shadow-lg'
+          }`}
+        >
+          {loading ? 'Searching...' : 'Get Tee Times'}
+        </button>
+      )}
+      {hideSubmitButton && (
+        <p className="mt-4 text-xs text-slate-500 italic">
+          * Changing filters will automatically refresh results
+        </p>
+      )}
     </section>
   );
 } 

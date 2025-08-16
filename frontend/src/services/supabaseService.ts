@@ -94,9 +94,10 @@ export const fetchRegions = async () => {
             throw new Error(error.message)
         }
         
-        return data.map((region: { id: number, name: string }) => ({
+        return data.map((region: { id: number, name: string , timezone: string }) => ({
             value: region.id,
-            label: region.name
+            label: region.name,
+            timezone: region.timezone
         }))
     } catch (error) {
         console.error('Error fetching regions:', error)

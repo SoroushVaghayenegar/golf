@@ -4,11 +4,7 @@ import { FixedSizeGrid as Grid, GridChildComponentProps } from 'react-window';
 import { Listbox } from "@headlessui/react";
 import { ChevronDown, ArrowUp, ArrowDown } from "lucide-react";
 import { type TeeTime } from "../services/teeTimeService";
-import { 
-  parseDateTimeInVancouver,
-  getVancouverToday,
-  getVancouverNow
-} from "../services/timezoneService";
+// Timezone-aware helpers are implemented locally to allow passing region-specific timezones
 import { SubscriptionSignup } from "@/components/SubscriptionSignup";
 import LottiePlayer from "@/components/LottiePlayer";
 import TeeTimeCard from "@/components/TeeTimeCard";
@@ -41,6 +37,12 @@ interface VirtualizedTeeTimeCardsProps {
   courseCityMapping: Record<string, string>;
   onTeeTimeVisibilityChange?: (visibleCount: number) => void;
   selectedRegionId: string;
+  // Optional IANA timezone for the selected region (e.g., 'America/Vancouver')
+  regionTimeZone?: string;
+  // If true, show skeletons instead of the animation when loading
+  useSkeletonWhileLoading?: boolean;
+  // If true, do not render the initial empty-state background image/prompt
+  disableInitialEmptyState?: boolean;
 }
 
 export interface VirtualizedTeeTimeCardsRef {
@@ -68,9 +70,29 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
   isMobile,
   hasSearched,
   onTeeTimeVisibilityChange,
-  selectedRegionId
+  selectedRegionId,
+  regionTimeZone,
+  useSkeletonWhileLoading,
+  disableInitialEmptyState
 }, ref) => {
   
+  const DEFAULT_TIMEZONE = 'America/Vancouver';
+  const effectiveTimeZone = regionTimeZone || DEFAULT_TIMEZONE;
+
+  const parseDateTimeInTimeZone = (dateTimeString: string, timeZone: string): Date => {
+    const date = new Date(dateTimeString.replace('T', ' '));
+    return new Date(date.toLocaleString('en-US', { timeZone }));
+  };
+
+  const getNowInTimeZone = (timeZone: string): Date => {
+    return new Date(new Date().toLocaleString('en-US', { timeZone }));
+  };
+
+  const getTodayInTimeZone = (timeZone: string): Date => {
+    const now = getNowInTimeZone(timeZone);
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  };
+
   const sectionRef = useRef<HTMLElement>(null);
   const scrollableRef = useRef<HTMLDivElement>(null);
   const [visibleTeeTimes, setVisibleTeeTimes] = useState<Set<number>>(new Set());
@@ -124,77 +146,66 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
 
   const filteredTeeTimes = useMemo(() => {
     let filtered = teeTimes;
-    
-    // Filter by time range
-    filtered = filtered.filter(teeTime => {
-      const teeTimeDateTime = parseDateTimeInVancouver(teeTime.start_datetime);
-      const teeTimeHour = teeTimeDateTime.getHours();
-      return teeTimeHour >= timeRange[0] && teeTimeHour <= timeRange[1];
-    });
-    
-    // Filter by cities if enabled
-    if (citiesFilterEnabled && selectedCities.length > 0) {
-      filtered = filtered.filter(teeTime => selectedCities.includes(teeTime.city));
-    }
-    
-    // Filter by courses if enabled
-    if (coursesFilterEnabled && selectedCourses.length > 0) {
-      filtered = filtered.filter(teeTime => selectedCourses.includes(teeTime.course_name));
-    }
-    
-    // Filter out removed courses
+
+    // Filter out removed courses (frontend-only)
     if (removedCourses.length > 0) {
       filtered = filtered.filter(teeTime => !removedCourses.includes(teeTime.course_name));
     }
-    
-    // If any of the fetched dates is today, filter out tee times that are earlier than now
+
+    // If any of the fetched dates is today, filter out tee times that are earlier than now (frontend-only safeguard)
     if (fetchedDates && fetchedDates.length > 0) {
-      const vancouverToday = getVancouverToday();
+      const todayInTz = getTodayInTimeZone(effectiveTimeZone);
       const hasTodaySelected = fetchedDates.some(date => 
-        date.toDateString() === vancouverToday.toDateString()
+        date.toDateString() === todayInTz.toDateString()
       );
       
       if (hasTodaySelected) {
-        const vancouverNow = getVancouverNow();
+        const nowInTz = getNowInTimeZone(effectiveTimeZone);
         filtered = filtered.filter(teeTime => {
-          const teeTimeDateTime = parseDateTimeInVancouver(teeTime.start_datetime);
+          const teeTimeDateTime = parseDateTimeInTimeZone(teeTime.start_datetime, effectiveTimeZone);
           const teeTimeDate = new Date(teeTimeDateTime.getFullYear(), teeTimeDateTime.getMonth(), teeTimeDateTime.getDate());
           
-          if (teeTimeDate.toDateString() === vancouverToday.toDateString()) {
-            return teeTimeDateTime >= vancouverNow;
+          if (teeTimeDate.toDateString() === todayInTz.toDateString()) {
+            return teeTimeDateTime >= nowInTz;
           }
           return true;
         });
       }
     }
-    
-    // Sort tee times
-    filtered.sort((a, b) => {
+
+    return filtered;
+  }, [teeTimes, removedCourses, fetchedDates, effectiveTimeZone]);
+
+  // Sorting (separate from filtering for clarity)
+  const sortedTeeTimes = useMemo(() => {
+    const copy = [...filteredTeeTimes];
+    copy.sort((a, b) => {
       switch (sortBy) {
-        case 'startTime':
-          const timeA = parseDateTimeInVancouver(a.start_datetime);
-          const timeB = parseDateTimeInVancouver(b.start_datetime);
+        case 'startTime': {
+          const timeA = parseDateTimeInTimeZone(a.start_datetime, effectiveTimeZone);
+          const timeB = parseDateTimeInTimeZone(b.start_datetime, effectiveTimeZone);
           return timeA.getTime() - timeB.getTime();
+        }
         case 'priceAsc':
           return Number(a.price) - Number(b.price);
         case 'priceDesc':
           return Number(b.price) - Number(a.price);
-        case 'rating':
+        case 'rating': {
           const ratingA = a.rating ?? 0;
           const ratingB = b.rating ?? 0;
           return ratingB - ratingA;
+        }
         default:
           return 0;
       }
     });
-    
-    return filtered;
-  }, [teeTimes, timeRange, citiesFilterEnabled, selectedCities, coursesFilterEnabled, selectedCourses, removedCourses, fetchedDates, sortBy]);
+    return copy;
+  }, [filteredTeeTimes, sortBy, effectiveTimeZone]);
 
   // Group tee times by date
   const groupedTeeTimes = useMemo(() => {
-    const grouped = filteredTeeTimes.reduce((acc, teeTime) => {
-      const teeTimeDateTime = parseDateTimeInVancouver(teeTime.start_datetime);
+    const grouped = sortedTeeTimes.reduce((acc, teeTime) => {
+      const teeTimeDateTime = parseDateTimeInTimeZone(teeTime.start_datetime, effectiveTimeZone);
       const dateKey = teeTimeDateTime.toDateString();
       
       if (!acc[dateKey]) {
@@ -213,12 +224,12 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
       date: dateKey,
       teeTimes: grouped[dateKey]
     }));
-  }, [filteredTeeTimes]);
+  }, [sortedTeeTimes, effectiveTimeZone]);
 
   // Format date for display
   const formatDateDisplay = (dateString: string) => {
     const date = new Date(dateString);
-    const today = getVancouverToday();
+    const today = getTodayInTimeZone(effectiveTimeZone);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
@@ -419,7 +430,7 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
 
       {/* Scrollable Results Container */}
       <div ref={scrollableRef} className="flex-1 lg:overflow-hidden w-full max-w-full">
-        {loading && (
+        {loading && !useSkeletonWhileLoading && (
           <div className={isMobile
             ? 'fixed inset-0 bg-white z-50 flex flex-col items-center justify-center'
             : 'flex-1 flex flex-col items-center justify-center'
@@ -428,10 +439,22 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
             <p className="text-slate-600 mt-4">Loading tee times...</p>
           </div>
         )}
+        {loading && useSkeletonWhileLoading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+            {Array.from({ length: 6 }).map((_, idx) => (
+              <div key={idx} className="bg-white rounded-lg shadow p-4">
+                <div className="h-6 w-1/3 bg-slate-200 rounded mb-3" />
+                <div className="h-4 w-1/2 bg-slate-200 rounded mb-2" />
+                <div className="h-4 w-2/3 bg-slate-200 rounded mb-2" />
+                <div className="h-48 w-full bg-slate-200 rounded" />
+              </div>
+            ))}
+          </div>
+        )}
         {error && (
           <div className="text-center py-8 text-red-500">{error}</div>
         )}
-        {!loading && !error && !hasSearched && !isMobile && (
+        {!loading && !error && !hasSearched && !isMobile && !disableInitialEmptyState && (
           <div className="flex-1 flex flex-col items-center justify-center relative w-full h-full min-h-[600px]">
             <div 
               className="fixed inset-0 w-screen h-screen bg-cover bg-center opacity-60 z-0"

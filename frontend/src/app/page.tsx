@@ -1,12 +1,10 @@
 "use client";
 import posthog from 'posthog-js';
-import { useState, useEffect, useRef } from "react";
-import { fetchTeeTimes, type TeeTime } from "../services/teeTimeService";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { 
   getVancouverToday, 
-  formatDateForAPI
 } from "../services/timezoneService";
-import VirtualizedTeeTimeCards, { VirtualizedTeeTimeCardsRef } from "@/components/VirtualizedTeeTimeCards";
 import Sidebar from "@/components/Sidebar";
 
 // Custom hook for managing region with localStorage persistence
@@ -37,9 +35,9 @@ const useRegionIdWithStorage = (defaultRegionId: string = '1') => {
 };
 
 export default function Home() {
+  const router = useRouter();
   // State for filters
   const [selectedDates, setSelectedDates] = useState<Date[] | undefined>(undefined);
-  const [fetchedDates, setFetchedDates] = useState<Date[] | undefined>(undefined);
   const [numOfPlayers, setNumOfPlayers] = useState<string>("any");
   const [holes, setHoles] = useState<string>("any");
   const [timeRange, setTimeRange] = useState<number[]>([5, 22]); // 5am to 10pm
@@ -47,162 +45,47 @@ export default function Home() {
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
   const [removedCourses, setRemovedCourses] = useState<string[]>([]);
   const {selectedRegionId, setSelectedRegionId, isInitialized } = useRegionIdWithStorage();
-  const [sortBy, setSortBy] = useState<'startTime' | 'priceAsc' | 'priceDesc' | 'rating'>('startTime');
-  const [teeTimes, setTeeTimes] = useState<TeeTime[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [courseCityMapping, setCourseCityMapping] = useState<Record<string, string>>({});
-  
-  // Subscription component state
-  const [showSubscription, setShowSubscription] = useState(false);
-  const [subscriptionShown, setSubscriptionShown] = useState(false);
-  const [subscriptionDismissed, setSubscriptionDismissed] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [loading] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [todayDate, setTodayDate] = useState<Date | null>(null);
-  const [visibleTeeTimeCount, setVisibleTeeTimeCount] = useState(0);
-  const resultsSectionRef = useRef<VirtualizedTeeTimeCardsRef>(null);
+  const [, setCourseCityMapping] = useState<Record<string, string>>({});
 
-  // Check sessionStorage and set mobile state on component mount
   useEffect(() => {
     // Mark as client-side rendered
     setIsClient(true);
-    
-    const dismissed = sessionStorage.getItem('subscription-dismissed') === 'true';
-    setSubscriptionDismissed(dismissed);
-    
-    // Set mobile state after hydration
-    setIsMobile(window.innerWidth < 1024);
-    
+
     // Initialize dates after hydration
     const today = getVancouverToday();
     setTodayDate(today);
     setSelectedDates([today]);
-    setFetchedDates([today]);
-    
-    // Handle window resize
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 1024);
-    };
-    
-    window.addEventListener('resize', handleResize);
-    
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
   }, []);
 
-  // Tee time count-based subscription trigger
-  useEffect(() => {
-    if (!teeTimes.length || subscriptionShown || subscriptionDismissed) return;
-
-    const mobileThreshold = 5;
-    const desktopThreshold = 15;
-    const threshold = isMobile ? mobileThreshold : desktopThreshold;
-
-    if (visibleTeeTimeCount >= threshold) {
-      setShowSubscription(true);
-      setSubscriptionShown(true);
-    }
-  }, [visibleTeeTimeCount, teeTimes.length, subscriptionShown, subscriptionDismissed, isMobile]);
-
-  // Reset subscription state when new search is performed
-  useEffect(() => {
-    setShowSubscription(false);
-    setSubscriptionShown(false);
-    setVisibleTeeTimeCount(0);
-  }, [fetchedDates]);
-
-  // Handle subscription dismissal
-  const handleSubscriptionDismiss = () => {
-    setSubscriptionDismissed(true);
-    setShowSubscription(false);
-    setSubscriptionShown(true);
+  // Helper to format a Date as YYYY-MM-DD without timezone shifts
+  const formatDateLocal = (date: Date) => {
+    const y = date.getFullYear();
+    const m = (date.getMonth() + 1).toString().padStart(2, '0');
+    const d = date.getDate().toString().padStart(2, '0');
+    return `${y}-${m}-${d}`;
   };
 
-  // Handle removing a course from filters
-  const handleRemoveCourse = (courseName: string) => {
-    setRemovedCourses(prev => [...prev, courseName]);
-    setSelectedCourses(prev => prev.filter(course => course !== courseName));
-  };
-
-  // Function to fetch tee times
-  const handleGetTeeTimes = async () => {
-    if (!selectedDates || selectedDates.length === 0) {
-      setError('Please select at least one date');
-      return;
+  // Navigate to /search with current filters
+  const handleNavigateToSearch = () => {
+    const params = new URLSearchParams();
+    if (selectedDates && selectedDates.length > 0) {
+      params.set('dates', selectedDates.map(formatDateLocal).join(','));
     }
-
-    if (!selectedRegionId) {
-      setError('Please select a region');
-      return;
+    if (numOfPlayers) params.set('players', numOfPlayers);
+    if (holes) params.set('holes', holes);
+    if (timeRange && timeRange.length === 2) {
+      params.set('timeRange', `${timeRange[0]}-${timeRange[1]}`);
     }
+    if (selectedRegionId) params.set('region', selectedRegionId);
+    if (selectedCities.length > 0) params.set('cities', selectedCities.join(','));
+    if (selectedCourses.length > 0) params.set('courses', selectedCourses.join(','));
+    // Trigger auto search on destination page
+    params.set('auto', '1');
 
-    posthog.capture('tee_times_searched', {
-      dates_count: selectedDates.length,
-      num_of_players: numOfPlayers,
-      holes: holes,
-      region: "TO-DO",
-      start_time_filter: timeRange[0],
-      end_time_filter: timeRange[1],
-      selected_cities_count: selectedCities.length,
-      selected_courses_count: selectedCourses.length,
-    });
-    
-    const startTime = Date.now();
-    setLoading(true);
-    setError(null);
-    setRemovedCourses([]); // Clear removed courses when starting a new search
-    try {
-      console.log('Selected dates:', selectedDates);
-      
-      const formattedDates = selectedDates.map(date => formatDateForAPI(date));
-      console.log('Formatted dates:', formattedDates);
-      const data = await fetchTeeTimes({
-        dates: formattedDates, // Array of YYYY-MM-DD strings
-        numOfPlayers,
-        holes,
-        regionId: selectedRegionId
-      });
-      setTeeTimes(data);
-      setFetchedDates(selectedDates);
-    } catch (err) {
-      setError('Failed to fetch tee times. Please try again.');
-      console.error(err);
-    } finally {
-      // Ensure the function takes at least 1.5 seconds
-      const elapsedTime = Date.now() - startTime;
-      const remainingTime = Math.max(0, 2000 - elapsedTime);
-      
-      if (remainingTime > 0) {
-        await new Promise(resolve => setTimeout(resolve, remainingTime));
-      }
-      
-      setLoading(false);
-      
-      // Auto-scroll to results section after loading is complete
-      setTimeout(() => {
-        if (isMobile) {
-          // On mobile, scroll the window to the results section
-          const sectionElement = resultsSectionRef.current?.sectionElement;
-          if (sectionElement) {
-            sectionElement.scrollIntoView({ 
-              behavior: 'smooth', 
-              block: 'start' 
-            });
-          }
-        } else {
-          // On desktop, scroll to top of the scrollable div
-          const scrollableElement = resultsSectionRef.current?.scrollableElement;
-          if (scrollableElement) {
-            scrollableElement.scrollTo({ 
-              top: 0, 
-              behavior: 'smooth' 
-            });
-          }
-        }
-      }, 100); // Small delay to ensure DOM is updated
-    }
+    router.push(`/search?${params.toString()}`);
   };
 
   return (
@@ -224,46 +107,29 @@ export default function Home() {
             setSelectedCourses={setSelectedCourses}
             removedCourses={removedCourses}
             loading={loading}
-            onGetTeeTimes={handleGetTeeTimes}
+            onGetTeeTimes={handleNavigateToSearch}
             isClient={isClient}
             todayDate={todayDate}
             setCourseCityMapping={setCourseCityMapping}
             selectedRegionId={selectedRegionId}
             setSelectedRegionId={setSelectedRegionId}
+            hideSubmitButton={false}
           />
         )}
-
-        {/* Tee Times Results Section - Scrollable */}
-        {/* On mobile, only show results section if there are results, loading, or error */}
-        {/* On desktop, always show to display initial state */}
-        {(!isMobile || teeTimes.length > 0 || loading || !!error) && (
-          <div className="flex-1 lg:p-10 lg:pl-0 lg:pr-10 lg:py-10 px-4 sm:px-10 lg:px-0 w-full max-w-full overflow-x-hidden lg:h-[calc(100vh-64px)] lg:min-h-[calc(100vh-64px)]">
-            <VirtualizedTeeTimeCards
-              ref={resultsSectionRef}
-              teeTimes={teeTimes}
-              loading={loading}
-              error={error}
-              timeRange={timeRange}
-              citiesFilterEnabled={true}
-              selectedCities={selectedCities}
-              coursesFilterEnabled={true}
-              selectedCourses={selectedCourses}
-              removedCourses={removedCourses}
-              onRemoveCourse={handleRemoveCourse}
-              fetchedDates={fetchedDates}
-              sortBy={sortBy}
-              setSortBy={setSortBy}
-              showSubscription={showSubscription}
-              setShowSubscription={setShowSubscription}
-              handleSubscriptionDismiss={handleSubscriptionDismiss}
-              isMobile={isMobile}
-              hasSearched={teeTimes.length > 0 || loading || !!error}
-              courseCityMapping={courseCityMapping}
-              onTeeTimeVisibilityChange={setVisibleTeeTimeCount}
-              selectedRegionId={selectedRegionId}
-            />
+        <div className="relative flex-1 lg:h-[calc(100vh-64px)] h-[50vh] overflow-hidden hidden lg:block">
+          <img src="/bg1.png" alt="Background" className="absolute inset-0 w-full h-full object-cover opacity-90" />
+          <div className="absolute inset-0 bg-black/40" />
+          <div className="relative z-10 w-full h-full flex items-center justify-center p-6 text-center">
+            <div className="max-w-3xl">
+              <h1 className="text-white text-xl sm:text-2xl md:text-3xl font-semibold drop-shadow-md">
+                Click &quot;Get Tee Times&quot; to find your ideal tee time
+              </h1>
+              <p className="mt-3 text-white/90 text-base sm:text-lg md:text-xl drop-shadow">
+                Select your preferences and discover available tee times
+              </p>
+            </div>
           </div>
-        )}
+        </div>
       </main>
     </div>
   );
