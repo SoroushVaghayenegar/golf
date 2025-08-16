@@ -6,6 +6,7 @@ import WatchlistFilters from "@/components/WatchlistFilters";
 import { toast } from "sonner";
 import { createTeeTimeWatchlist, type TeeTimeWatchlistFilters } from "@/services/teeTimeWatchlistService";
 import { fetchTeeTimes } from "@/services/teeTimeService";
+import { fetchCourseDisplayNamesAndTheirCities } from "@/services/supabaseService";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { SquareArrowOutUpRight } from "lucide-react";
@@ -71,6 +72,19 @@ export default function CreateTeeTimeWatchlistPage() {
   const createWatchlistNow = async () => {
     setLoading(true);
     try {
+      // Ensure course mappings are available when needed
+      if ((selectedCourses.length > 0 || selectedCities.length > 0) && (Object.keys(courseIdMapping).length === 0 || Object.keys(courseCityMapping).length === 0) && selectedRegionId) {
+        const courseCityData = await fetchCourseDisplayNamesAndTheirCities(selectedRegionId);
+        const idMapping: Record<string, number> = {};
+        const simpleCityMapping: Record<string, string> = {};
+        Object.entries(courseCityData).forEach(([courseName, courseData]) => {
+          const data = courseData as { courseId: number; city: string };
+          idMapping[courseName] = data.courseId;
+          simpleCityMapping[courseName] = data.city;
+        });
+        setCourseIdMapping(idMapping);
+        setCourseCityMapping(simpleCityMapping);
+      }
       // Build filters payload
       const startHour = timeRange[0];
       const endHour = timeRange[1];
@@ -129,6 +143,19 @@ export default function CreateTeeTimeWatchlistPage() {
 
     setLoading(true);
     try {
+      // Ensure course mappings are available when needed
+      if ((selectedCourses.length > 0 || selectedCities.length > 0) && (Object.keys(courseIdMapping).length === 0 || Object.keys(courseCityMapping).length === 0) && selectedRegionId) {
+        const courseCityData = await fetchCourseDisplayNamesAndTheirCities(selectedRegionId);
+        const idMapping: Record<string, number> = {};
+        const simpleCityMapping: Record<string, string> = {};
+        Object.entries(courseCityData).forEach(([courseName, courseData]) => {
+          const data = courseData as { courseId: number; city: string };
+          idMapping[courseName] = data.courseId;
+          simpleCityMapping[courseName] = data.city;
+        });
+        setCourseIdMapping(idMapping);
+        setCourseCityMapping(simpleCityMapping);
+      }
       const dateStr = formatDateLocal(new Date(selectedDates[0]));
       const startTime = `${String(timeRange[0]).padStart(2, '0')}:00`;
       const endTime = `${String(timeRange[1]).padStart(2, '0')}:00`;
@@ -141,12 +168,13 @@ export default function CreateTeeTimeWatchlistPage() {
       let courseIds: string[] | undefined = undefined;
       const idsSet = new Set<string>();
       if (selectedCourses.length > 0) {
+        // Honor explicit course selections only
         selectedCourses.forEach((courseName) => {
           const id = nameToId[courseName];
           if (id) idsSet.add(id);
         });
-      }
-      if (selectedCities.length > 0 && courseCityMapping && Object.keys(courseCityMapping).length > 0) {
+      } else if (selectedCities.length > 0 && courseCityMapping && Object.keys(courseCityMapping).length > 0) {
+        // Only fall back to city-based inclusion if no explicit courses were selected
         Object.entries(courseCityMapping).forEach(([courseName, cityName]) => {
           if (selectedCities.includes(cityName)) {
             const id = nameToId[courseName];
@@ -243,9 +271,7 @@ export default function CreateTeeTimeWatchlistPage() {
             <DialogHeader>
               <DialogTitle>We found tee times!</DialogTitle>
               <DialogDescription>
-                There are {availableCount} tee times available for your watchlist parameters currently.
-                <br />
-                *We suggest to not create a watchlist as long as tee times are available.*
+                There are currently <strong>{availableCount}</strong> tee times available for your watchlist parameters.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
@@ -268,15 +294,6 @@ export default function CreateTeeTimeWatchlistPage() {
                 }}
               >
                 Show me <SquareArrowOutUpRight className="inline-block" />
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={async () => {
-                  setShowResultsDialog(false);
-                  await createWatchlistNow();
-                }}
-              >
-                Create watchlist instead
               </Button>
             </DialogFooter>
           </DialogContent>

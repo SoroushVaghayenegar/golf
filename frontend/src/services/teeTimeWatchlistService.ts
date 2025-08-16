@@ -27,21 +27,22 @@ export const createTeeTimeWatchlist = async (filters: TeeTimeWatchlistFilters) =
             region_id: filters.regionId,
             courses: filters.courses,
         })
-        .select()
+        .select('*, regions(name)')
         .single()
 
     if (error) {
         throw error
     }
 
-    return data
+    // Flatten region name for convenience in UI
+    return data ? { ...data, region: (data as any).regions?.name ?? null } : data
 }
 
 export const getTeeTimeWatchlists = async () => {
     const client = createClient()
     const { data, error } = await client
         .from('tee_time_watchlists')
-        .select('*')
+        .select('*, regions(name)')
         .eq('notification_sent', false)
         .gte('date', new Date().toISOString())
 
@@ -49,7 +50,11 @@ export const getTeeTimeWatchlists = async () => {
         throw error
     }
 
-    return data
+    // Map nested region to flat string to match UI expectations
+    return (data ?? []).map((row: any) => ({
+        ...row,
+        region: row.regions?.name ?? null,
+    }))
 }
 
 export const deleteTeeTimeWatchlist = async (id: number) => {

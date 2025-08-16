@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Exit on any error
-set -e
+set -Eeuo pipefail
+trap 'echo "Error: command failed at line $LINENO" >&2' ERR
 
 # Configuration
 LAMBDA_FUNCTION_NAME=$(basename "$(pwd)")
@@ -61,10 +61,17 @@ for whl in "$WHEELS_DIR"/*.whl; do
   unzip -q -o "$whl" -d "$TEMP_DIR"
 done
 
-# Create zip file
+# Create zip file (remove any previous archive to avoid incremental zip growth)
 echo "🗜️ Creating deployment package..."
 cd $TEMP_DIR
-zip -r ../$ZIP_FILE . -x "*.pyc" -x "__pycache__/*" -x "*.DS_Store" -x "test.py" -x "email_preview.html"
+rm -f ../$ZIP_FILE
+zip -r ../$ZIP_FILE . \
+  -x "*.pyc" \
+  -x "__pycache__/*" \
+  -x "*.DS_Store" \
+  -x "test.py" \
+  -x "test_local.py" \
+  -x "wheels/*"
 cd ..
 
 # Upload to AWS Lambda
@@ -72,7 +79,7 @@ echo "☁️ Uploading to AWS Lambda..."
 aws lambda update-function-code \
     --function-name $LAMBDA_FUNCTION_NAME \
     --zip-file fileb://$ZIP_FILE \
-    --no-cli-pager > /dev/null 2>&1
+    --no-cli-pager --output json
 
 # Cleanup
 echo "🧹 Cleaning up..."

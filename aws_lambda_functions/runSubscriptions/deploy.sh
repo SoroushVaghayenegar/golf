@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Exit on any error
-set -e
+set -Eeuo pipefail
+trap 'echo "Error: command failed at line $LINENO" >&2' ERR
 
 # Configuration
 LAMBDA_FUNCTION_NAME="runSubscriptions"  # Change this to your Lambda function name
@@ -34,7 +34,7 @@ echo "☁️ Uploading to AWS Lambda..."
 aws lambda update-function-code \
     --function-name $LAMBDA_FUNCTION_NAME \
     --zip-file fileb://$ZIP_FILE \
-    --no-cli-pager > /dev/null 2>&1
+    --no-cli-pager --output json
 
 # Cleanup
 echo "🧹 Cleaning up..."

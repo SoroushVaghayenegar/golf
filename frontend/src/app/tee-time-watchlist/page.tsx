@@ -14,7 +14,7 @@ interface TeeTimeWatchlist {
   end_time: string;
   num_of_players: string;
   holes: string;
-  region: string;
+  regions: { name: string };
   courses: Course[];
   created_at?: string;
 }
@@ -246,7 +246,7 @@ export default function TeeTimeWatchlistPage() {
                         <td className="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm text-gray-700 leading-tight whitespace-nowrap">{formatTimeNoSeconds(wl.start_time)} - {formatTimeNoSeconds(wl.end_time)}</td>
                         <td className="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm text-gray-700 leading-tight whitespace-nowrap hidden md:table-cell">{wl.num_of_players}</td>
                         <td className="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm text-gray-700 leading-tight whitespace-nowrap hidden md:table-cell">{wl.holes}</td>
-                        <td className="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm text-gray-700 leading-tight whitespace-nowrap hidden md:table-cell">{wl.region || "—"}</td>
+                        <td className="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm text-gray-700 leading-tight whitespace-nowrap hidden md:table-cell">{wl.regions.name || "—"}</td>
                         <td className="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm text-gray-700 leading-tight">
                           <TruncatedCourses courses={wl.courses.map((c) => c.name).join(", ")} />
                         </td>
