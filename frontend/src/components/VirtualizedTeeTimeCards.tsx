@@ -495,18 +495,28 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
         {!loading && !error && filteredTeeTimes.length > 0 && (
           <div className="h-full w-full max-w-full overflow-hidden">
             {groupedTeeTimes.length === 1 ? (
-              // Single date - use virtual grid
-              <Grid
-                columnCount={columns}
-                columnWidth={columnWidth}
-                height={containerHeight || 600}
-                rowCount={totalRows}
-                rowHeight={rowHeight}
-                width={containerWidth || 320} // Use calculated container width with fallback
-                className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 w-full max-w-full"
-              >
-                {cellRenderer}
-              </Grid>
+              // Single date - show header with day and date, then virtual grid
+              <div className="w-full max-w-full">
+                <div className="px-2 pb-2">
+                  <div className="flex items-baseline gap-4 sm:gap-2">
+                    <span className="font-semibold text-base sm:text-lg">{formatDateDisplay(groupedTeeTimes[0].date)}</span>
+                    {fetchedDates && fetchedDates.length > 1 && (
+                      <span className="text-[10px] sm:text-xs text-amber-700">(Only this day has tee times)</span>
+                    )}
+                  </div>
+                </div>
+                <Grid
+                  columnCount={columns}
+                  columnWidth={columnWidth}
+                  height={containerHeight || 600}
+                  rowCount={totalRows}
+                  rowHeight={rowHeight}
+                  width={containerWidth || 320} // Use calculated container width with fallback
+                  className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 w-full max-w-full"
+                >
+                  {cellRenderer}
+                </Grid>
+              </div>
             ) : (
               // Multiple dates - use accordion with virtual scrolling for each group
               <Accordion type="multiple" defaultValue={groupedTeeTimes.map((_, index) => `date-${index}`)} className="w-full h-full max-w-full">

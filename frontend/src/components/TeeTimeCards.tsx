@@ -387,19 +387,24 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
           const filtered = filteredTeeTimes(teeTimes);
           const grouped = groupTeeTimesByDate(filtered);
           
-          // If only one date, show without accordion
+          // If only one date, show header with day/date and then results without accordion
           if (grouped.length === 1) {
             return (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                      {grouped[0].teeTimes.map((teeTime, index) => (
-                        <TeeTimeCard
-                          key={index}
-                          teeTime={teeTime}
-                          index={index}
-                          onRemoveCourse={onRemoveCourse}
-                          onVisibilityChange={createVisibilityCallback(index)}
-                        />
-                      ))}
+              <div className="w-full">
+                <div className="px-1 pb-2">
+                  <span className="font-semibold text-lg">{formatDateDisplay(grouped[0].date)}</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {grouped[0].teeTimes.map((teeTime, index) => (
+                    <TeeTimeCard
+                      key={index}
+                      teeTime={teeTime}
+                      index={index}
+                      onRemoveCourse={onRemoveCourse}
+                      onVisibilityChange={createVisibilityCallback(index)}
+                    />
+                  ))}
+                </div>
               </div>
             );
           }
