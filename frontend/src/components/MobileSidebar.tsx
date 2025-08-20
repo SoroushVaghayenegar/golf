@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Listbox } from "@headlessui/react";
-import { ChevronDown, Users, Clock, School, LandPlot, MapPin, Info, SlidersHorizontal, X } from "lucide-react";
+import { ChevronDown, Users, Clock, School, LandPlot, MapPin, Info, SlidersHorizontal } from "lucide-react";
 import { Range } from "react-range";
 import Select, { MultiValue, StylesConfig } from "react-select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -396,16 +396,16 @@ export default function MobileSidebar({
             aria-hidden
           />
           <div className="absolute inset-x-0 bottom-0 top-0 bg-white rounded-t-2xl shadow-xl flex flex-col">
-            <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-white rounded-t-2xl">
+            <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 pt-[env(safe-area-inset-top)] border-b border-slate-200 bg-white rounded-t-2xl">
               <div className="flex items-center gap-2">
                 <SlidersHorizontal className="w-5 h-5 text-slate-700" />
                 <h2 className="text-base font-semibold text-slate-800">Filters</h2>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sidebar-primary text-white text-sm font-medium hover:bg-sidebar-primary-hover focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sidebar-primary text-white text-sm font-medium hover:bg-sidebar-primary-hover focus:outline-none focus:ring-2 focus:ring-sidebar-primary whitespace-nowrap"
               >
-                Done <X className="w-4 h-4" />
+                Done
               </button>
             </div>
 
