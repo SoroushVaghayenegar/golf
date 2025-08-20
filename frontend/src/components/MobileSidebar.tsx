@@ -395,8 +395,8 @@ export default function MobileSidebar({
             onClick={() => setIsOpen(false)}
             aria-hidden
           />
-          <div className="absolute inset-x-0 bottom-0 top-0 bg-white rounded-t-2xl shadow-xl flex flex-col">
-            <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 pt-[env(safe-area-inset-top)] border-b border-slate-200 bg-white rounded-t-2xl">
+          <div className="absolute inset-x-0 bottom-0 top-0 bg-white shadow-xl flex flex-col">
+            <div className="sticky top-2 z-10 flex items-center justify-between px-4 py-3 pt-[env(safe-area-inset-top)] border-b border-slate-200 bg-white">
               <div className="flex items-center gap-2">
                 <SlidersHorizontal className="w-5 h-5 text-slate-700" />
                 <h2 className="text-base font-semibold text-slate-800">Filters</h2>
