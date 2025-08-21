@@ -243,8 +243,7 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
       return date.toLocaleDateString('en-US', { 
         weekday: 'long', 
         month: 'long', 
-        day: 'numeric',
-        year: 'numeric'
+        day: 'numeric'
       });
     }
   };
@@ -498,7 +497,7 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
               // Single date - show header with day and date, then virtual grid
               <div className="w-full max-w-full">
                 <div className="px-2 pb-2">
-                  <div className="flex items-baseline gap-4 sm:gap-2">
+                  <div className="flex items-baseline justify-between sm:gap-2">
                     <span className="font-semibold text-base sm:text-lg">{formatDateDisplay(groupedTeeTimes[0].date)}</span>
                     {fetchedDates && fetchedDates.length > 1 && (
                       <span className="text-[10px] sm:text-xs text-amber-700">(Only this day has tee times)</span>

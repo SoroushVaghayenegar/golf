@@ -236,6 +236,9 @@ export default function MobileSidebar({
         ]),
       ];
       setSelectedCourses(updatedCourses);
+    } else {
+      // When all cities are cleared, also clear courses so requests don't include courseIds
+      setSelectedCourses([]);
     }
   };
 
@@ -256,7 +259,9 @@ export default function MobileSidebar({
 
   const handleCityToggle = () => {
     if (showCitySelector) {
+      // Switching from "Custom" to "All" – clear city and course filters
       setSelectedCities([]);
+      setSelectedCourses([]);
     }
     setShowCitySelector(!showCitySelector);
   };
@@ -371,32 +376,33 @@ export default function MobileSidebar({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="w-full bg-white border border-slate-200 rounded-xl p-4 shadow-sm active:shadow hover:border-sidebar-primary focus:outline-none focus:ring-2 focus:ring-sidebar-primary text-left"
+        className="w-full bg-white border border-slate-200 rounded-xl p-4 shadow-sm active:shadow hover:border-sidebar-primary focus:outline-none focus:ring-2 focus:ring-sidebar-primary text-left relative"
         aria-label="Open filters"
       >
+
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Filters</p>
             <p className="text-sm text-slate-800 mt-1 whitespace-pre-line line-clamp-2">{summaryText}</p>
             <p className="text-xs text-slate-500 mt-1">Region: {regionLabel}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center">
             <SlidersHorizontal className="w-5 h-5 text-sidebar-primary" />
-            <Badge className="min-w-[28px] justify-center" aria-label="Tee times count">{teeTimesCount}</Badge>
           </div>
         </div>
+        <span className="absolute bottom-3 right-4 text-sm text-green-700">{teeTimesCount} tee time{teeTimesCount === 1 ? "" : "s"}</span>
       </button>
 
       {/* Full-screen filter panel */}
       {isOpen && (
         <div className="fixed inset-0 z-50">
           <div
-            className="absolute inset-0 bg-black/40"
+            className="absolute bg-black/40"
             onClick={() => setIsOpen(false)}
             aria-hidden
           />
           <div className="absolute inset-x-0 bottom-0 top-0 bg-white shadow-xl flex flex-col">
-            <div className="sticky top-2 z-10 flex items-center justify-between px-4 py-3 pt-[env(safe-area-inset-top)] border-b border-slate-200 bg-white">
+            <div className="z-10 flex items-center justify-between px-4 py-3 pt-[calc(env(safe-area-inset-top)+10px)] border-b border-slate-200 bg-white">
               <div className="flex items-center gap-2">
                 <SlidersHorizontal className="w-5 h-5 text-slate-700" />
                 <h2 className="text-base font-semibold text-slate-800">Filters</h2>
@@ -430,7 +436,7 @@ export default function MobileSidebar({
                         <button
                           key={option}
                           onClick={() => setNumOfPlayers(option)}
-                          className={`px-3 py-2 rounded-lg border text-sm transition-all duration-200 ${
+                          className={`w-full px-3 py-2 rounded-lg border text-sm transition-all duration-200 flex items-center justify-center ${
                             numOfPlayers === option
                               ? "bg-sidebar-primary text-white border-sidebar-primary shadow-md"
                               : "bg-white hover:bg-green-200 border-slate-200 text-slate-700 hover:border-sidebar-primary"
