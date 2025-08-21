@@ -348,7 +348,7 @@ export default function Sidebar({
 
   return (
     <section className="w-full lg:w-80 flex-shrink-0 bg-white shadow p-5 flex flex-col gap-3 lg:gap-4 lg:h-[calc(100vh-64px)] lg:min-h-[calc(100vh-64px)] lg:sticky lg:top-0 rounded-xl lg:rounded-none justify-between relative z-20 mt-4 lg:mt-0 lg:overflow-hidden">
-      <div className="flex flex-col gap-4 lg:gap-4 flex-1 overflow-y-auto">
+      <div className="flex flex-col gap-4 lg:gap-4 flex-1 overflow-visible lg:overflow-y-auto">
         
         
         <CompactCalendar
