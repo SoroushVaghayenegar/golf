@@ -1,6 +1,6 @@
 "use client";
 import { forwardRef, useRef, useImperativeHandle, useState, useEffect, useMemo, useCallback } from "react";
-import { FixedSizeGrid as Grid, GridChildComponentProps } from 'react-window';
+import { VirtuosoGrid, VirtuosoGridHandle } from 'react-virtuoso';
 import { Listbox } from "@headlessui/react";
 import { ChevronDown, ArrowUp, ArrowDown, HeartCrack } from "lucide-react";
 import { type TeeTime } from "../services/teeTimeService";
@@ -89,9 +89,8 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
 
   const sectionRef = useRef<HTMLElement>(null);
   const scrollableRef = useRef<HTMLDivElement>(null);
+  const virtuosoRef = useRef<VirtuosoGridHandle>(null);
   const [visibleTeeTimes, setVisibleTeeTimes] = useState<Set<number>>(new Set());
-  const [containerWidth, setContainerWidth] = useState(0);
-  const [containerHeight, setContainerHeight] = useState(0);
 
   // Expose both refs to parent component
   useImperativeHandle(ref, () => ({
@@ -99,37 +98,7 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
     sectionElement: sectionRef.current,
   }), []);
 
-  // Calculate container dimensions
-  useEffect(() => {
-    const updateDimensions = () => {
-      if (scrollableRef.current) {
-        const rect = scrollableRef.current.getBoundingClientRect();
-        setContainerWidth(rect.width);
-        setContainerHeight(rect.height);
-      }
-    };
-
-    // Use ResizeObserver for better performance and accuracy
-    const resizeObserver = new ResizeObserver(() => {
-      updateDimensions();
-    });
-
-    // Initial update
-    updateDimensions();
-    
-    // Observe the scrollable container
-    if (scrollableRef.current) {
-      resizeObserver.observe(scrollableRef.current);
-    }
-    
-    // Fallback for window resize
-    window.addEventListener('resize', updateDimensions);
-    
-    return () => {
-      resizeObserver.disconnect();
-      window.removeEventListener('resize', updateDimensions);
-    };
-  }, []);
+  // No need to calculate explicit container dimensions with VirtuosoGrid
 
   // Notify parent when visible count changes
   useEffect(() => {
@@ -248,43 +217,13 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
     }
   };
 
-  // Calculate grid dimensions
-  const getGridDimensions = useCallback(() => {
-    // Ensure we have a valid container width, with minimum constraints
-    const availableWidth = Math.max(containerWidth || 320, 320); // Minimum 320px width
-    
-    let columns = 1;
-    if (availableWidth >= 640) columns = 2; // sm
-    if (availableWidth >= 1024) columns = 3; // lg
-    
-    // Ensure column width respects container boundaries
-    const columnWidth = Math.floor(availableWidth / columns);
-    const rowHeight = 400; // Approximate height of a TeeTimeCard
-    
-    return { columns, columnWidth, rowHeight };
-  }, [containerWidth]);
-
-  const { columns, columnWidth, rowHeight } = getGridDimensions();
-
-  // Create a flat array of all tee times for virtual scrolling
-  const flatTeeTimes = useMemo(() => {
-    const flat: Array<{ teeTime: TeeTime; groupIndex: number; dateKey: string }> = [];
-    
-    groupedTeeTimes.forEach((group, groupIndex) => {
-      group.teeTimes.forEach(teeTime => {
-        flat.push({
-          teeTime,
-          groupIndex,
-          dateKey: group.date
-        });
-      });
-    });
-    
-    return flat;
+  // Flat data is only needed in single-date mode; VirtuosoGrid uses simple index-based rendering
+  const singleDayItems = useMemo(() => {
+    if (groupedTeeTimes.length === 1) {
+      return groupedTeeTimes[0].teeTimes;
+    }
+    return [] as TeeTime[];
   }, [groupedTeeTimes]);
-
-  // Calculate total rows needed
-  const totalRows = Math.ceil(flatTeeTimes.length / columns);
 
   // Build share text from fetched dates in format like "Aug 12"
   const shareText = useMemo(() => {
@@ -297,17 +236,11 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
     return 'Found some good tee times';
   }, [fetchedDates]);
 
-  // Cell renderer for virtual grid
-  const cellRenderer = useCallback(({ columnIndex, rowIndex, style }: GridChildComponentProps) => {
-    const index = rowIndex * columns + columnIndex;
-    const item = flatTeeTimes[index];
-    
-    if (!item) return null;
-
+  const renderTeeTimeItem = useCallback((index: number, teeTime: TeeTime) => {
     return (
-      <div style={style} className="p-2">
+      <div className="p-2">
         <TeeTimeCard
-          teeTime={item.teeTime}
+          teeTime={teeTime}
           index={index}
           onRemoveCourse={onRemoveCourse}
           onVisibilityChange={(isVisible) => {
@@ -324,7 +257,7 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
         />
       </div>
     );
-  }, [flatTeeTimes, columns, onRemoveCourse]);
+  }, [onRemoveCourse]);
 
   return (
     <section ref={sectionRef} className="flex-1 flex flex-col lg:h-full lg:overflow-hidden w-full max-w-full">
@@ -438,7 +371,7 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
       )}
 
       {/* Scrollable Results Container */}
-      <div ref={scrollableRef} className="flex-1 lg:overflow-hidden w-full max-w-full">
+      <div ref={scrollableRef} className="flex-1 w-full max-w-full overflow-auto h-full">
         {loading && !useSkeletonWhileLoading && (
           <div className={isMobile
             ? 'fixed inset-0 bg-white z-50 flex flex-col items-center justify-center'
@@ -495,8 +428,8 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
           <div className="h-full w-full max-w-full overflow-hidden">
             {groupedTeeTimes.length === 1 ? (
               // Single date - show header with day and date, then virtual grid
-              <div className="w-full max-w-full">
-                <div className="px-2 pb-2">
+              <div className="w-full max-w-full h-full flex flex-col">
+                <div className="px-2 pb-2 flex-shrink-0">
                   <div className="flex items-baseline justify-between sm:gap-2">
                     <span className="font-semibold text-base sm:text-lg">{formatDateDisplay(groupedTeeTimes[0].date)}</span>
                     {fetchedDates && fetchedDates.length > 1 && (
@@ -504,24 +437,22 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
                     )}
                   </div>
                 </div>
-                <Grid
-                  columnCount={columns}
-                  columnWidth={columnWidth}
-                  height={containerHeight || 600}
-                  rowCount={totalRows}
-                  rowHeight={rowHeight}
-                  width={containerWidth || 320} // Use calculated container width with fallback
-                  className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 w-full max-w-full"
-                >
-                  {cellRenderer}
-                </Grid>
+                <div className="flex-1 min-h-0 w-full">
+                  <VirtuosoGrid
+                    ref={virtuosoRef}
+                    data={singleDayItems}
+                    itemContent={(index, item) => renderTeeTimeItem(index, item)}
+                    listClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-2 w-full"
+                    className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 w-full max-w-full"
+                    style={{ height: '100%' }}
+                  />
+                </div>
               </div>
             ) : (
               // Multiple dates - use accordion with virtual scrolling for each group
               <Accordion type="multiple" defaultValue={groupedTeeTimes.map((_, index) => `date-${index}`)} className="w-full h-full max-w-full">
                 {groupedTeeTimes.map((group, groupIndex) => {
                   const groupTeeTimes = group.teeTimes;
-                  const groupTotalRows = Math.ceil(groupTeeTimes.length / columns);
                   
                   return (
                     <AccordionItem key={groupIndex} value={`date-${groupIndex}`} className="border-b">
@@ -536,44 +467,14 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
                         </div>
                       </AccordionTrigger>
                       <AccordionContent className="px-4 pb-4">
-                        <div className="h-[400px] w-full max-w-full overflow-hidden">
-                          <Grid
-                            columnCount={columns}
-                            columnWidth={columnWidth}
-                            height={400}
-                            rowCount={groupTotalRows}
-                            rowHeight={rowHeight}
-                            width={containerWidth || 320} // Use calculated container width with fallback
+                        <div className="h-[400px] w-full max-w-full">
+                          <VirtuosoGrid
+                            data={groupTeeTimes}
+                            itemContent={(index, item) => renderTeeTimeItem(index, item)}
+                            listClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-2 w-full"
                             className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 w-full max-w-full"
-                          >
-                            {({ columnIndex, rowIndex, style }: GridChildComponentProps) => {
-                              const index = rowIndex * columns + columnIndex;
-                              const teeTime = groupTeeTimes[index];
-                              
-                              if (!teeTime) return null;
-
-                              return (
-                                <div style={{...style, maxWidth: '100%'}} className="p-2 w-full max-w-full overflow-hidden">
-                                  <TeeTimeCard
-                                    teeTime={teeTime}
-                                    index={index}
-                                    onRemoveCourse={onRemoveCourse}
-                                    onVisibilityChange={(isVisible) => {
-                                      setVisibleTeeTimes(prev => {
-                                        const newSet = new Set(prev);
-                                        if (isVisible) {
-                                          newSet.add(index);
-                                        } else {
-                                          newSet.delete(index);
-                                        }
-                                        return newSet;
-                                      });
-                                    }}
-                                  />
-                                </div>
-                              );
-                            }}
-                          </Grid>
+                            style={{ height: '100%' }}
+                          />
                         </div>
                       </AccordionContent>
                     </AccordionItem>

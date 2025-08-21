@@ -573,7 +573,7 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen lg:min-h-[calc(100vh-64px)] bg-gradient-to-br from-blue-50 to-slate-100 p-4 py-0 sm:p-10 lg:p-0 font-[family-name:var(--font-geist-sans)] w-full max-w-full overflow-x-hidden lg:overflow-y-hidden">
-      <main className="w-full max-w-full flex flex-col lg:flex-row lg:h-[calc(100vh-64px)] lg:min-h-[calc(100vh-64px)] gap-8 lg:gap-0 overflow-x-hidden py-6">
+      <main className="w-full max-w-full flex flex-col lg:flex-row lg:h-[calc(100vh-64px)] lg:min-h-[calc(100vh-64px)] gap-8 lg:gap-0 overflow-x-hidden lg:py-0 py-6">
         {isInitialized && (
           isMobile ? (
             <MobileSidebar
@@ -637,7 +637,7 @@ export default function SearchPage() {
         {/* On mobile, only show results section if there are results, loading, or error */}
         {/* On desktop, always show to display initial state */}
         {(!isMobile || teeTimes.length > 0 || loading || !!(error || storeError) || hasEverSearched) && (
-          <div className="flex-1 lg:p-10 lg:pl-10 lg:pr-10 lg:py-10 px-4 sm:px-10 lg:px-0 w-full max-w-full overflow-x-hidden lg:h-[calc(100vh-64px)] lg:min-h-[calc(100vh-64px)]">
+          <div className="flex-1 lg:p-10 lg:pl-10 lg:pr-10 lg:py-4 px-4 sm:px-10 lg:px-0 w-full max-w-full overflow-x-hidden lg:h-[calc(100vh-64px)] lg:min-h-[calc(100vh-64px)]">
             {(() => {
               const ResultsComponent = isMobile ? MobileTeeTimeCards : VirtualizedTeeTimeCards;
               return (
