@@ -8,6 +8,7 @@ import {
   formatDateForAPI
 } from "@/services/timezoneService";
 import VirtualizedTeeTimeCards, { VirtualizedTeeTimeCardsRef } from "@/components/VirtualizedTeeTimeCards";
+import MobileTeeTimeCards from "@/components/MobileTeeTimeCards";
 import Sidebar from "@/components/Sidebar";
 import MobileSidebar from "@/components/MobileSidebar";
 import { useAppStore } from '@/stores/appStore'
@@ -572,7 +573,7 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen lg:min-h-[calc(100vh-64px)] bg-gradient-to-br from-blue-50 to-slate-100 p-4 py-0 sm:p-10 lg:p-0 font-[family-name:var(--font-geist-sans)] w-full max-w-full overflow-x-hidden lg:overflow-y-hidden">
-      <main className="w-full max-w-full flex flex-col lg:flex-row lg:h-[calc(100vh-64px)] lg:min-h-[calc(100vh-64px)] gap-8 lg:gap-0 overflow-x-hidden">
+      <main className="w-full max-w-full flex flex-col lg:flex-row lg:h-[calc(100vh-64px)] lg:min-h-[calc(100vh-64px)] gap-8 lg:gap-0 overflow-x-hidden py-6">
         {isInitialized && (
           isMobile ? (
             <MobileSidebar
@@ -637,29 +638,34 @@ export default function SearchPage() {
         {/* On desktop, always show to display initial state */}
         {(!isMobile || teeTimes.length > 0 || loading || !!(error || storeError) || hasEverSearched) && (
           <div className="flex-1 lg:p-10 lg:pl-10 lg:pr-10 lg:py-10 px-4 sm:px-10 lg:px-0 w-full max-w-full overflow-x-hidden lg:h-[calc(100vh-64px)] lg:min-h-[calc(100vh-64px)]">
-            <VirtualizedTeeTimeCards
-              ref={resultsSectionRef}
-              teeTimes={teeTimes}
-              loading={loading}
-              error={error || storeError}
-              removedCourseIds={removedCourseIds}
-              onRemoveCourse={handleRemoveCourse}
-              fetchedDates={fetchedDates}
-              sortBy={sortBy}
-              setSortBy={setSortBy}
-              showSubscription={showSubscription}
-              setShowSubscription={setShowSubscription}
-              handleSubscriptionDismiss={handleSubscriptionDismiss}
-              isMobile={isMobile}
-              hasSearched={hasEverSearched}
-              courseCityMapping={courseCityMapping}
-              onTeeTimeVisibilityChange={setVisibleTeeTimeCount}
-              selectedRegionId={selectedRegionId}
-              regionTimeZone={regionTimeZone}
-              useSkeletonWhileLoading={hasEverSearched}
-              disableInitialEmptyState
-              shareUrl={currentUrl}
-            />
+            {(() => {
+              const ResultsComponent = isMobile ? MobileTeeTimeCards : VirtualizedTeeTimeCards;
+              return (
+                <ResultsComponent
+                  ref={resultsSectionRef}
+                  teeTimes={teeTimes}
+                  loading={loading}
+                  error={error || storeError}
+                  removedCourseIds={removedCourseIds}
+                  onRemoveCourse={handleRemoveCourse}
+                  fetchedDates={fetchedDates}
+                  sortBy={sortBy}
+                  setSortBy={setSortBy}
+                  showSubscription={showSubscription}
+                  setShowSubscription={setShowSubscription}
+                  handleSubscriptionDismiss={handleSubscriptionDismiss}
+                  isMobile={isMobile}
+                  hasSearched={hasEverSearched}
+                  courseCityMapping={courseCityMapping}
+                  onTeeTimeVisibilityChange={setVisibleTeeTimeCount}
+                  selectedRegionId={selectedRegionId}
+                  regionTimeZone={regionTimeZone}
+                  useSkeletonWhileLoading={hasEverSearched}
+                  disableInitialEmptyState
+                  shareUrl={currentUrl}
+                />
+              );
+            })()}
           </div>
         )}
       </main>
