@@ -2,14 +2,16 @@
 import posthog from 'posthog-js';
 import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { fetchTeeTimes, type TeeTime } from "@/services/teeTimeService";
 import { fetchRegions } from "@/services/supabaseService";
 import {
   getVancouverToday,
   formatDateForAPI
 } from "@/services/timezoneService";
 import VirtualizedTeeTimeCards, { VirtualizedTeeTimeCardsRef } from "@/components/VirtualizedTeeTimeCards";
+import MobileTeeTimeCards from "@/components/MobileTeeTimeCards";
 import Sidebar from "@/components/Sidebar";
+import MobileSidebar from "@/components/MobileSidebar";
+import { useAppStore } from '@/stores/appStore'
 
 // Custom hook for managing region with localStorage persistence
 const useRegionIdWithStorage = (defaultRegionId: string = '1') => {
@@ -53,8 +55,11 @@ export default function SearchPage() {
   const [removedCourseIds, setRemovedCourseIds] = useState<number[]>([]);
   const {selectedRegionId, setSelectedRegionId, isInitialized } = useRegionIdWithStorage();
   const [sortBy, setSortBy] = useState<'startTime' | 'priceAsc' | 'priceDesc' | 'rating'>('startTime');
-  const [teeTimes, setTeeTimes] = useState<TeeTime[]>([]);
-  const [loading, setLoading] = useState(false);
+  // tee times now from store
+  const teeTimes = useAppStore((s) => s.teeTimes)
+  const loading = useAppStore((s) => s.teeTimesLoading)
+  const storeError = useAppStore((s) => s.teeTimesError)
+  const fetchTeeTimesAction = useAppStore((s) => s.fetchTeeTimesAction)
   const [hasEverSearched, setHasEverSearched] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [courseCityMapping, setCourseCityMapping] = useState<Record<string, string>>({});
@@ -78,6 +83,7 @@ export default function SearchPage() {
   const [showSubscription, setShowSubscription] = useState(false);
   const [subscriptionShown, setSubscriptionShown] = useState(false);
   const [subscriptionDismissed, setSubscriptionDismissed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [todayDate, setTodayDate] = useState<Date | null>(null);
@@ -93,6 +99,8 @@ export default function SearchPage() {
     
     const dismissed = sessionStorage.getItem('subscription-dismissed') === 'true';
     setSubscriptionDismissed(dismissed);
+    const shown = sessionStorage.getItem('subscription-shown') === 'true';
+    setSubscriptionShown(shown);
     
     // Set mobile state after hydration
     setIsMobile(window.innerWidth < 1024);
@@ -384,6 +392,9 @@ export default function SearchPage() {
   useEffect(() => {
     if (!teeTimes.length || subscriptionShown || subscriptionDismissed) return;
 
+    // Only consider showing after mobile sidebar is closed on mobile
+    if (isMobile && isMobileSidebarOpen) return;
+
     const mobileThreshold = 5;
     const desktopThreshold = 15;
     const threshold = isMobile ? mobileThreshold : desktopThreshold;
@@ -391,30 +402,22 @@ export default function SearchPage() {
     if (visibleTeeTimeCount >= threshold) {
       setShowSubscription(true);
       setSubscriptionShown(true);
+      sessionStorage.setItem('subscription-shown', 'true');
     }
-  }, [visibleTeeTimeCount, teeTimes.length, subscriptionShown, subscriptionDismissed, isMobile]);
+  }, [visibleTeeTimeCount, teeTimes.length, subscriptionShown, subscriptionDismissed, isMobile, isMobileSidebarOpen]);
 
-  // Reset subscription state when new search is performed
-  useEffect(() => {
-    setShowSubscription(false);
-    setSubscriptionShown(false);
-    setVisibleTeeTimeCount(0);
-  }, [fetchedDates]);
-
-  // Handle subscription dismissal
   const handleSubscriptionDismiss = () => {
-    setSubscriptionDismissed(true);
     setShowSubscription(false);
-    setSubscriptionShown(true);
+    setSubscriptionDismissed(true);
+    sessionStorage.setItem('subscription-dismissed', 'true');
   };
 
-  // Handle removing a course from filters
+  // Course removal helper remains unchanged
   const handleRemoveCourse = (courseId: number, courseName?: string) => {
-    if (typeof courseId === 'number' && Number.isFinite(courseId)) {
+    if (Number.isFinite(courseId)) {
       setRemovedCourseIds(prev => (prev.includes(courseId) ? prev : [...prev, courseId]));
       return;
     }
-    // Fallback: try to resolve id from course name using available mappings/data
     if (courseName) {
       // 1) Try reverse lookup from id->name map
       const resolvedFromMap = Object.entries(courseIdToName || {}).find(([, name]) => name === courseName)?.[0];
@@ -460,14 +463,10 @@ export default function SearchPage() {
     const startTime = Date.now();
     // Record the key for the request we're about to make
     lastQueryKeyRef.current = getQueryKey();
-    setLoading(true);
     setError(null);
     // Note: Don't clear removedCourseIds here as they should persist from URL params
     try {
-      console.log('Selected dates:', selectedDates);
-      
       const formattedDates = selectedDates.map(date => formatDateForAPI(date));
-      console.log('Formatted dates:', formattedDates);
       // Build optional courseIds with precedence:
       // 1) If explicit courses are selected, ONLY include those
       // 2) Else, if cities are selected, include all courses in those cities
@@ -500,7 +499,7 @@ export default function SearchPage() {
         }
       }
 
-      const data = await fetchTeeTimes({
+      await fetchTeeTimesAction({
         dates: formattedDates, // Array of YYYY-MM-DD strings
         numOfPlayers,
         holes,
@@ -508,10 +507,10 @@ export default function SearchPage() {
         startTime: `${String(timeRange[0]).padStart(2, '0')}:00`,
         endTime: `${String(timeRange[1]).padStart(2, '0')}:00`,
         courseIds
-      });
-      setTeeTimes(data);
+      })
       setFetchedDates(selectedDates);
     } catch (err) {
+      // Store already set teeTimesError; keep local user-friendly error for UI gates
       setError('Failed to fetch tee times. Please try again.');
       console.error(err);
     } finally {
@@ -523,8 +522,6 @@ export default function SearchPage() {
           await new Promise(resolve => setTimeout(resolve, remainingTime));
         }
       }
-      
-      setLoading(false);
       // After finishing, keep the latest effective key in sync
       lastQueryKeyRef.current = getQueryKey();
       // Mark first search as completed AFTER loading is cleared to avoid skeletons during first load
@@ -576,64 +573,99 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen lg:min-h-[calc(100vh-64px)] bg-gradient-to-br from-blue-50 to-slate-100 p-4 py-0 sm:p-10 lg:p-0 font-[family-name:var(--font-geist-sans)] w-full max-w-full overflow-x-hidden lg:overflow-y-hidden">
-      <main className="w-full max-w-full flex flex-col lg:flex-row lg:h-[calc(100vh-64px)] lg:min-h-[calc(100vh-64px)] gap-8 lg:gap-0 overflow-x-hidden">
+      <main className="w-full max-w-full flex flex-col lg:flex-row lg:h-[calc(100vh-64px)] lg:min-h-[calc(100vh-64px)] gap-8 lg:gap-0 overflow-x-hidden lg:py-0 py-6">
         {isInitialized && (
-          <Sidebar
-            selectedDates={selectedDates}
-            setSelectedDates={setSelectedDates}
-            numOfPlayers={numOfPlayers}
-            setNumOfPlayers={setNumOfPlayers}
-            holes={holes}
-            setHoles={setHoles}
-            timeRange={timeRange}
-            setTimeRange={setTimeRange}
-            selectedCities={selectedCities}
-            setSelectedCities={setSelectedCities}
-            selectedCourses={selectedCourses}
-            setSelectedCourses={setSelectedCourses}
-            removedCourseIds={removedCourseIds}
-            loading={loading}
-            onGetTeeTimes={handleGetTeeTimes}
-            isClient={isClient}
-            todayDate={todayDate}
-            setCourseCityMapping={setCourseCityMapping}
-            selectedRegionId={selectedRegionId}
-            setSelectedRegionId={setSelectedRegionId}
-            setCourseIdToName={setCourseIdToName}
-            forceShowCourseSelector={forceShowCourseSelector}
-            forceShowCitySelector={forceShowCitySelector}
-            hideSubmitButton
-          />
+          isMobile ? (
+            <MobileSidebar
+              selectedDates={selectedDates}
+              setSelectedDates={setSelectedDates}
+              numOfPlayers={numOfPlayers}
+              setNumOfPlayers={setNumOfPlayers}
+              holes={holes}
+              setHoles={setHoles}
+              timeRange={timeRange}
+              setTimeRange={setTimeRange}
+              selectedCities={selectedCities}
+              setSelectedCities={setSelectedCities}
+              selectedCourses={selectedCourses}
+              setSelectedCourses={setSelectedCourses}
+              removedCourseIds={removedCourseIds}
+              loading={loading}
+              onGetTeeTimes={handleGetTeeTimes}
+              isClient={isClient}
+              todayDate={todayDate}
+              setCourseCityMapping={setCourseCityMapping}
+              selectedRegionId={selectedRegionId}
+              setSelectedRegionId={setSelectedRegionId}
+              setCourseIdToName={setCourseIdToName}
+              forceShowCourseSelector={forceShowCourseSelector}
+              forceShowCitySelector={forceShowCitySelector}
+              hideSubmitButton
+              onOpenChange={setIsMobileSidebarOpen}
+            />
+          ) : (
+            <Sidebar
+              selectedDates={selectedDates}
+              setSelectedDates={setSelectedDates}
+              numOfPlayers={numOfPlayers}
+              setNumOfPlayers={setNumOfPlayers}
+              holes={holes}
+              setHoles={setHoles}
+              timeRange={timeRange}
+              setTimeRange={setTimeRange}
+              selectedCities={selectedCities}
+              setSelectedCities={setSelectedCities}
+              selectedCourses={selectedCourses}
+              setSelectedCourses={setSelectedCourses}
+              removedCourseIds={removedCourseIds}
+              loading={loading}
+              onGetTeeTimes={handleGetTeeTimes}
+              isClient={isClient}
+              todayDate={todayDate}
+              setCourseCityMapping={setCourseCityMapping}
+              selectedRegionId={selectedRegionId}
+              setSelectedRegionId={setSelectedRegionId}
+              setCourseIdToName={setCourseIdToName}
+              forceShowCourseSelector={forceShowCourseSelector}
+              forceShowCitySelector={forceShowCitySelector}
+              hideSubmitButton
+            />
+          )
         )}
 
         {/* Tee Times Results Section - Scrollable */}
         {/* On mobile, only show results section if there are results, loading, or error */}
         {/* On desktop, always show to display initial state */}
-        {(!isMobile || teeTimes.length > 0 || loading || !!error || hasEverSearched) && (
-          <div className="flex-1 lg:p-10 lg:pl-10 lg:pr-10 lg:py-10 px-4 sm:px-10 lg:px-0 w-full max-w-full overflow-x-hidden lg:h-[calc(100vh-64px)] lg:min-h-[calc(100vh-64px)]">
-            <VirtualizedTeeTimeCards
-              ref={resultsSectionRef}
-              teeTimes={teeTimes}
-              loading={loading}
-              error={error}
-              removedCourseIds={removedCourseIds}
-              onRemoveCourse={handleRemoveCourse}
-              fetchedDates={fetchedDates}
-              sortBy={sortBy}
-              setSortBy={setSortBy}
-              showSubscription={showSubscription}
-              setShowSubscription={setShowSubscription}
-              handleSubscriptionDismiss={handleSubscriptionDismiss}
-              isMobile={isMobile}
-              hasSearched={hasEverSearched}
-              courseCityMapping={courseCityMapping}
-              onTeeTimeVisibilityChange={setVisibleTeeTimeCount}
-              selectedRegionId={selectedRegionId}
-              regionTimeZone={regionTimeZone}
-              useSkeletonWhileLoading={hasEverSearched}
-              disableInitialEmptyState
-              shareUrl={currentUrl}
-            />
+        {(!isMobile || teeTimes.length > 0 || loading || !!(error || storeError) || hasEverSearched) && (
+          <div className="flex-1 lg:p-10 lg:pl-10 lg:pr-10 lg:py-4 px-4 sm:px-10 lg:px-0 w-full max-w-full overflow-x-hidden lg:h-[calc(100vh-64px)] lg:min-h-[calc(100vh-64px)]">
+            {(() => {
+              const ResultsComponent = isMobile ? MobileTeeTimeCards : VirtualizedTeeTimeCards;
+              return (
+                <ResultsComponent
+                  ref={resultsSectionRef}
+                  teeTimes={teeTimes}
+                  loading={loading}
+                  error={error || storeError}
+                  removedCourseIds={removedCourseIds}
+                  onRemoveCourse={handleRemoveCourse}
+                  fetchedDates={fetchedDates}
+                  sortBy={sortBy}
+                  setSortBy={setSortBy}
+                  showSubscription={showSubscription}
+                  setShowSubscription={setShowSubscription}
+                  handleSubscriptionDismiss={handleSubscriptionDismiss}
+                  isMobile={isMobile}
+                  hasSearched={hasEverSearched}
+                  courseCityMapping={courseCityMapping}
+                  onTeeTimeVisibilityChange={setVisibleTeeTimeCount}
+                  selectedRegionId={selectedRegionId}
+                  regionTimeZone={regionTimeZone}
+                  useSkeletonWhileLoading={hasEverSearched}
+                  disableInitialEmptyState
+                  shareUrl={currentUrl}
+                />
+              );
+            })()}
           </div>
         )}
       </main>
