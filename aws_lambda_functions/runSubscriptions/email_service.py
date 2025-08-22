@@ -7,7 +7,7 @@ AFTERNOON = {"name": "Afternoon", "start_hour": 11, "end_hour": 17}
 EVENING = {"name": "Evening", "start_hour": 17, "end_hour": 23}
 
 
-def send_email(email: str, tee_times: list[dict], token: str, region: str):
+def send_email(email: str, tee_times: list[dict], token: str, region_id: int):
     import boto3
     if len(tee_times) == 0:
         return
@@ -21,7 +21,7 @@ def send_email(email: str, tee_times: list[dict], token: str, region: str):
     text_body = generate_email_text(tee_times)
     
     ses.send_email(
-        Source='noreply@t-times.golf',
+        Source='weekly-subscriptions@mail.teeclub.golf',
         Destination={
             'ToAddresses': [email]
         },
@@ -42,7 +42,7 @@ def send_email(email: str, tee_times: list[dict], token: str, region: str):
             }
         }
     )
-    print(f"Email sent to: {email} {len(tee_times)} tee times for region: {region}")
+    print(f"Email sent to: {email} {len(tee_times)} tee times for region: {region_id}")
 
 
 def organize_tee_times(tee_times: list[dict]):

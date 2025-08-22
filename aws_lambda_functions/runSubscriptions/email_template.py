@@ -306,6 +306,15 @@ def generate_email_html(tee_times: list[dict], token: str = "", email: str = "")
                 padding: 32px 24px; 
                 text-align: center; 
             }}
+            .header-logo {{ 
+                width: 60px; 
+                height: 60px; 
+                border-radius: 50%; 
+                margin: 0 auto 16px auto; 
+                display: block; 
+                border: 3px solid rgba(255, 255, 255, 0.2);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            }}
             .header-title {{ 
                 margin: 0; 
                 color: #fff; 
@@ -498,6 +507,7 @@ def generate_email_html(tee_times: list[dict], token: str = "", email: str = "")
     <body>
         <div class="container">
             <div class="header-gradient">
+                <img src="https://teeclub-admin.s3.us-west-2.amazonaws.com/logo/logo-square.png" alt="TeeClub Logo" class="header-logo">
                 <h1 class="header-title">⛳ Your Golf Tee Times</h1>
                 <p class="header-subtitle">Ready to hit the courses?</p>
                 <p class="header-count">{len(tee_times)} available tee times for your preferred courses</p>
@@ -508,7 +518,7 @@ def generate_email_html(tee_times: list[dict], token: str = "", email: str = "")
                     <span>❤️</span>
                     Book your tee times quickly before they fill up!
                 </p>
-                <a href="https://t-times.golf" class="cta-button" target="_blank" rel="noopener noreferrer">View Full Schedule</a>
+                <a href="https://teeclub.golf" class="cta-button" target="_blank" rel="noopener noreferrer">View Full Schedule</a>
             </div>
     """
 
@@ -585,10 +595,10 @@ def generate_email_html(tee_times: list[dict], token: str = "", email: str = "")
                     You're receiving this email because you're subscribed to golf tee time notifications.
                 </p>
                 <div class="footer-links">
-                    <a href="https://t-times.golf/unsubscribe?token={token}&email={email}" target="_blank" rel="noopener noreferrer">Unsubscribe</a>
+                    <a href="https://teeclub.golf/unsubscribe?token={token}&email={email}" target="_blank" rel="noopener noreferrer">Unsubscribe</a>
                 </div>
                 <p style="margin: 0; font-size: 11px; color: #9ca3af;">
-                    © {datetime.now().year} T-Times Golf. All rights reserved.
+                    © {datetime.now().year} TeeClub. All rights reserved.
                 </p>
             </div>
         </div>
@@ -608,6 +618,17 @@ def generate_no_tee_times_html() -> str:
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>No Tee Times Available</title>
+        <style>
+            .header-logo { 
+                width: 60px; 
+                height: 60px; 
+                border-radius: 50%; 
+                margin: 0 auto 16px auto; 
+                display: block; 
+                border: 3px solid rgba(255, 255, 255, 0.2);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            }
+        </style>
     </head>
     <body style="
         margin: 0;
@@ -628,6 +649,7 @@ def generate_no_tee_times_html() -> str:
                 padding: 32px 24px;
                 text-align: center;
             ">
+                <img src="https://teeclub-admin.s3.us-west-2.amazonaws.com/logo/logo-square.png" alt="TeeClub Logo" class="header-logo">
                 <h1 style="
                     margin: 0;
                     color: #ffffff;
@@ -674,7 +696,7 @@ def generate_no_tee_times_html() -> str:
                         font-size: 12px;
                         color: #9ca3af;
                     ">
-                        © {datetime.now().year} T-Times Golf. All rights reserved.
+                        © {datetime.now().year} TeeClub. All rights reserved.
                     </p>
                 </div>
             </div>
@@ -693,7 +715,7 @@ def generate_email_text(tee_times: list[dict]) -> str:
 No tee times are currently available for your preferences. 
 Check back later or adjust your subscription settings.
 
-© {datetime.now().year} T-Times Golf. All rights reserved."""
+© {datetime.now().year} TeeClub. All rights reserved."""
     
     text = "Your Golf Tee Times\n\n"
     text += "Here are the latest tee times available for your preferred courses and times:\n\n"
@@ -725,5 +747,5 @@ Check back later or adjust your subscription settings.
             text += f"   {booking_text}: {tee_time['booking_link']}\n"
         text += "\n"
     
-    text += f"\n© {datetime.now().year} T-Times Golf. All rights reserved."
+    text += f"\n© {datetime.now().year} TeeClub. All rights reserved."
     return text 
