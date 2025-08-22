@@ -21,7 +21,7 @@ def send_email(email: str, tee_times: list[dict], token: str, region_id: int):
     text_body = generate_email_text(tee_times)
     
     ses.send_email(
-        Source='weekly-subscriptions@mail.teeclub.golf',
+        Source='tee-times@mail.teeclub.golf',
         Destination={
             'ToAddresses': [email]
         },
