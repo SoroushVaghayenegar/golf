@@ -148,8 +148,30 @@ export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[
             const teeTimeStartTimeString = teeTime.start_datetime.replace(".000Z", "")
             const teeTimeStartDatetime = new Date(teeTimeStartTimeString)
             const teetimeStartTime = teeTimeStartDatetime.toTimeString().slice(0, 5) // HH:MM format
+            
+            // Get current date and time in the regionTimeZone
+            const currentDate = getCurrentDate(regionTimeZone);
 
-            if (!isTeeTimeInTimeRange(regionTimeZone, teetimeStartTime, startTime, endTime)) {
+            // currentTime is in format HH:MM, no am/pm , its 24 hour format
+            const currentTime = getCurrentTime24HourFormat(regionTimeZone);
+            
+            let startTimeToUse = startTime;
+            if (!startTimeToUse) {
+                startTimeToUse = currentTime;
+            }
+            else if (typedCourseTeeTimes.date === currentDate) {
+                if (parseToMinutes(currentTime) > parseToMinutes(startTime)) {
+                    
+                    startTimeToUse = currentTime;
+                }
+            }
+
+            // If startTime is present, choose startTime as the smaller of startTime and CurrentTime in the regionTimeZone, otherwise choose startTime as CurrentTime in the regionTimeZone
+            if (typedCourseTeeTimes.date === currentDate) {
+                console.log("startTimeToUse", startTimeToUse)
+            }
+            
+            if (!isTeeTimeInTimeRange(regionTimeZone, teetimeStartTime, startTimeToUse, endTime)) {
                 return;
             }
 
@@ -183,6 +205,20 @@ export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[
     result.sort((a, b) => new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime())
     
     return { data: result, error: null }
+}
+
+function getCurrentDate(regionTimeZone: string): string {
+    const date = new Date(new Date().toLocaleString("en-US", { timeZone: regionTimeZone }));
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+}
+
+function getCurrentTime24HourFormat(regionTimeZone: string): string {
+    return new Date().toLocaleTimeString('en-US', { timeZone: regionTimeZone, hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
 /**
@@ -268,10 +304,7 @@ function getWeatherDescription(weatherCode: number | null): string | null {
     return weatherCodeMap[weatherCode] || `Unknown weather code: ${weatherCode}`;
 }
 
-function isTeeTimeInTimeRange(regionTimeZone: string, teeTimeTime: string, startTime: string | null, endTime: string | null): boolean {
-    // teeTimeTime is in format HH:MM
-    // startTime and endTime are in format HH:MM
-    const parseToMinutes = (timeStr: string | null): number | null => {
+function parseToMinutes(timeStr: string | null): number | null {
         if (!timeStr) return null;
         const parts = timeStr.split(":");
         if (parts.length !== 2) return null;
@@ -280,15 +313,11 @@ function isTeeTimeInTimeRange(regionTimeZone: string, teeTimeTime: string, start
         if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null;
         if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
         return hour * 60 + minute;
-    };
-    
-    // If startTime is present, choose startTime as the smaller of startTime and CurrentTime in the regionTimeZone, otherwise choose startTime as CurrentTime in the regionTimeZone
-    const currentTime = new Date().toLocaleTimeString('en-US', { timeZone: regionTimeZone, hour: '2-digit', minute: '2-digit' });
-    const currentTimeMinutes = parseToMinutes(currentTime);
+}
 
-    if (startTime && currentTimeMinutes > parseToMinutes(startTime)) {
-        startTime = currentTime;
-    }
+function isTeeTimeInTimeRange(regionTimeZone: string, teeTimeTime: string, startTime: string | null, endTime: string | null): boolean {
+    // teeTimeTime is in format HH:MM
+    // startTime and endTime are in format HH:MM
 
 
     const teeMinutes = parseToMinutes(teeTimeTime);

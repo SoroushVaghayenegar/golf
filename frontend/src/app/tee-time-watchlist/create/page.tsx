@@ -88,8 +88,6 @@ export default function CreateTeeTimeWatchlistPage() {
       // Build filters payload
       const startHour = timeRange[0];
       const endHour = timeRange[1];
-      const start_time = `${String(startHour).padStart(2, '0')}:00`;
-      const end_time = `${String(endHour).padStart(2, '0')}:00`;
       const date = selectedDates?.[0]
         ? formatDateLocal(new Date(selectedDates[0]))
         : formatDateLocal(new Date());
@@ -112,8 +110,8 @@ export default function CreateTeeTimeWatchlistPage() {
 
       const filters: TeeTimeWatchlistFilters = {
         date,
-        start_time,
-        end_time,
+        start_hour: startHour,
+        end_hour: endHour,
         num_of_players: numOfPlayers,
         holes,
         regionId: selectedRegionId,
@@ -157,8 +155,8 @@ export default function CreateTeeTimeWatchlistPage() {
         setCourseCityMapping(simpleCityMapping);
       }
       const dateStr = formatDateLocal(new Date(selectedDates[0]));
-      const startTime = `${String(timeRange[0]).padStart(2, '0')}:00`;
-      const endTime = `${String(timeRange[1]).padStart(2, '0')}:00`;
+      const startTime = timeRange[0];
+      const endTime = timeRange[1];
 
       // Build optional courseIds from selected courses and/or cities
       const nameToId: Record<string, string> = {};
