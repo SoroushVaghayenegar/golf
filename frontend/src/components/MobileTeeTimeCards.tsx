@@ -101,26 +101,8 @@ const MobileTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, MobileTeeTimeC
       filtered = filtered.filter(teeTime => !removedCourseIds.includes(Number(teeTime.course_id)));
     }
 
-    if (fetchedDates && fetchedDates.length > 0) {
-      const todayInTz = getTodayInTimeZone(effectiveTimeZone);
-      const hasTodaySelected = fetchedDates.some(date => 
-        date.toDateString() === todayInTz.toDateString()
-      );
-      if (hasTodaySelected) {
-        const nowInTz = getNowInTimeZone(effectiveTimeZone);
-        filtered = filtered.filter(teeTime => {
-          const teeTimeDateTime = parseDateTimeInTimeZone(teeTime.start_datetime, effectiveTimeZone);
-          const teeTimeDate = new Date(teeTimeDateTime.getFullYear(), teeTimeDateTime.getMonth(), teeTimeDateTime.getDate());
-          if (teeTimeDate.toDateString() === todayInTz.toDateString()) {
-            return teeTimeDateTime >= nowInTz;
-          }
-          return true;
-        });
-      }
-    }
-
     return filtered;
-  }, [teeTimes, removedCourseIds, fetchedDates, effectiveTimeZone]);
+  }, [teeTimes, removedCourseIds]);
 
   const sortedTeeTimes = useMemo(() => {
     const copy = [...filteredTeeTimes];

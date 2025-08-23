@@ -15,18 +15,6 @@ export default function TeeTimeWatchlistPage() {
     return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   };
 
-  const formatTimeNoSeconds = (timeStr: string | null | undefined) => {
-    if (!timeStr) return "—";
-    // Expect formats like HH:mm or HH:mm:ss
-    const parts = String(timeStr).split(":");
-    if (parts.length >= 2) {
-      const [h, m] = parts;
-      const hh = h.length === 1 ? `0${h}` : h;
-      return `${hh}:${m}`;
-    }
-    return String(timeStr);
-  };
-
   function TruncatedCourses({ courses }: { courses: string }) {
     const textRef = useRef<HTMLSpanElement | null>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
