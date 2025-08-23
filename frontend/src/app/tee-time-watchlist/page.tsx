@@ -15,18 +15,6 @@ export default function TeeTimeWatchlistPage() {
     return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   };
 
-  const formatTimeNoSeconds = (timeStr: string | null | undefined) => {
-    if (!timeStr) return "—";
-    // Expect formats like HH:mm or HH:mm:ss
-    const parts = String(timeStr).split(":");
-    if (parts.length >= 2) {
-      const [h, m] = parts;
-      const hh = h.length === 1 ? `0${h}` : h;
-      return `${hh}:${m}`;
-    }
-    return String(timeStr);
-  };
-
   function TruncatedCourses({ courses }: { courses: string }) {
     const textRef = useRef<HTMLSpanElement | null>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
@@ -231,7 +219,7 @@ export default function TeeTimeWatchlistPage() {
                     {watchlists.map((wl) => (
                       <tr key={wl.id} className="hover:bg-gray-50">
                         <td className="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 leading-tight whitespace-nowrap">{formatDateMonthDay(wl.date)}</td>
-                        <td className="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm text-gray-700 leading-tight whitespace-nowrap">{formatTimeNoSeconds(wl.start_time)} - {formatTimeNoSeconds(wl.end_time)}</td>
+                        <td className="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm text-gray-700 leading-tight whitespace-nowrap">{wl.start_hour} - {wl.end_hour}</td>
                         <td className="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm text-gray-700 leading-tight whitespace-nowrap hidden md:table-cell">{wl.num_of_players}</td>
                         <td className="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm text-gray-700 leading-tight whitespace-nowrap hidden md:table-cell">{wl.holes}</td>
                         <td className="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm text-gray-700 leading-tight whitespace-nowrap hidden md:table-cell">{wl.region || "—"}</td>

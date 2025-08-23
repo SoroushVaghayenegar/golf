@@ -68,7 +68,7 @@ class Supabase:
                 courses=item.get('course_list', []),
                 broadcast_days=broadcast_days,
                 token=item.get('token'),
-                region=item.get('region')
+                region_id=item.get('region_id')
             )
             
             if subscription.valid_for_subscription():
@@ -76,8 +76,8 @@ class Supabase:
         
         return subscriptions
     
-    def fetch_tee_times(self, dates: list[str], region: str):
-        url = f"{self.base_url}/functions/v1/tee-times?dates={','.join(dates)}&region={region}&numOfPlayers=any&holes=any"
+    def fetch_tee_times(self, dates: list[str], region_id: int):
+        url = f"{self.base_url}/functions/v1/tee-times?dates={','.join(dates)}&region_id={region_id}&numOfPlayers=any&holes=any"
         response = requests.get(url, headers=self.headers)
         response.raise_for_status()
         return response.json()

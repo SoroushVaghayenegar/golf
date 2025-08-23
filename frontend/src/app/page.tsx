@@ -70,6 +70,12 @@ export default function Home() {
 
   // Navigate to /search with current filters
   const handleNavigateToSearch = () => {
+    // Region is required
+    if (!selectedRegionId) {
+      alert("Please select a region")
+      return
+    }
+
     const params = new URLSearchParams();
     if (selectedDates && selectedDates.length > 0) {
       params.set('dates', selectedDates.map(formatDateLocal).join(','));

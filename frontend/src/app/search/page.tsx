@@ -504,8 +504,8 @@ export default function SearchPage() {
         numOfPlayers,
         holes,
         regionId: selectedRegionId,
-        startTime: `${String(timeRange[0]).padStart(2, '0')}:00`,
-        endTime: `${String(timeRange[1]).padStart(2, '0')}:00`,
+        startTime: timeRange[0],
+        endTime: timeRange[1],
         courseIds
       })
       setFetchedDates(selectedDates);

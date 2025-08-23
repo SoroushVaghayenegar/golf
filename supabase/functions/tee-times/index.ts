@@ -32,7 +32,24 @@ Deno.serve(async (req)=>{
     const holes = url.searchParams.get('holes')
     const courseIdsParam = url.searchParams.get('courseIds')
     const region_id = url.searchParams.get('region_id')
-
+    
+    // if startTime or endTime is provided, then need to be a number from 5 - 22
+    if (startTime && (parseInt(startTime) < 5 || parseInt(startTime) > 22)) {
+      return new Response("Start time must be between 5 and 22", {
+        status: 400,
+        headers: {
+          "access-control-allow-origin": allowedOrigin
+        }
+      })
+    }
+    if (endTime && (parseInt(endTime) < 5 || parseInt(endTime) > 22)) {
+      return new Response("End time must be between 5 and 22", {
+        status: 400,
+        headers: {
+          "access-control-allow-origin": allowedOrigin
+        }
+      })
+    }
     if (!datesParam) {
       return new Response("Dates are required", {
         status: 400,
@@ -77,7 +94,7 @@ Deno.serve(async (req)=>{
     const regionTimeZone = regionData.timezone
 
     // Get tee times with forecast data
-    const { data, error } = await getTeeTimes(supabase, dates, startTime, endTime, numOfPlayers, holes, courseIds, region_id, regionTimeZone)
+    const { data, error } = await getTeeTimes(supabase, dates, `${startTime.padStart(2, "0")}:00`, `${endTime.padStart(2, "0")}:00`, numOfPlayers, holes, courseIds, region_id, regionTimeZone)
 
     const headers = {
       "access-control-allow-origin": allowedOrigin,

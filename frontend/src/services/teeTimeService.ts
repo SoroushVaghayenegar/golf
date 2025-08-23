@@ -32,8 +32,8 @@ interface TeeTimeFilters {
     regionId: string;
     // Optional: restrict to these course IDs if provided
     courseIds?: string[];
-    startTime: string; // Format: HH:MM
-    endTime: string; // Format: HH:MM
+    startTime: number;
+    endTime: number;
 }
 
 // Cities are now fetched dynamically from the database via supabaseService
@@ -46,8 +46,8 @@ export const fetchTeeTimes = async (filters: TeeTimeFilters): Promise<TeeTime[]>
         params.append('numOfPlayers', filters.numOfPlayers);
         params.append('holes', filters.holes);
         params.append('region_id', filters.regionId);
-        params.append('startTime', filters.startTime);
-        params.append('endTime', filters.endTime);
+        params.append('startTime', filters.startTime.toString());
+        params.append('endTime', filters.endTime.toString());
         if (filters.courseIds && filters.courseIds.length > 0) {
             params.append('courseIds', filters.courseIds.join(','));
         }

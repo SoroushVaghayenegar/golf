@@ -6,8 +6,8 @@ export interface Course {
 
 export interface TeeTimeWatchlistFilters {
     date: string;
-    start_time: string;
-    end_time: string;
+    start_hour: number;
+    end_hour: number;
     num_of_players: string;
     holes: string;
     regionId: string;
@@ -17,8 +17,8 @@ export interface TeeTimeWatchlistFilters {
 interface TeeTimeWatchlistRow {
     id: number;
     date: string;
-    start_time: string;
-    end_time: string;
+    start_hour: number;
+    end_hour: number;
     num_of_players: string;
     holes: string;
     region_id: string;
@@ -38,8 +38,8 @@ export const createTeeTimeWatchlist = async (filters: TeeTimeWatchlistFilters) =
         .from('tee_time_watchlists')
         .insert({
             date: filters.date,
-            start_time: filters.start_time,
-            end_time: filters.end_time,
+            start_hour: filters.start_hour,
+            end_hour: filters.end_hour,
             num_of_players: filters.num_of_players,
             holes: filters.holes,
             region_id: filters.regionId,

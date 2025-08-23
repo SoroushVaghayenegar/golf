@@ -115,13 +115,13 @@ def lambda_handler(event, context):
         return
     
     # get all regions from subscriptions
-    regions = set()
+    region_ids = set()
     for subscription in subscriptions_for_broadcast_today:
-        regions.add(subscription.region)
+        region_ids.add(subscription.region_id)
     
     # get all tee times for each region
-    for region in regions:
-        print(f"Getting tee times for region: {region}")
+    for region_id in region_ids:
+        print(f"Getting tee times for region: {region_id}")
 
         # get a set of days for subscriptions
         tee_time_days = set()
@@ -132,7 +132,7 @@ def lambda_handler(event, context):
         day_to_date_mapping = get_dates_for_days(tee_time_days, vancouver_time)
     
         # maping of day to tee times
-        tee_times = supabase_client.fetch_tee_times(list(day_to_date_mapping.values()), region)
+        tee_times = supabase_client.fetch_tee_times(list(day_to_date_mapping.values()), region_id)
         day_to_tee_times = {}
         for tee_time in tee_times:
             # Parse the start_datetime string to get the date and day
@@ -148,10 +148,10 @@ def lambda_handler(event, context):
             tee_times = day_to_tee_times[subscription.days[0]]
             filtered_tee_times = filter_tee_times(tee_times, subscription.courses, subscription.start_time, subscription.end_time)
             if test_email:
-                send_email(test_email, filtered_tee_times, subscription.token, region)
+                send_email(test_email, filtered_tee_times, subscription.token, region_id)
                 print("Successfully sent test email")
                 return
-            send_email(subscription.email, filtered_tee_times, subscription.token, region)
+            send_email(subscription.email, filtered_tee_times, subscription.token, region_id)
 
 
     print("Successfully sent emails")

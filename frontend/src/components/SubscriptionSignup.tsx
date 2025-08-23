@@ -297,7 +297,7 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
 
   const handleSubmit = async () => {
     // Email validation
-    const emailRegex = /^[^\[s@]+@\[^\s@]+\.\[^\s@]+$/
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!email || !emailRegex.test(email)) {
       alert("Please enter a valid email address")
       return
@@ -305,6 +305,18 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
     
     if (golfDays.length === 0 || selectedCourses.length === 0 || emailDays.length === 0) {
       alert("Please fill in all required fields")
+      return
+    }
+
+    // Make sure timeFrom is before timeTo
+    if (timeFrom >= timeTo) {
+      alert("Please make sure the start time is before the end time")
+      return
+    }
+
+    // Region is required
+    if (!localSelectedRegionId) {
+      alert("Please select a region")
       return
     }
 
