@@ -5,6 +5,7 @@ import { ChevronDown, Users, Clock, School, LandPlot, MapPin, Info } from "lucid
 import { Range } from "react-range";
 import Select, { MultiValue, StylesConfig } from 'react-select';
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 import { fetchCourseDisplayNamesAndTheirCities, fetchRegions } from "../services/supabaseService";
 import CompactCalendar from "./CompactCalendar";
 
@@ -37,6 +38,8 @@ interface WatchlistFiltersProps {
   selectedRegionId: string;
   setSelectedRegionId: (regionId: string) => void;
   calendarExpandedClassName?: string;
+  createAnother?: boolean;
+  setCreateAnother?: (checked: boolean) => void;
 }
 
 export default function WatchlistFilters({
@@ -60,7 +63,9 @@ export default function WatchlistFilters({
   setCourseIdMapping,
   selectedRegionId,
   setSelectedRegionId,
-  calendarExpandedClassName
+  calendarExpandedClassName,
+  createAnother,
+  setCreateAnother
 }: WatchlistFiltersProps) {
   const [cities, setCities] = useState<string[]>([]);
   const [citiesLoading, setCitiesLoading] = useState(false);
@@ -620,6 +625,20 @@ export default function WatchlistFilters({
         </div>
 
         <div className="mt-8 pt-6 border-t border-gray-200">
+          {/* Create Another Checkbox */}
+          {createAnother !== undefined && setCreateAnother && (
+            <div className="mb-4 flex items-center space-x-2">
+              <Checkbox
+                id="createAnother"
+                checked={createAnother}
+                onCheckedChange={(checked) => setCreateAnother(checked as boolean)}
+              />
+              <label htmlFor="createAnother" className="text-sm text-gray-600">
+                Create another watchlist after this one
+              </label>
+            </div>
+          )}
+          
           <button
             onClick={onGetTeeTimes}
             disabled={loading || !selectedDates || selectedDates.length === 0}

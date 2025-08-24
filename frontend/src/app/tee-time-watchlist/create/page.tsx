@@ -33,6 +33,7 @@ export default function CreateTeeTimeWatchlistPage() {
   const [selectedRegionId, setSelectedRegionId] = useState<string>("");
   const [courseCityMapping, setCourseCityMapping] = useState<Record<string, string>>({});
   const [courseIdMapping, setCourseIdMapping] = useState<Record<string, number>>({});
+  const [createAnother, setCreateAnother] = useState(false);
 
   // Dialog state for when tee times are available
   const [showResultsDialog, setShowResultsDialog] = useState(false);
@@ -67,6 +68,15 @@ export default function CreateTeeTimeWatchlistPage() {
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
+  };
+
+  const resetForm = () => {
+    setSelectedDates(undefined);
+    setNumOfPlayers("any");
+    setHoles("any");
+    setTimeRange([7, 17]);
+    setSelectedCities([]);
+    setSelectedCourses([]);
   };
 
   const createWatchlistNow = async () => {
@@ -122,7 +132,12 @@ export default function CreateTeeTimeWatchlistPage() {
       toast.success("Watchlist created", {
         description: `Saved preferences for ${created?.region ?? 'region'} on ${filters.date}`,
       });
-      router.push("/tee-time-watchlist");
+      
+      if (createAnother) {
+        resetForm();
+      } else {
+        router.push("/tee-time-watchlist");
+      }
     } catch (error) {
       console.error('Failed to create watchlist:', error);
       toast.error("Failed to create watchlist");
@@ -261,6 +276,8 @@ export default function CreateTeeTimeWatchlistPage() {
           selectedRegionId={selectedRegionId}
           setSelectedRegionId={setSelectedRegionId}
           calendarExpandedClassName="p-2 max-w-[18rem] mx-auto"
+          createAnother={createAnother}
+          setCreateAnother={setCreateAnother}
         />
 
         {/* Availability Dialog */}
