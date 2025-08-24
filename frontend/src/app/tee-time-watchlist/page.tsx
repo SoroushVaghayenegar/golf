@@ -144,7 +144,7 @@ export default function TeeTimeWatchlistPage() {
   }, []);
 
   return (
-    <div className="py-6 min-h-[calc(100vh-64px)]">
+    <div className="min-h-[calc(100vh-64px)]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
           <div>
