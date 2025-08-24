@@ -1,5 +1,6 @@
 import os
 import requests
+from datetime import datetime
 from supabase import create_client
 
 class SupabaseService:
@@ -18,11 +19,11 @@ class SupabaseService:
         # If a foreign key exists: tee_time_watchlists.user_id -> profiles.user_id
         # this will embed email and full_name from profiles into each result as `profiles`
         # get rows with notification_sent = false
-        response = self.supabase.table("tee_time_watchlists").select("*, profiles(email, full_name)").eq("notification_sent", False).execute()
+        response = self.supabase.table("tee_time_watchlists").select("*, profiles(email, full_name)").execute()
         return response.data
 
-    def update_tee_time_watchlist_as_sent(self, watchlist_id: str):
-        self.supabase.table("tee_time_watchlists").update({"notification_sent": True}).eq("id", watchlist_id).execute()
+    def update_tee_times_as_processed(self, watchlist_id: str, updated_processed_tee_times: list[str]):
+        self.supabase.table("tee_time_watchlists").update({"processed_tee_times": updated_processed_tee_times, "updated_at": datetime.now().isoformat()}).eq("id", watchlist_id).execute()
     
     def get_tee_times(self, date: str, start_time: int, end_time: int, course_ids: str, num_of_players: str, holes: str, region_id: str):
         url = f"{self.base_url}/functions/v1/tee-times?dates={date}&startTime={start_time}&endTime={end_time}&courseIds={course_ids}&numOfPlayers={num_of_players}&holes={holes}&region_id={region_id}"

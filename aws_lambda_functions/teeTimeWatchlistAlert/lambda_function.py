@@ -16,6 +16,8 @@ def lambda_handler(event, context):
         course_ids = ",".join([str(course["id"]) for course in watchlist["courses"]])
         start_time = watchlist["start_hour"]
         end_time = watchlist["end_hour"]
+        processed_tee_times = watchlist.get("processed_tee_times") or []
+
         tee_times = supabase_service.get_tee_times(
             date=watchlist["date"],
             start_time=start_time,
@@ -25,6 +27,8 @@ def lambda_handler(event, context):
             holes=watchlist["holes"],
             region_id=watchlist["region_id"]
         )
+        
+        tee_times = [tee_time for tee_time in tee_times if tee_time.get("id") not in processed_tee_times]
         if len(tee_times) > 0:
             # Determine recipient email and full name
             profile = watchlist.get("profiles")
@@ -41,8 +45,13 @@ def lambda_handler(event, context):
                     "holes": watchlist.get("holes"),
                     "courseIds": course_ids
                 }
-                send_watchlist_email(email=email, full_name=full_name, count=len(tee_times), params=params)
-                supabase_service.update_tee_time_watchlist_as_sent(watchlist.get("id"))
+                
+                send_watchlist_email(email=email, full_name=full_name, tee_times=tee_times, params=params)
+                
+                tee_times_ids = [tee_time.get("id") for tee_time in tee_times]
+                processed_tee_times.extend(tee_times_ids)
+                supabase_service.update_tee_times_as_processed(watchlist.get("id"), processed_tee_times)
+
                 emails_sent += 1
             except Exception as e:
                 print(f"Failed to send watchlist email for watchlist {watchlist.get('id')}: {e}")

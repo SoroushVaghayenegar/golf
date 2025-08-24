@@ -13,7 +13,7 @@ export async function fetchCourseTeeTimes(course: Course, searchDate: Date): Pro
         return {
             courseId: course.id,
             date: searchDate.toISOString().split('T')[0],
-            teeTimes: await fetchTeeTimesFromCPS(course.name,subdomain, params, headers, searchDate, course.requires_login)
+            teeTimes: await fetchTeeTimesFromCPS(course.id, course.name, subdomain, params, headers, searchDate, course.requires_login)
         }
     } else if (course.external_api === CHRONO_LIGHTSPEED) {
         
@@ -51,6 +51,7 @@ export async function fetchCourseTeeTimes(course: Course, searchDate: Date): Pro
 }
 
 export async function fetchTeeTimesFromCPS(
+  courseId: number,
   courseName: string,
   subdomain: string,
   params: Record<string, any>,
@@ -123,7 +124,8 @@ export async function fetchTeeTimesFromCPS(
         const playersAvailable = teeTimeObject["availableParticipantNo"].length;
         const holes = parseInt(holesStr);
         const booking_link = `https://${subdomain}.cps.golf`
-        teeTimes.push(new TeeTime(startDateTime, playersAvailable, holes, price, booking_link));
+        const tee_time_id = courseId + startDateTime.toISOString().split('T')[0].replaceAll('-', '') + startDateTime.getHours() + startDateTime.getMinutes()
+        teeTimes.push(new TeeTime(startDateTime, playersAvailable, holes, price, booking_link, tee_time_id));
       }
     }
     return teeTimes;

@@ -42,6 +42,7 @@ interface ForecastData {
 }
 
 export interface TeeTime {
+    id: string;
     start_date: string;
     start_time: string;
     start_datetime: string;
@@ -176,6 +177,7 @@ export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[
             }
 
             const teeTimeObj: TeeTime = {
+                id: teeTime.tee_time_id,
                 start_date: typedCourseTeeTimes.date,
                 start_time: teetimeStartTime,
                 start_datetime: teeTimeStartTimeString,

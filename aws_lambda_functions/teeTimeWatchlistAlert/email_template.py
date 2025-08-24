@@ -1,11 +1,34 @@
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from urllib.parse import urlencode
+from datetime import datetime
 
 
 def _first_name_from_full_name(full_name: Optional[str]) -> str:
     if not full_name:
         return "there"
     return full_name.split(" ")[0].strip() or "there"
+
+
+def _format_tee_time(start_datetime: str) -> str:
+    try:
+        # Parse the datetime string in format "2025-08-21T18:00"
+        dt = datetime.fromisoformat(start_datetime)
+        # Format to 12-hour time with AM/PM
+        return dt.strftime("%I:%M %p").lstrip('0')
+    except Exception:
+        # Fallback to manual parsing if datetime.fromisoformat fails
+        try:
+            time_part = start_datetime.split('T')[1]
+            hour, minute = time_part.split(':')
+            hour_int = int(hour)
+            am_pm = "AM" if hour_int < 12 else "PM"
+            if hour_int == 0:
+                hour_int = 12
+            elif hour_int > 12:
+                hour_int -= 12
+            return f"{hour_int}:{minute} {am_pm}"
+        except Exception:
+            return start_datetime
 
 
 def _extract_hour_component(time_str: Optional[str]) -> Optional[int]:
@@ -58,8 +81,9 @@ def _build_search_url(params: Dict[str, Any]) -> str:
     return f"{base_url}?{query_string}" if query_string else base_url
 
 
-def generate_watchlist_email_html(full_name: Optional[str], count: int, params: Dict[str, Any]) -> str:
+def generate_watchlist_email_html(full_name: Optional[str], tee_times: List[Dict[str, Any]], params: Dict[str, Any]) -> str:
     first_name = _first_name_from_full_name(full_name)
+    count = len(tee_times)
     plural = "tee time" if count == 1 else "tee times"
 
     date = params.get("date") or "—"
@@ -70,6 +94,25 @@ def generate_watchlist_email_html(full_name: Optional[str], count: int, params: 
     num_of_players = params.get("num_of_players") or params.get("players") or "—"
     holes = params.get("holes") or "—"
     search_url = _build_search_url(params)
+    
+    # Generate individual tee time listings
+    tee_time_listings = ""
+    for tee_time in tee_times:
+        formatted_time = _format_tee_time(tee_time.get("start_datetime", ""))
+        course_name = tee_time.get("course_name", "Unknown Course")
+        price = tee_time.get("price", 0)
+        players_available = tee_time.get("players_available", 1)
+        
+        tee_time_listings += f"""
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 8px 0;">
+            <div style="font-weight: 700; font-size: 16px; color: #0f172a; margin-bottom: 4px;">
+                {formatted_time} ({course_name})
+            </div>
+            <div style="font-size: 13px; color: #64748b;">
+                ${float(price):.2f} per person • {players_available} spots • {tee_time.get('holes', '18')} holes
+            </div>
+        </div>
+        """
 
     return f"""
     <!doctype html>
@@ -186,10 +229,12 @@ def generate_watchlist_email_html(full_name: Optional[str], count: int, params: 
           </div>
           <div class=\"content\">
             <h1 class=\"title\">Hi {first_name}, we found your {plural}! ⛳</h1>
-            <p class=\"subtitle\">Your tee time watchlist just matched <strong>{count}</strong> {plural}. Jump in now before they’re gone.</p>
-            <span class=\"badge\">{count} {plural} found</span>
+            <p class=\"subtitle\">Your tee time watchlist just matched <strong>{count}</strong> {plural}. Jump in now before they're gone.</p>
+            <div style="margin: 16px 0;">
+              {tee_time_listings}
+            </div>
             <div class=\"cta\">
-              <a href=\"{search_url}\" target=\"_blank\" rel=\"noopener noreferrer\">View tee times on TeeClub</a>
+              <a href=\"{search_url}\" target=\"_blank\" rel=\"noopener noreferrer\">View all on TeeClub</a>
             </div>
             <div class=\"details\">
               <h3>Watchlist filters</h3>
@@ -211,8 +256,9 @@ def generate_watchlist_email_html(full_name: Optional[str], count: int, params: 
     """
 
 
-def generate_watchlist_email_text(full_name: Optional[str], count: int, params: Dict[str, Any]) -> str:
+def generate_watchlist_email_text(full_name: Optional[str], tee_times: List[Dict[str, Any]], params: Dict[str, Any]) -> str:
     first_name = _first_name_from_full_name(full_name)
+    count = len(tee_times)
     plural = "tee time" if count == 1 else "tee times"
     date = params.get("date") or "—"
     start_time = params.get("start_time") or "—"
@@ -222,10 +268,23 @@ def generate_watchlist_email_text(full_name: Optional[str], count: int, params: 
     num_of_players = params.get("num_of_players") or params.get("players") or "—"
     holes = params.get("holes") or "—"
     search_url = _build_search_url(params)
+    
+    # Generate individual tee time listings for text format
+    tee_time_text = ""
+    for i, tee_time in enumerate(tee_times, 1):
+        formatted_time = _format_tee_time(tee_time.get("start_datetime", ""))
+        course_name = tee_time.get("course_name", "Unknown Course")
+        price = tee_time.get("price", 0)
+        players_available = tee_time.get("players_available", 1)
+        
+        tee_time_text += f"{i}. {formatted_time} ({course_name})\n"
+        tee_time_text += f"   ${float(price):.2f} per person • {players_available} spots • {tee_time.get('holes', '18')} holes\n"
+        tee_time_text += "\n"
 
     return (
         f"Hi {first_name},\n\n"
-        f"Good news — your watchlist found {count} {plural}.\n\n"
+        f"Good news — your watchlist found {count} {plural}:\n\n"
+        f"{tee_time_text}"
         f"Watchlist filters:\n"
         f"- Date: {date}\n"
         f"- Time: {start_time} – {end_time}\n"
@@ -233,7 +292,7 @@ def generate_watchlist_email_text(full_name: Optional[str], count: int, params: 
         f"- Region: {region}\n"
         f"- Players: {num_of_players}\n"
         f"- Holes: {holes}\n\n"
-        f"Open TeeClub to view them: {search_url}\n\n"
+        f"View all on TeeClub: {search_url}\n\n"
         f"— TeeClub"
     )
 
