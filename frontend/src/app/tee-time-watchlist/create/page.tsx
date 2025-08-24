@@ -238,7 +238,7 @@ export default function CreateTeeTimeWatchlistPage() {
 
   return (
     <div className="min-h-screen lg:min-h-[calc(100vh-64px)]">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-32 mt-6">
         <div className="mb-4">
           <Breadcrumb>
             <BreadcrumbList>
