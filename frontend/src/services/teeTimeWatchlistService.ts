@@ -62,7 +62,6 @@ export const getTeeTimeWatchlists = async () => {
     const { data, error } = await client
         .from('tee_time_watchlists')
         .select('*, regions(name)')
-        .eq('notification_sent', false)
         .gte('date', new Date().toISOString())
 
     if (error) {
