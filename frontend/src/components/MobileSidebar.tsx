@@ -725,7 +725,7 @@ export default function MobileSidebar({
               </div>
             )}
             {hideSubmitButton && (
-              <div className="sticky bottom-0 px-4 py-3 border-t border-slate-200 bg-white">
+              <div className="sticky px-4 py-4 border-t border-slate-200 bg-white">
                 <div className="w-full flex justify-center">
                   <Badge className="px-3 py-1 text-xs" aria-live="polite" aria-busy={loading}>
                     {loading ? (
