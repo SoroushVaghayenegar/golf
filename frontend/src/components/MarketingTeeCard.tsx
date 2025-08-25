@@ -1,12 +1,31 @@
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { BellIcon, HeartIcon, ClockIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { ArrowRightIcon } from '@heroicons/react/24/solid';
+import { createClient } from '@/lib/supabase/client';
 
 interface MarketingTeeCardProps {
   index: number;
 }
 
 export default function MarketingTeeCard({ index }: MarketingTeeCardProps) {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    supabase.auth.getUser().then(({ data }) => {
+      setIsAuthenticated(!!data.user);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => {
+      listener?.subscription.unsubscribe();
+    };
+  }, []);
   return (
     <div
       key={index}
@@ -52,11 +71,11 @@ export default function MarketingTeeCard({ index }: MarketingTeeCardProps) {
         {/* Call to Action Button */}
         <div className="mt-5 pt-4 border-t border-slate-200 w-full max-w-full">
           <Link
-            href="/tee-time-watchlist/create"
+            href={isAuthenticated ? "/tee-time-watchlist/create" : "/auth/request-invite"}
             className="w-full px-4 py-3 font-semibold rounded-lg transition-all duration-200 text-center block transform hover:scale-[1.02] active:scale-[0.98] max-w-full overflow-hidden bg-green-700 focus:bg-green-800 text-white shadow-lg hover:shadow-xl"
           >
             <div className="flex items-center justify-center gap-2">
-              <span>Create Watchlist</span>
+              <span>{isAuthenticated ? "Create Watchlist" : "Be the first to try it"}</span>
               <ArrowRightIcon className="w-4 h-4" />
             </div>
           </Link>
