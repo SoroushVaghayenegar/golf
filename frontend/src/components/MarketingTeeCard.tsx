@@ -10,7 +10,7 @@ export default function MarketingTeeCard({ index }: MarketingTeeCardProps) {
   return (
     <div
       key={index}
-      className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl shadow-sm hover:shadow-lg transition-all duration-200 border-2 border-blue-200 overflow-hidden w-full max-w-full relative"
+      className="bg-gradient-to-br from-indigo-200 to-amber-200 rounded-xl shadow-sm hover:shadow-lg transition-all duration-200 border-2 border-blue-200 overflow-hidden w-full max-w-full relative"
     >
       {/* Attention-grabbing badge */}
       <div className="absolute top-3 right-3 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full z-10">
@@ -50,10 +50,10 @@ export default function MarketingTeeCard({ index }: MarketingTeeCardProps) {
         </div>
 
         {/* Call to Action Button */}
-        <div className="mt-5 pt-4 border-t border-blue-200 w-full max-w-full">
+        <div className="mt-5 pt-4 border-t border-slate-200 w-full max-w-full">
           <Link
             href="/tee-time-watchlist/create"
-            className="w-full px-4 py-3 font-semibold rounded-lg transition-all duration-200 text-center block transform hover:scale-[1.02] active:scale-[0.98] max-w-full overflow-hidden bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl"
+            className="w-full px-4 py-3 font-semibold rounded-lg transition-all duration-200 text-center block transform hover:scale-[1.02] active:scale-[0.98] max-w-full overflow-hidden bg-green-700 focus:bg-green-800 text-white shadow-lg hover:shadow-xl"
           >
             <div className="flex items-center justify-center gap-2">
               <span>Create Watchlist</span>
