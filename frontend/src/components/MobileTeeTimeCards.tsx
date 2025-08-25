@@ -295,9 +295,15 @@ const MobileTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, MobileTeeTimeC
           </div>
         )}
         {!loading && !error && hasSearched && filteredTeeTimes.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-slate-600">
-            <HeartCrack className="w-10 h-10 text-slate-400 mb-2" />
-            <p className="font-medium">Unfortunately, no tee times found.</p>
+          <div className="w-full max-w-full">
+            {/* Show marketing card even when no tee times found */}
+            <div className="p-2 mb-6">
+              <MarketingTeeCard index={0} />
+            </div>
+            <div className="flex flex-col items-center justify-center py-12 text-slate-600">
+              <HeartCrack className="w-10 h-10 text-slate-400 mb-2" />
+              <p className="font-medium">Unfortunately, no tee times found.</p>
+            </div>
           </div>
         )}
 
