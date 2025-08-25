@@ -8,6 +8,7 @@ import { type TeeTime } from "../services/teeTimeService";
 import { SubscriptionSignup } from "@/components/SubscriptionSignup";
 import LottiePlayer from "@/components/LottiePlayer";
 import TeeTimeCard from "@/components/TeeTimeCard";
+import MarketingTeeCard from "@/components/MarketingTeeCard";
 import ShareButton from "@/components/ShareButton";
 import {
   Accordion,
@@ -197,11 +198,12 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
   };
 
   // Flat data is only needed in single-date mode; VirtuosoGrid uses simple index-based rendering
+  // Marketing card is inserted as the first item
   const singleDayItems = useMemo(() => {
     if (groupedTeeTimes.length === 1) {
-      return groupedTeeTimes[0].teeTimes;
+      return [null, ...groupedTeeTimes[0].teeTimes]; // null represents the marketing card
     }
-    return [] as TeeTime[];
+    return [] as (TeeTime | null)[];
   }, [groupedTeeTimes]);
 
   // Build share text from fetched dates in format like "Aug 12"
@@ -215,25 +217,29 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
     return 'Found some good tee times';
   }, [fetchedDates]);
 
-  const renderTeeTimeItem = useCallback((index: number, teeTime: TeeTime) => {
+  const renderTeeTimeItem = useCallback((index: number, teeTime: TeeTime | null) => {
     return (
       <div className="p-2">
-        <TeeTimeCard
-          teeTime={teeTime}
-          index={index}
-          onRemoveCourse={onRemoveCourse}
-          onVisibilityChange={(isVisible) => {
-            setVisibleTeeTimes(prev => {
-              const newSet = new Set(prev);
-              if (isVisible) {
-                newSet.add(index);
-              } else {
-                newSet.delete(index);
-              }
-              return newSet;
-            });
-          }}
-        />
+        {teeTime === null ? (
+          <MarketingTeeCard index={index} />
+        ) : (
+          <TeeTimeCard
+            teeTime={teeTime}
+            index={index}
+            onRemoveCourse={onRemoveCourse}
+            onVisibilityChange={(isVisible) => {
+              setVisibleTeeTimes(prev => {
+                const newSet = new Set(prev);
+                if (isVisible) {
+                  newSet.add(index);
+                } else {
+                  newSet.delete(index);
+                }
+                return newSet;
+              });
+            }}
+          />
+        )}
       </div>
     );
   }, [onRemoveCourse]);
@@ -431,7 +437,7 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
               // Multiple dates - use accordion with virtual scrolling for each group
               <Accordion type="multiple" defaultValue={groupedTeeTimes.map((_, index) => `date-${index}`)} className="w-full h-full max-w-full">
                 {groupedTeeTimes.map((group, groupIndex) => {
-                  const groupTeeTimes = group.teeTimes;
+                  const groupTeeTimes = [null, ...group.teeTimes]; // Add marketing card as first item
                   
                   return (
                     <AccordionItem key={groupIndex} value={`date-${groupIndex}`} className="border-b">
@@ -441,7 +447,7 @@ const VirtualizedTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, Virtualiz
                             {formatDateDisplay(group.date)}
                           </span>
                           <span className="text-sm text-slate-500">
-                            {groupTeeTimes.length} tee time{groupTeeTimes.length !== 1 ? 's' : ''}
+                            {group.teeTimes.length} tee time{group.teeTimes.length !== 1 ? 's' : ''}
                           </span>
                         </div>
                       </AccordionTrigger>
