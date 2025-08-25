@@ -52,13 +52,6 @@ def organize_tee_times(tee_times: list[dict]):
     """
     from collections import defaultdict
     from datetime import datetime
-    import pytz
-
-    # Helper to get local date (Vancouver) from tee time
-    def get_local_date(dt_str):
-        dt = datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
-        vancouver_tz = pytz.timezone('America/Vancouver')
-        return dt.astimezone(vancouver_tz).date()
 
     # Helper to get time range name
     def get_time_range(hour):
@@ -73,11 +66,9 @@ def organize_tee_times(tee_times: list[dict]):
     organized = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
     for tee in tee_times:
         dt = datetime.fromisoformat(tee['start_datetime'].replace('Z', '+00:00'))
-        vancouver_tz = pytz.timezone('America/Vancouver')
-        local_dt = dt.astimezone(vancouver_tz)
-        date = local_dt.date()
+        date = dt.date()
         course = tee['course_name']
-        hour = local_dt.hour
+        hour = dt.hour
         time_range = get_time_range(hour)
         if time_range:
             organized[date][course][time_range].append(tee)
