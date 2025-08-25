@@ -42,8 +42,8 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
   const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
   const [golfDays, setGolfDays] = useState<string[]>([])
-  const [timeFrom, setTimeFrom] = useState("05:00")
-  const [timeTo, setTimeTo] = useState("22:00")
+  const [timeFrom, setTimeFrom] = useState("08:00")
+  const [timeTo, setTimeTo] = useState("18:00")
   const [selectedCities, setSelectedCities] = useState<string[]>([])
   const [selectedCourses, setSelectedCourses] = useState<string[]>([])
   const [emailDays, setEmailDays] = useState<string[]>([])
@@ -51,7 +51,7 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
   const [isSubmitting, setIsSubmitting] = useState(false)
   
   // Region and data loading states (initialize with prop value)
-  const [localSelectedRegionId, setLocalSelectedRegionId] = useState<string>(selectedRegionId)
+  const [localSelectedRegionId, setLocalSelectedRegionId] = useState<string>(selectedRegionId || "1")
   const [regions, setRegions] = useState<{ value: string; label: string }[]>([])
   const [cities, setCities] = useState<string[]>([])
   const [courseCityMapping, setCourseCityMapping] = useState<Record<string, string>>({})
@@ -73,6 +73,22 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
     }
     return options
   }, [])
+
+  // Filtered options for timeFrom (5 AM to 9 PM)
+  const timeFromOptions = useMemo(() => {
+    return timeOptions.filter(option => {
+      const [hour] = option.value.split(':').map(Number)
+      return hour >= 5 && hour <= 21
+    })
+  }, [timeOptions])
+
+  // Filtered options for timeTo (6 AM to 10 PM)
+  const timeToOptions = useMemo(() => {
+    return timeOptions.filter(option => {
+      const [hour] = option.value.split(':').map(Number)
+      return hour >= 6 && hour <= 22
+    })
+  }, [timeOptions])
 
   // Update local region when prop changes
   useEffect(() => {
@@ -393,7 +409,7 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
                     <SelectValue placeholder="Select time" />
                   </SelectTrigger>
                   <SelectContent>
-                    {timeOptions.map(option => (
+                    {timeFromOptions.map(option => (
                       <SelectItem key={`from-${option.value}`} value={option.value}>{option.label}</SelectItem>
                     ))}
                   </SelectContent>
@@ -406,7 +422,7 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
                     <SelectValue placeholder="Select time" />
                   </SelectTrigger>
                   <SelectContent>
-                    {timeOptions.map(option => (
+                    {timeToOptions.map(option => (
                       <SelectItem key={`to-${option.value}`} value={option.value}>{option.label}</SelectItem>
                     ))}
                   </SelectContent>
@@ -455,6 +471,7 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
                   className="react-select-container"
                   classNamePrefix="react-select"
                   instanceId="subscription-cities-select"
+                  menuPlacement="top"
                   {...commonSelectProps}
                 />
               )}
@@ -483,6 +500,7 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
                   className="react-select-container"
                   classNamePrefix="react-select"
                   instanceId="subscription-courses-select"
+                  menuPlacement="top"
                   {...commonSelectProps}
                 />
               )}
