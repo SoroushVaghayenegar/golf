@@ -8,6 +8,7 @@ import { type TeeTime } from "../services/teeTimeService";
 import { SubscriptionSignup } from "@/components/SubscriptionSignup";
 import LottiePlayer from "@/components/LottiePlayer";
 import TeeTimeCard from "@/components/TeeTimeCard";
+import MarketingTeeCard from "@/components/MarketingTeeCard";
 import ShareButton from "@/components/ShareButton";
 import type { VirtualizedTeeTimeCardsRef } from "@/components/VirtualizedTeeTimeCards";
 
@@ -36,7 +37,8 @@ interface MobileTeeTimeCardsProps {
 
 type FlatItem =
   | { type: 'header'; date: string }
-  | { type: 'card'; teeTime: TeeTime; cardIndex: number; date: string };
+  | { type: 'card'; teeTime: TeeTime; cardIndex: number; date: string }
+  | { type: 'marketing'; cardIndex: number; date: string };
 
 const MobileTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, MobileTeeTimeCardsProps>(({ 
   teeTimes,
@@ -162,6 +164,9 @@ const MobileTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, MobileTeeTimeC
     let cardIndexCounter = 0;
     groupedTeeTimes.forEach(group => {
       items.push({ type: 'header', date: group.date });
+      // Add marketing card as first item after header
+      items.push({ type: 'marketing', cardIndex: cardIndexCounter, date: group.date });
+      cardIndexCounter++;
       group.teeTimes.forEach(tt => {
         items.push({ type: 'card', teeTime: tt, cardIndex: cardIndexCounter, date: group.date });
         cardIndexCounter++;
@@ -187,6 +192,13 @@ const MobileTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, MobileTeeTimeC
       return (
         <div key={`header-${key}`} className="px-2 pb-1 py-4 bg-transparent">
           <div className="font-semibold text-base sm:text-lg">{formatDateDisplay(item.date)}</div>
+        </div>
+      );
+    }
+    if (item.type === 'marketing') {
+      return (
+        <div key={`marketing-${key}`} className="p-2">
+          <MarketingTeeCard index={item.cardIndex} />
         </div>
       );
     }
@@ -283,9 +295,15 @@ const MobileTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, MobileTeeTimeC
           </div>
         )}
         {!loading && !error && hasSearched && filteredTeeTimes.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-slate-600">
-            <HeartCrack className="w-10 h-10 text-slate-400 mb-2" />
-            <p className="font-medium">Unfortunately, no tee times found.</p>
+          <div className="w-full max-w-full">
+            {/* Show marketing card even when no tee times found */}
+            <div className="p-2 mb-6">
+              <MarketingTeeCard index={0} />
+            </div>
+            <div className="flex flex-col items-center justify-center py-12 text-slate-600">
+              <HeartCrack className="w-10 h-10 text-slate-400 mb-2" />
+              <p className="font-medium">Unfortunately, no tee times found.</p>
+            </div>
           </div>
         )}
 
@@ -297,7 +315,7 @@ const MobileTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, MobileTeeTimeC
               itemContent={(index) => renderItem(flatItems[index], index)}
               increaseViewportBy={{ top: 400, bottom: 800 }}
               rangeChanged={({ startIndex, endIndex }) => {
-                // Count only cards in the current render range
+                // Count only tee time cards in the current render range (exclude marketing cards)
                 let count = 0;
                 for (let i = startIndex; i <= endIndex; i++) {
                   const it = flatItems[i];

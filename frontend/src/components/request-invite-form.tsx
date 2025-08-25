@@ -46,7 +46,7 @@ export function RequestInviteForm({ className, ...props }: React.ComponentPropsW
   }
 
   return (
-    <div className={cn('flex flex-col gap-6', className)} {...props}>
+    <div className={cn('flex flex-col gap-10', className)} {...props}>
       {success ? (
         <Card>
           <CardHeader>
@@ -64,11 +64,7 @@ export function RequestInviteForm({ className, ...props }: React.ComponentPropsW
           <CardHeader>
             <CardTitle className="text-2xl">Request an Invite</CardTitle>
             <CardDescription>
-              Type in your email and we&apos;ll add you to the waitlist.
-              <br />
-              <br />
-              Why get on the waitlist?<br />
-              <span className='text-violet-500'>You&apos;ll get acccess to features not open to public</span>
+              Type in your email and we&apos;ll add you to the <span className='font-bold'>waitlist</span>.
             </CardDescription>
           </CardHeader>
           <CardContent>
