@@ -7,7 +7,7 @@ AFTERNOON = {"name": "Afternoon", "start_hour": 11, "end_hour": 17}
 EVENING = {"name": "Evening", "start_hour": 17, "end_hour": 23}
 
 
-def send_email(email: str, tee_times: list[dict], token: str, region_id: int):
+def send_email(email: str, tee_times: list[dict], token: str, region_id: int, subscription=None):
     import boto3
     if len(tee_times) == 0:
         return
@@ -17,7 +17,7 @@ def send_email(email: str, tee_times: list[dict], token: str, region_id: int):
     ses = boto3.client('ses', region_name='us-west-2')
     
     # Generate HTML and text versions of the email
-    html_body = generate_email_html(tee_times, token, email)
+    html_body = generate_email_html(tee_times, token, email, subscription, region_id)
     text_body = generate_email_text(tee_times)
     
     ses.send_email(

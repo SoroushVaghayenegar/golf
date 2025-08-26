@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect } from "react"
 import Select, { MultiValue, StylesConfig } from 'react-select'
 import posthog from 'posthog-js'
+import { toast } from "sonner"
 import {
   Dialog,
   DialogContent,
@@ -364,10 +365,10 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
       
       // Close the dialog on success
       onOpenChange(false)
-      alert("Subscription created successfully!")
+      toast.success("Subscription created successfully!")
     } catch (error) {
       console.error("Failed to create subscription:", error)
-      alert("Failed to create subscription. Please try again.")
+      toast.error("Failed to create subscription. Please try again.")
     } finally {
       setIsSubmitting(false)
     }
