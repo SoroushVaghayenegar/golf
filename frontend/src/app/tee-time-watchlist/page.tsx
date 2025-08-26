@@ -46,11 +46,10 @@ export default function TeeTimeWatchlistPage() {
           el.style.width = '100%';
           const containerWidth = el.clientWidth;
           
-          // Show info button if text is truncated OR if there are multiple courses (likely to be long)
-          const hasMultipleCourses = courses.includes(',');
+          // Show info button only if text is actually truncated
           const isTextTruncated = contentWidth > containerWidth;
           
-          setIsTruncated(isTextTruncated || hasMultipleCourses);
+          setIsTruncated(isTextTruncated);
         } catch {}
       };
 
