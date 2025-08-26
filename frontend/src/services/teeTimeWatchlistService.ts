@@ -26,7 +26,7 @@ interface TeeTimeWatchlistRow {
     notification_sent?: boolean;
     created_at?: string;
     regions?: { name: string } | null;
-    processed_tee_times?: any[];
+    processed_tee_times?: string[];
     processed_tee_times_count?: number;
 }
 
