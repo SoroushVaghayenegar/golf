@@ -6,6 +6,14 @@ import { getTeeTimeWatchlists, deleteTeeTimeWatchlist, type TeeTimeWatchlist } f
 import { Skeleton } from "@/components/ui/skeleton";
 import { Trash, Info } from "lucide-react";
 import { toast } from "sonner";
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbSeparator,
+  BreadcrumbPage,
+} from "@/components/ui/breadcrumb";
 
 export default function TeeTimeWatchlistPage() {
   const formatDateMonthDay = (dateStr: string | null | undefined) => {
@@ -26,13 +34,39 @@ export default function TeeTimeWatchlistPage() {
     useEffect(() => {
       const el = textRef.current;
       if (!el) return;
-      // Defer to ensure layout is settled
-      const id = requestAnimationFrame(() => {
+      
+      // Check for truncation with a more robust approach
+      const checkTruncation = () => {
         try {
-          setIsTruncated(el.scrollWidth > el.clientWidth);
+          // Reset to check actual content width
+          el.style.width = 'auto';
+          const contentWidth = el.scrollWidth;
+          
+          // Set back to container width
+          el.style.width = '100%';
+          const containerWidth = el.clientWidth;
+          
+          // Show info button only if text is actually truncated
+          const isTextTruncated = contentWidth > containerWidth;
+          
+          setIsTruncated(isTextTruncated);
         } catch {}
-      });
-      return () => cancelAnimationFrame(id);
+      };
+
+      // Defer to ensure layout is settled
+      const id = requestAnimationFrame(checkTruncation);
+      
+      // Also check on window resize for better mobile responsiveness
+      const handleResize = () => {
+        requestAnimationFrame(checkTruncation);
+      };
+      
+      window.addEventListener('resize', handleResize);
+      
+      return () => {
+        cancelAnimationFrame(id);
+        window.removeEventListener('resize', handleResize);
+      };
     }, [courses]);
 
     useEffect(() => {
@@ -92,7 +126,11 @@ export default function TeeTimeWatchlistPage() {
 
     return (
       <div ref={containerRef} className="relative flex items-center gap-1">
-        <span ref={textRef} className="block w-24 sm:w-48 md:w-64 truncate align-middle">
+        <span 
+          ref={textRef} 
+          className="block max-w-[6rem] sm:max-w-[8rem] md:max-w-[12rem] lg:max-w-[16rem] truncate align-middle"
+          style={{ width: '100%' }}
+        >
           {courses}
         </span>
         {isTruncated && (
@@ -101,7 +139,7 @@ export default function TeeTimeWatchlistPage() {
             type="button"
             aria-label="Show full courses"
             onClick={toggleOpen}
-            className="inline-flex items-center justify-center w-5 h-5 rounded-none border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
+            className="inline-flex items-center justify-center w-5 h-5 rounded-none border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-sidebar-primary flex-shrink-0"
           >
             <Info className="w-3.5 h-3.5" />
           </button>
@@ -146,9 +184,23 @@ export default function TeeTimeWatchlistPage() {
   return (
     <div className="min-h-[calc(100vh-64px)]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+        <div className="mb-4">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link href="/">Home</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>Tee Time Watchlists</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Tee Time Watchlist</h1>
             <p className="text-gray-600 max-w-2xl">
               Manage your current watchlists. Create new ones to get notified about last‑minute cancellations and upcoming tee times.
             </p>
@@ -173,6 +225,7 @@ export default function TeeTimeWatchlistPage() {
                       <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold text-gray-900 hidden md:table-cell">Holes</th>
                       <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold text-gray-900 hidden md:table-cell">Region</th>
                       <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold text-gray-900">Courses</th>
+                      <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold text-gray-900">Tee times found</th>
                       <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold text-gray-900 hidden lg:table-cell">Created</th>
                       <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-right text-xs sm:text-sm font-semibold text-gray-900"></th>
                     </tr>
@@ -186,6 +239,7 @@ export default function TeeTimeWatchlistPage() {
                         <td className="px-2 sm:px-3 py-2 sm:py-3 hidden md:table-cell"><Skeleton className="h-4 w-16" /></td>
                         <td className="px-2 sm:px-3 py-2 sm:py-3 hidden md:table-cell"><Skeleton className="h-4 w-28" /></td>
                         <td className="px-2 sm:px-3 py-2 sm:py-3"><Skeleton className="h-4 w-16" /></td>
+                        <td className="px-2 sm:px-3 py-2 sm:py-3"><Skeleton className="h-4 w-20" /></td>
                         <td className="px-2 sm:px-3 py-2 sm:py-3 hidden lg:table-cell"><Skeleton className="h-4 w-40" /></td>
                         <td className="px-2 sm:px-3 py-2 sm:py-3 text-right"><Skeleton className="h-8 w-8 inline-block" /></td>
                       </tr>
@@ -211,6 +265,7 @@ export default function TeeTimeWatchlistPage() {
                       <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold text-gray-900 hidden md:table-cell">Holes</th>
                       <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold text-gray-900 hidden md:table-cell">Region</th>
                       <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold text-gray-900">Courses</th>
+                      <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold text-gray-900">Tee Times Found</th>
                       <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold text-gray-900 hidden lg:table-cell">Created</th>
                       <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-right text-xs sm:text-sm font-semibold text-gray-900"></th>
                     </tr>
@@ -225,6 +280,9 @@ export default function TeeTimeWatchlistPage() {
                         <td className="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm text-gray-700 leading-tight whitespace-nowrap hidden md:table-cell">{wl.region || "—"}</td>
                         <td className="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm text-gray-700 leading-tight">
                           <TruncatedCourses courses={wl.courses.map((c) => c.name).join(", ")} />
+                        </td>
+                        <td className="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm text-purple-500 leading-tight whitespace-nowrap font-bold">
+                          {wl.processed_tee_times_count || 0}
                         </td>
                         <td className="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm text-gray-500 leading-tight whitespace-nowrap hidden lg:table-cell">{wl.created_at ? new Date(wl.created_at).toLocaleString() : "—"}</td>
                         <td className="px-2 sm:px-3 py-2 sm:py-3 text-right">

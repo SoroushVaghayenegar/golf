@@ -1,5 +1,6 @@
 import pytz
 from datetime import datetime
+from urllib.parse import urlencode
 
 def format_time_for_email(datetime_str: str) -> str:
     """Format datetime string to Vancouver time for email display"""
@@ -47,6 +48,53 @@ def generate_rating_stars(rating: float) -> str:
         stars_html += "☆"
     
     return f'<span style="color: #fbbf24; font-size: 14px;">{stars_html}</span> <span style="color: #64748b; font-size: 12px;">({rating:.1f})</span>'
+
+def generate_personalized_url(tee_times: list[dict], subscription=None, region_id: int = 1) -> str:
+    """Generate personalized URL for View Full Schedule based on subscription data and tee times"""
+    from datetime import datetime
+    
+    # Default params
+    params = {
+        'players': 'any',
+        'holes': 'any',
+        'region': str(region_id)
+    }
+    
+    # Extract dates from tee_times
+    if tee_times:
+        dates = set()
+        for tee_time in tee_times:
+            # Parse the start_datetime string to get the date
+            dt = datetime.fromisoformat(tee_time["start_datetime"].replace('Z', '+00:00'))
+            dates.add(dt.strftime('%Y-%m-%d'))
+        params['dates'] = ','.join(sorted(dates))
+    else:
+        # Fallback to today's date if no tee times
+        params['dates'] = datetime.now().strftime('%Y-%m-%d')
+    
+    # Generate timeRange from subscription if available
+    if subscription and hasattr(subscription, 'start_time') and hasattr(subscription, 'end_time'):
+        # Round down start time and round up end time
+        start_hour = subscription.start_time.hour
+        end_hour = subscription.end_time.hour
+        
+        # If end_time has minutes/seconds, round up to next hour
+        if subscription.end_time.minute > 0 or subscription.end_time.second > 0:
+            end_hour += 1
+        
+        # Ensure end_hour doesn't exceed 24 (but display as 22 max for UI)
+        if end_hour > 22:
+            end_hour = 22
+            
+        params['timeRange'] = f'{start_hour}-{end_hour}'
+    else:
+        # Default time range
+        params['timeRange'] = '5-22'
+    
+    # Generate the URL
+    base_url = 'https://teeclub.golf/search'
+    query_string = urlencode(params)
+    return f'{base_url}?{query_string}'
 
 def generate_weather_html(tee_time: dict) -> str:
     """Generate HTML for weather information"""
@@ -242,7 +290,7 @@ def generate_tee_time_card_html(tee_time: dict, index: int) -> str:
     </td>
     """
 
-def generate_email_html(tee_times: list[dict], token: str = "", email: str = "") -> str:
+def generate_email_html(tee_times: list[dict], token: str = "", email: str = "", subscription=None, region_id: int = 1) -> str:
     """Generate the grouped HTML email (by day, course, time range) with the original header at the top."""
     if not tee_times:
         return generate_no_tee_times_html()
@@ -276,6 +324,9 @@ def generate_email_html(tee_times: list[dict], token: str = "", email: str = "")
         }.get(name, '')
 
     organized = organize_tee_times(tee_times)
+    
+    # Generate personalized URL for View Full Schedule
+    personalized_url = generate_personalized_url(tee_times, subscription, region_id)
 
     html = f"""
     <!DOCTYPE html>
@@ -518,7 +569,7 @@ def generate_email_html(tee_times: list[dict], token: str = "", email: str = "")
                     <span>❤️</span>
                     Book your tee times quickly before they fill up!
                 </p>
-                <a href="https://teeclub.golf" class="cta-button" target="_blank" rel="noopener noreferrer">View Full Schedule</a>
+                <a href="{personalized_url}" class="cta-button" target="_blank" rel="noopener noreferrer">View Full Schedule</a>
             </div>
     """
 

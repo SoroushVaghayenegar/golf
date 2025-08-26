@@ -26,6 +26,8 @@ interface TeeTimeWatchlistRow {
     notification_sent?: boolean;
     created_at?: string;
     regions?: { name: string } | null;
+    processed_tee_times?: string[];
+    processed_tee_times_count?: number;
 }
 
 export type TeeTimeWatchlist = Omit<TeeTimeWatchlistRow, "regions"> & {
@@ -61,18 +63,19 @@ export const getTeeTimeWatchlists = async () => {
     const client = createClient()
     const { data, error } = await client
         .from('tee_time_watchlists')
-        .select('*, regions(name)')
+        .select('*, regions(name), processed_tee_times')
         .gte('date', new Date().toISOString())
 
     if (error) {
         throw error
     }
 
-    // Map nested region to flat string to match UI expectations
+    // Map nested region to flat string to match UI expectations and calculate count
     const rows: TeeTimeWatchlistRow[] = (data ?? []) as unknown as TeeTimeWatchlistRow[]
     return rows.map((row) => ({
         ...row,
         region: row.regions?.name ?? null,
+        processed_tee_times_count: Array.isArray(row.processed_tee_times) ? row.processed_tee_times.length : 0,
     })) as TeeTimeWatchlist[]
 }
 

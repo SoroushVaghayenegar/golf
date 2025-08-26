@@ -148,10 +148,10 @@ def lambda_handler(event, context):
             tee_times = day_to_tee_times[subscription.days[0]]
             filtered_tee_times = filter_tee_times(tee_times, subscription.courses, subscription.start_time, subscription.end_time)
             if test_email:
-                send_email(test_email, filtered_tee_times, subscription.token, region_id)
+                send_email(test_email, filtered_tee_times, subscription.token, region_id, subscription)
                 print("Successfully sent test email")
                 return
-            send_email(subscription.email, filtered_tee_times, subscription.token, region_id)
+            send_email(subscription.email, filtered_tee_times, subscription.token, region_id, subscription)
 
 
     print("Successfully sent emails")

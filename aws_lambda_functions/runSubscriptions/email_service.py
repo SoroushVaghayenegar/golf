@@ -7,7 +7,7 @@ AFTERNOON = {"name": "Afternoon", "start_hour": 11, "end_hour": 17}
 EVENING = {"name": "Evening", "start_hour": 17, "end_hour": 23}
 
 
-def send_email(email: str, tee_times: list[dict], token: str, region_id: int):
+def send_email(email: str, tee_times: list[dict], token: str, region_id: int, subscription=None):
     import boto3
     if len(tee_times) == 0:
         return
@@ -17,7 +17,7 @@ def send_email(email: str, tee_times: list[dict], token: str, region_id: int):
     ses = boto3.client('ses', region_name='us-west-2')
     
     # Generate HTML and text versions of the email
-    html_body = generate_email_html(tee_times, token, email)
+    html_body = generate_email_html(tee_times, token, email, subscription, region_id)
     text_body = generate_email_text(tee_times)
     
     ses.send_email(
@@ -52,13 +52,6 @@ def organize_tee_times(tee_times: list[dict]):
     """
     from collections import defaultdict
     from datetime import datetime
-    import pytz
-
-    # Helper to get local date (Vancouver) from tee time
-    def get_local_date(dt_str):
-        dt = datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
-        vancouver_tz = pytz.timezone('America/Vancouver')
-        return dt.astimezone(vancouver_tz).date()
 
     # Helper to get time range name
     def get_time_range(hour):
@@ -73,11 +66,9 @@ def organize_tee_times(tee_times: list[dict]):
     organized = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
     for tee in tee_times:
         dt = datetime.fromisoformat(tee['start_datetime'].replace('Z', '+00:00'))
-        vancouver_tz = pytz.timezone('America/Vancouver')
-        local_dt = dt.astimezone(vancouver_tz)
-        date = local_dt.date()
+        date = dt.date()
         course = tee['course_name']
-        hour = local_dt.hour
+        hour = dt.hour
         time_range = get_time_range(hour)
         if time_range:
             organized[date][course][time_range].append(tee)

@@ -26,8 +26,8 @@ Deno.serve(async (req)=>{
     
     // get query params
     const datesParam = url.searchParams.get('dates')
-    const startTime = url.searchParams.get('startTime')
-    const endTime = url.searchParams.get('endTime')
+    const startTime = url.searchParams.get('startTime') || "5"
+    const endTime = url.searchParams.get('endTime') || "22"
     const numOfPlayers = url.searchParams.get('numOfPlayers')
     const holes = url.searchParams.get('holes')
     const courseIdsParam = url.searchParams.get('courseIds')
