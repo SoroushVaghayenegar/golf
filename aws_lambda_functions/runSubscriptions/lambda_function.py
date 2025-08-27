@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 import sys
 import json
 import pytz
+import asyncio
 from supabase_client import Supabase
 from tee_time_subscription import Day
 from datetime import time
@@ -114,25 +115,28 @@ def lambda_handler(event, context):
         print("No subscriptions to broadcast")
         return
     
-    # get all regions from subscriptions
-    region_ids = set()
+    # Group subscriptions by region
+    subscriptions_by_region = {}
     for subscription in subscriptions_for_broadcast_today:
-        region_ids.add(subscription.region_id)
+        region_id = subscription.region_id
+        if region_id not in subscriptions_by_region:
+            subscriptions_by_region[region_id] = []
+        subscriptions_by_region[region_id].append(subscription)
     
-    # get all tee times for each region
-    for region_id in region_ids:
+    # Process each region separately
+    for region_id, region_subscriptions in subscriptions_by_region.items():
         print(f"Getting tee times for region: {region_id}")
 
-        # get a set of days for subscriptions
+        # get a set of days for subscriptions in this region only
         tee_time_days = set()
-        for subscription in subscriptions_for_broadcast_today:
+        for subscription in region_subscriptions:
             tee_time_days.update(subscription.days)
     
         # Create mapping of days to dates
         day_to_date_mapping = get_dates_for_days(tee_time_days, vancouver_time)
     
-        # maping of day to tee times
-        tee_times = supabase_client.fetch_tee_times(list(day_to_date_mapping.values()), region_id)
+        # mapping of day to tee times
+        tee_times = asyncio.run(supabase_client.fetch_tee_times(list(day_to_date_mapping.values()), region_id))
         day_to_tee_times = {}
         for tee_time in tee_times:
             # Parse the start_datetime string to get the date and day
@@ -142,11 +146,15 @@ def lambda_handler(event, context):
                 day_to_tee_times[day_of_week] = []
             day_to_tee_times[day_of_week].append(tee_time)
 
-    
-    
-        for subscription in subscriptions_for_broadcast_today:
-            tee_times = day_to_tee_times[subscription.days[0]]
-            filtered_tee_times = filter_tee_times(tee_times, subscription.courses, subscription.start_time, subscription.end_time)
+        # Process subscriptions for this region
+        for subscription in region_subscriptions:
+            # Collect tee times for ALL subscribed days
+            all_tee_times = []
+            for day in subscription.days:
+                if day in day_to_tee_times:
+                    all_tee_times.extend(day_to_tee_times[day])
+            
+            filtered_tee_times = filter_tee_times(all_tee_times, subscription.courses, subscription.start_time, subscription.end_time)
             if test_email:
                 send_email(test_email, filtered_tee_times, subscription.token, region_id, subscription)
                 print("Successfully sent test email")

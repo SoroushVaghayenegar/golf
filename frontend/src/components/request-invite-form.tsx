@@ -9,6 +9,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
@@ -65,6 +73,72 @@ export function RequestInviteForm({ className, ...props }: React.ComponentPropsW
             <CardTitle className="text-2xl">Request an Invite</CardTitle>
             <CardDescription>
               Type in your email and we&apos;ll add you to the <span className='font-bold'>waitlist</span>.
+              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800 flex items-center gap-2">
+                  📧 <span>To ensure you receive our invite, please whitelist <span className="font-semibold">@teeclub.golf</span></span>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="link" className="h-auto p-0 text-blue-600 underline text-sm">
+                        How?
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>📧 Whitelist Instructions</DialogTitle>
+                        <DialogDescription>
+                          Follow these steps to ensure you receive all our emails
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 text-sm">
+                        <div className="space-y-2">
+                          <h4 className="font-semibold text-gray-900">Gmail / Google Workspace:</h4>
+                          <ol className="list-decimal list-inside space-y-1 text-gray-700 ml-2">
+                            <li>Open Gmail → click the ⚙️ gear icon → See all settings</li>
+                            <li>Go to Filters and Blocked Addresses → Create a new filter</li>
+                            <li>In the From field, enter: <code className="bg-gray-100 px-1 rounded">@teeclub.golf</code></li>
+                            <li>Click Create filter</li>
+                            <li>Check &quot;Never send it to Spam&quot; → Create filter</li>
+                          </ol>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <h4 className="font-semibold text-gray-900">Outlook / Office 365/ Hotmail:</h4>
+                          <ol className="list-decimal list-inside space-y-1 text-gray-700 ml-2">
+                            <li>Go to Settings → Mail → Junk Email</li>
+                            <li>Under &quot;Safe senders and domains&quot;, click Add</li>
+                            <li>Type: <code className="bg-gray-100 px-1 rounded">teeclub.golf</code></li>
+                          </ol>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <h4 className="font-semibold text-gray-900">Yahoo Mail:</h4>
+                          <ol className="list-decimal list-inside space-y-1 text-gray-700 ml-2">
+                            <li>Sign in and go to Settings ⚙️ → More Settings</li>
+                            <li>Select Filters → Add new filter</li>
+                            <li>Enter a name (e.g. &quot;Safe senders&quot;)</li>
+                            <li>In the From field type: <code className="bg-gray-100 px-1 rounded">@teeclub.golf</code></li>
+                            <li>Choose Inbox as the folder, then click Save</li>
+                          </ol>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <h4 className="font-semibold text-gray-900">Apple Mail:</h4>
+                          <ol className="list-decimal list-inside space-y-1 text-gray-700 ml-2">
+                            <li>Open an email from us</li>
+                            <li>Click the sender&apos;s name → Add to Contacts</li>
+                          </ol>
+                        </div>
+                        
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                          <p className="text-green-800 font-medium text-center">
+                            👉 In all cases, add <code className="bg-green-100 px-1 rounded">@teeclub.golf</code> to your safe sender list
+                          </p>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </p>
+              </div>
             </CardDescription>
           </CardHeader>
           <CardContent>
