@@ -82,7 +82,7 @@ export function RequestInviteForm({ className, ...props }: React.ComponentPropsW
                         How?
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto [&_[data-slot=dialog-close]]:focus:ring-0 [&_[data-slot=dialog-close]]:focus:ring-offset-0">
                       <DialogHeader>
                         <DialogTitle>📧 Whitelist Instructions</DialogTitle>
                         <DialogDescription>
