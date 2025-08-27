@@ -1,5 +1,7 @@
 import os
 import requests
+import asyncio
+import aiohttp
 from datetime import time
 from dotenv import load_dotenv
 
@@ -76,8 +78,31 @@ class Supabase:
         
         return subscriptions
     
-    def fetch_tee_times(self, dates: list[str], region_id: int):
-        url = f"{self.base_url}/functions/v1/tee-times?dates={','.join(dates)}&region_id={region_id}&numOfPlayers=any&holes=any"
-        response = requests.get(url, headers=self.headers)
-        response.raise_for_status()
-        return response.json()
+    async def fetch_tee_times(self, dates: list[str], region_id: int):
+        """Fetch tee times for multiple dates in parallel, making individual requests for each date."""
+        
+        async def fetch_single_date(session: aiohttp.ClientSession, date: str):
+            """Fetch tee times for a single date."""
+            url = f"{self.base_url}/functions/v1/tee-times?dates={date}&region_id={region_id}&numOfPlayers=any&holes=any"
+            try:
+                async with session.get(url, headers=self.headers) as response:
+                    response.raise_for_status()
+                    return await response.json()
+            except Exception as e:
+                print(f"Error fetching tee times for date {date}: {e}")
+                return []
+        
+        # Create async session and fetch all dates in parallel
+        async with aiohttp.ClientSession() as session:
+            tasks = [fetch_single_date(session, date) for date in dates]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            
+            # Flatten results and filter out exceptions
+            all_tee_times = []
+            for i, result in enumerate(results):
+                if isinstance(result, Exception):
+                    print(f"Failed to fetch tee times for date {dates[i]}: {result}")
+                    continue
+                all_tee_times.extend(result)
+            
+            return all_tee_times
