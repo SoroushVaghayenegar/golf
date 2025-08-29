@@ -1,16 +1,16 @@
 "use client";
-import { forwardRef, useRef, useImperativeHandle, useState, useEffect } from "react";
-import { Listbox } from "@headlessui/react";
-import { ChevronDown, ArrowUp, ArrowDown, HeartCrack } from "lucide-react";
+import { forwardRef, useRef, useImperativeHandle, useState, useEffect, useMemo, useCallback } from "react";
+import { VirtuosoGrid, VirtuosoGridHandle } from 'react-virtuoso';
+import { HeartCrack } from "lucide-react";
 import { type TeeTime } from "../services/teeTimeService";
-import { 
-  parseDateTimeInVancouver,
-  getVancouverToday,
-  getVancouverNow
-} from "../services/timezoneService";
+// Timezone-aware helpers are implemented locally to allow passing region-specific timezones
 import { SubscriptionSignup } from "@/components/SubscriptionSignup";
 import LottiePlayer from "@/components/LottiePlayer";
 import TeeTimeCard from "@/components/TeeTimeCard";
+import MarketingTeeCard from "@/components/MarketingTeeCard";
+import ShareButton from "@/components/ShareButton";
+import SortBySelector, { type SortOption } from "@/components/SortBySelector";
+import { haversine, getCurrentPosition } from "@/utils/Geo";
 import {
   Accordion,
   AccordionContent,
@@ -22,16 +22,11 @@ interface TeeTimeCardsProps {
   teeTimes: TeeTime[];
   loading: boolean;
   error: string | null;
-  timeRange: number[];
-  citiesFilterEnabled: boolean;
-  selectedCities: string[];
-  coursesFilterEnabled: boolean;
-  selectedCourses: string[];
   removedCourseIds: number[];
-  onRemoveCourse: (courseId: number) => void;
+  onRemoveCourse: (courseId: number, courseName?: string) => void;
   fetchedDates: Date[] | undefined;
-  sortBy: 'startTime' | 'priceAsc' | 'priceDesc' | 'rating';
-  setSortBy: (sortBy: 'startTime' | 'priceAsc' | 'priceDesc' | 'rating') => void;
+  sortBy: SortOption;
+  setSortBy: (sortBy: SortOption) => void;
   showSubscription: boolean;
   setShowSubscription: (show: boolean) => void;
   handleSubscriptionDismiss: () => void;
@@ -40,6 +35,14 @@ interface TeeTimeCardsProps {
   courseCityMapping: Record<string, string>;
   onTeeTimeVisibilityChange?: (visibleCount: number) => void;
   selectedRegionId: string;
+  // Optional IANA timezone for the selected region (e.g., 'America/Vancouver')
+  regionTimeZone?: string;
+  // If true, show skeletons instead of the animation when loading
+  useSkeletonWhileLoading?: boolean;
+  // If true, do not render the initial empty-state background image/prompt
+  disableInitialEmptyState?: boolean;
+  // Optional share URL for the Share button
+  shareUrl?: string;
 }
 
 export interface TeeTimeCardsRef {
@@ -51,11 +54,6 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
   teeTimes,
   loading,
   error,
-  timeRange,
-  citiesFilterEnabled,
-  selectedCities,
-  coursesFilterEnabled,
-  selectedCourses,
   removedCourseIds,
   onRemoveCourse,
   fetchedDates,
@@ -67,12 +65,35 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
   isMobile,
   hasSearched,
   onTeeTimeVisibilityChange,
-  selectedRegionId
+  selectedRegionId,
+  regionTimeZone,
+  useSkeletonWhileLoading,
+  disableInitialEmptyState,
+  shareUrl
 }, ref) => {
   
+  const DEFAULT_TIMEZONE = 'America/Vancouver';
+  const effectiveTimeZone = regionTimeZone || DEFAULT_TIMEZONE;
+
+  const parseDateTimeInTimeZone = (dateTimeString: string, timeZone: string): Date => {
+    const date = new Date(dateTimeString.replace('T', ' '));
+    return new Date(date.toLocaleString('en-US', { timeZone }));
+  };
+
+  const getNowInTimeZone = (timeZone: string): Date => {
+    return new Date(new Date().toLocaleString('en-US', { timeZone }));
+  };
+
+  const getTodayInTimeZone = (timeZone: string): Date => {
+    const now = getNowInTimeZone(timeZone);
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  };
+
   const sectionRef = useRef<HTMLElement>(null);
   const scrollableRef = useRef<HTMLDivElement>(null);
+  const virtuosoRef = useRef<VirtuosoGridHandle>(null);
   const [visibleTeeTimes, setVisibleTeeTimes] = useState<Set<number>>(new Set());
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
   // Expose both refs to parent component
   useImperativeHandle(ref, () => ({
@@ -80,111 +101,93 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
     sectionElement: sectionRef.current,
   }), []);
 
-  // Notify parent when visible count changes (deferred to avoid render cycle issues)
+  // No need to calculate explicit container dimensions with VirtuosoGrid
+
+  // Notify parent when visible count changes
   useEffect(() => {
     if (onTeeTimeVisibilityChange) {
       onTeeTimeVisibilityChange(visibleTeeTimes.size);
     }
   }, [visibleTeeTimes.size, onTeeTimeVisibilityChange]);
 
-  // Handle tee time visibility changes
-  const handleTeeTimeVisibilityChange = (index: number, isVisible: boolean) => {
-    setVisibleTeeTimes(prev => {
-      const newSet = new Set(prev);
-      if (isVisible) {
-        newSet.add(index);
-      } else {
-        newSet.delete(index);
-      }
-      return newSet;
-    });
-  };
-
-  // Create callback function for TeeTimeCard
-  const createVisibilityCallback = (index: number) => {
-    return (isVisible: boolean) => handleTeeTimeVisibilityChange(index, isVisible);
-  };
-
-  // Reset visible tee times when tee times change
+  // Get user location when sorting by closest
   useEffect(() => {
-    setVisibleTeeTimes(new Set());
-  }, [teeTimes]);
+    if (sortBy === 'closest' && !userLocation) {
+      getCurrentPosition()
+        .then(setUserLocation)
+        .catch((error) => {
+          console.error('Failed to get user location:', error);
+          // Silently fall back to another sort method if location fails
+          // Note: The parent component should handle this via SortBySelector validation
+        });
+    }
+  }, [sortBy, userLocation]);
 
-  const filteredTeeTimes = (teeTimes: TeeTime[]) => {
+  const filteredTeeTimes = useMemo(() => {
     let filtered = teeTimes;
-    
-    // Filter by time range
-    filtered = filtered.filter(teeTime => {
-      const teeTimeDateTime = parseDateTimeInVancouver(teeTime.start_datetime);
-      const teeTimeHour = teeTimeDateTime.getHours();
-      return teeTimeHour >= timeRange[0] && teeTimeHour <= timeRange[1];
-    });
-    
-    // Filter by cities if enabled
-    if (citiesFilterEnabled && selectedCities.length > 0) {
-      filtered = filtered.filter(teeTime => selectedCities.includes(teeTime.city));
-    }
-    
-    // Filter by courses if enabled
-    if (coursesFilterEnabled && selectedCourses.length > 0) {
-      filtered = filtered.filter(teeTime => selectedCourses.includes(teeTime.course_name));
-    }
-    
-    // Filter out removed courses by numeric id
+
+    // Filter out removed courses (frontend-only) by numeric id
     if (removedCourseIds.length > 0) {
       filtered = filtered.filter(teeTime => !removedCourseIds.includes(Number(teeTime.course_id)));
     }
-    
-    // If any of the fetched dates is today, filter out tee times that are earlier than now
-    if (fetchedDates && fetchedDates.length > 0) {
-      const vancouverToday = getVancouverToday();
-      const hasTodaySelected = fetchedDates.some(date => 
-        date.toDateString() === vancouverToday.toDateString()
-      );
-      
-      if (hasTodaySelected) {
-        const vancouverNow = getVancouverNow();
-        filtered = filtered.filter(teeTime => {
-          const teeTimeDateTime = parseDateTimeInVancouver(teeTime.start_datetime);
-          const teeTimeDate = new Date(teeTimeDateTime.getFullYear(), teeTimeDateTime.getMonth(), teeTimeDateTime.getDate());
-          
-          // If this tee time is for today, check if it's in the future
-          if (teeTimeDate.toDateString() === vancouverToday.toDateString()) {
-            return teeTimeDateTime >= vancouverNow;
-          }
-          // If it's not today, include it
-          return true;
-        });
-      }
-    }
-    
-    // Sort tee times
-    filtered.sort((a, b) => {
+
+    return filtered;
+  }, [teeTimes, removedCourseIds]);
+
+  // Sorting (separate from filtering for clarity)
+  const sortedTeeTimes = useMemo(() => {
+    const copy = [...filteredTeeTimes];
+    copy.sort((a, b) => {
       switch (sortBy) {
-        case 'startTime':
-          const timeA = parseDateTimeInVancouver(a.start_datetime);
-          const timeB = parseDateTimeInVancouver(b.start_datetime);
+        case 'startTime': {
+          const timeA = parseDateTimeInTimeZone(a.start_datetime, effectiveTimeZone);
+          const timeB = parseDateTimeInTimeZone(b.start_datetime, effectiveTimeZone);
           return timeA.getTime() - timeB.getTime();
+        }
+        case 'closest': {
+          if (!userLocation) {
+            // If user location is not available, fall back to start time sorting
+            const timeA = parseDateTimeInTimeZone(a.start_datetime, effectiveTimeZone);
+            const timeB = parseDateTimeInTimeZone(b.start_datetime, effectiveTimeZone);
+            return timeA.getTime() - timeB.getTime();
+          }
+          
+          // Calculate distance from user to each course
+          const distanceA = haversine(
+            userLocation.latitude,
+            userLocation.longitude,
+            a.course.latitude,
+            a.course.longitude
+          );
+          const distanceB = haversine(
+            userLocation.latitude,
+            userLocation.longitude,
+            b.course.latitude,
+            b.course.longitude
+          );
+          
+          return distanceA - distanceB;
+        }
         case 'priceAsc':
           return Number(a.price) - Number(b.price);
         case 'priceDesc':
           return Number(b.price) - Number(a.price);
-        case 'rating':
+        case 'rating': {
           const ratingA = a.rating ?? 0;
           const ratingB = b.rating ?? 0;
           return ratingB - ratingA;
+        }
         default:
           return 0;
       }
     });
-    
-    return filtered;
-  };
+    return copy;
+  }, [filteredTeeTimes, sortBy, effectiveTimeZone, userLocation]);
 
   // Group tee times by date
-  const groupTeeTimesByDate = (teeTimes: TeeTime[]) => {
-    const grouped = teeTimes.reduce((acc, teeTime) => {
-      const teeTimeDateTime = parseDateTimeInVancouver(teeTime.start_datetime);
+  const groupedTeeTimes = useMemo(() => {
+    const grouped = sortedTeeTimes.reduce((acc, teeTime) => {
+      const teeTimeDateTime = parseDateTimeInTimeZone(teeTime.start_datetime, effectiveTimeZone);
       const dateKey = teeTimeDateTime.toDateString();
       
       if (!acc[dateKey]) {
@@ -195,7 +198,6 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
       return acc;
     }, {} as Record<string, TeeTime[]>);
 
-    // Sort dates chronologically
     const sortedDates = Object.keys(grouped).sort((a, b) => {
       return new Date(a).getTime() - new Date(b).getTime();
     });
@@ -204,12 +206,12 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
       date: dateKey,
       teeTimes: grouped[dateKey]
     }));
-  };
+  }, [sortedTeeTimes, effectiveTimeZone]);
 
   // Format date for display
   const formatDateDisplay = (dateString: string) => {
     const date = new Date(dateString);
-    const today = getVancouverToday();
+    const today = getTodayInTimeZone(effectiveTimeZone);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
@@ -229,121 +231,73 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
       return date.toLocaleDateString('en-US', { 
         weekday: 'long', 
         month: 'long', 
-        day: 'numeric',
-        year: 'numeric'
+        day: 'numeric'
       });
     }
   };
 
+  // Flat data is only needed in single-date mode; VirtuosoGrid uses simple index-based rendering
+  // Marketing card is inserted as the first item
+  const singleDayItems = useMemo(() => {
+    if (groupedTeeTimes.length === 1) {
+      return [null, ...groupedTeeTimes[0].teeTimes]; // null represents the marketing card
+    }
+    return [] as (TeeTime | null)[];
+  }, [groupedTeeTimes]);
+
+  // Build share text from fetched dates in format like "Aug 12"
+  const shareText = useMemo(() => {
+    if (fetchedDates && fetchedDates.length > 0) {
+      const formatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
+      const formattedUniqueDates = Array.from(new Set(fetchedDates.map((d) => formatter.format(d))));
+      const datesStr = formattedUniqueDates.join(', ');
+      return `Found some good tee times for ${datesStr}`;
+    }
+    return 'Found some good tee times';
+  }, [fetchedDates]);
+
+  const renderTeeTimeItem = useCallback((index: number, teeTime: TeeTime | null) => {
+    return (
+      <div className="p-2">
+        {teeTime === null ? (
+          <MarketingTeeCard index={index} />
+        ) : (
+          <TeeTimeCard
+            teeTime={teeTime}
+            index={index}
+            onRemoveCourse={onRemoveCourse}
+            onVisibilityChange={(isVisible) => {
+              setVisibleTeeTimes(prev => {
+                const newSet = new Set(prev);
+                if (isVisible) {
+                  newSet.add(index);
+                } else {
+                  newSet.delete(index);
+                }
+                return newSet;
+              });
+            }}
+          />
+        )}
+      </div>
+    );
+  }, [onRemoveCourse]);
+
   return (
-    <section ref={sectionRef} className="flex-1 flex flex-col lg:h-full lg:overflow-hidden">
-      {/* Sort By Component - Only show when there are results */}
-      {!loading && !error && filteredTeeTimes(teeTimes).length > 0 && (
-        <div className="bg-white rounded-lg shadow p-4 mb-4 flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase">Sort By</span>
-            <Listbox value={sortBy} onChange={setSortBy}>
-              <div className="relative">
-                <Listbox.Button className="px-4 py-2 text-left bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-blue-200 transition-colors min-w-[180px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-slate-700 text-sm">
-                      {sortBy === 'startTime' && 'Start Time'}
-                      {sortBy === 'priceAsc' && 'Price (Low to High)'}
-                      {sortBy === 'priceDesc' && 'Price (High to Low)'}
-                      {sortBy === 'rating' && 'Rating'}
-                    </span>
-                    <div className="flex items-center gap-1">
-                      {sortBy === 'startTime' && <ArrowUp className="w-3 h-3 text-slate-500" />}
-                      {sortBy === 'priceAsc' && <ArrowUp className="w-3 h-3 text-slate-500" />}
-                      {sortBy === 'priceDesc' && <ArrowDown className="w-3 h-3 text-slate-500" />}
-                      {sortBy === 'rating' && <ArrowDown className="w-3 h-3 text-slate-500" />}
-                      <ChevronDown className="w-4 h-4 text-slate-400" />
-                    </div>
-                  </div>
-                </Listbox.Button>
-                <Listbox.Options className="absolute z-10 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg overflow-auto focus:outline-none max-h-60 min-w-[200px]">
-                  <Listbox.Option
-                    value="startTime"
-                    className={({ active }) =>
-                      `px-4 py-2.5 cursor-pointer flex items-center justify-between text-sm ${
-                        active ? 'bg-blue-50 text-blue-600' : 'text-slate-700'
-                      }`
-                    }
-                  >
-                    {({ selected }) => (
-                      <>
-                        <span className="font-medium">Start Time</span>
-                        <div className="flex items-center gap-1">
-                          <ArrowUp className="w-3 h-3" />
-                          {selected && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
-                        </div>
-                      </>
-                    )}
-                  </Listbox.Option>
-                  <Listbox.Option
-                    value="priceAsc"
-                    className={({ active }) =>
-                      `px-4 py-2.5 cursor-pointer flex items-center justify-between text-sm ${
-                        active ? 'bg-blue-50 text-blue-600' : 'text-slate-700'
-                      }`
-                    }
-                  >
-                    {({ selected }) => (
-                      <>
-                        <span className="font-medium">Price (Low to High)</span>
-                        <div className="flex items-center gap-1">
-                          <ArrowUp className="w-3 h-3" />
-                          {selected && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
-                        </div>
-                      </>
-                    )}
-                  </Listbox.Option>
-                  <Listbox.Option
-                    value="priceDesc"
-                    className={({ active }) =>
-                      `px-4 py-2.5 cursor-pointer flex items-center justify-between text-sm ${
-                        active ? 'bg-blue-50 text-blue-600' : 'text-slate-700'
-                      }`
-                    }
-                  >
-                    {({ selected }) => (
-                      <>
-                        <span className="font-medium">Price (High to Low)</span>
-                        <div className="flex items-center gap-1">
-                          <ArrowDown className="w-3 h-3" />
-                          {selected && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
-                        </div>
-                      </>
-                    )}
-                  </Listbox.Option>
-                  <Listbox.Option
-                    value="rating"
-                    className={({ active }) =>
-                      `px-4 py-2.5 cursor-pointer flex items-center justify-between text-sm ${
-                        active ? 'bg-blue-50 text-blue-600' : 'text-slate-700'
-                      }`
-                    }
-                  >
-                    {({ selected }) => (
-                      <>
-                        <span className="font-medium">Rating</span>
-                        <div className="flex items-center gap-1">
-                          <ArrowDown className="w-3 h-3" />
-                          {selected && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
-                        </div>
-                      </>
-                    )}
-                  </Listbox.Option>
-                </Listbox.Options>
-              </div>
-            </Listbox>
-          </div>
+    <section ref={sectionRef} className="flex-1 flex flex-col lg:h-full lg:overflow-hidden w-full max-w-full">
+      {/* Sort row: white sort container + Share button as siblings */}
+      {!loading && !error && filteredTeeTimes.length > 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-7 w-full max-w-full mb-4 px-2">
+          {shareUrl && (
+            <ShareButton url={shareUrl} buttonLabel="Share tee times" className="px-6 py-6 text-lg lg:text-base" text={shareText}/>
+          )}
+          <SortBySelector sortBy={sortBy} setSortBy={setSortBy} />
         </div>
       )}
 
       {/* Scrollable Results Container */}
-      <div ref={scrollableRef} className="flex-1 lg:overflow-y-auto lg:pr-2 space-y-4">
-        {loading && (
+      <div ref={scrollableRef} className="flex-1 w-full max-w-full overflow-auto h-full">
+        {loading && !useSkeletonWhileLoading && (
           <div className={isMobile
             ? 'fixed inset-0 bg-white z-50 flex flex-col items-center justify-center'
             : 'flex-1 flex flex-col items-center justify-center'
@@ -352,13 +306,25 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
             <p className="text-slate-600 mt-4">Loading tee times...</p>
           </div>
         )}
+        {loading && useSkeletonWhileLoading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+            {Array.from({ length: 6 }).map((_, idx) => (
+              <div key={idx} className="bg-white rounded-lg shadow p-4">
+                <div className="h-6 w-1/3 bg-slate-200 rounded mb-3" />
+                <div className="h-4 w-1/2 bg-slate-200 rounded mb-2" />
+                <div className="h-4 w-2/3 bg-slate-200 rounded mb-2" />
+                <div className="h-48 w-full bg-slate-200 rounded" />
+              </div>
+            ))}
+          </div>
+        )}
         {error && (
           <div className="text-center py-8 text-red-500">{error}</div>
         )}
-        {!loading && !error && !hasSearched && !isMobile && (
+        {!loading && !error && !hasSearched && !isMobile && !disableInitialEmptyState && (
           <div className="flex-1 flex flex-col items-center justify-center relative w-full h-full min-h-[600px]">
             <div 
-              className="fixed inset-0 w-screen h-screen bg-cover bg-center opacity-40 z-0"
+              className="fixed inset-0 w-screen h-screen bg-cover bg-center opacity-60 z-0"
               style={{
                 backgroundImage: 'url(/bg1.png)',
                 backgroundRepeat: 'no-repeat',
@@ -370,85 +336,92 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
               <h2 className="text-2xl font-semibold text-slate-700 mb-2">
                 Click &quot;Get Tee Times&quot; to find your ideal tee time
               </h2>
-              <p className="text-white">
+              <p className="text-white font-semibold">
                 Select your preferences and discover available tee times
               </p>
             </div>
           </div>
         )}
-        {!loading && !error && hasSearched && filteredTeeTimes(teeTimes).length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-slate-600">
-            <HeartCrack className="w-10 h-10 text-slate-400 mb-2" />
-            <p className="font-medium">Unfortunately, no tee times found.</p>
+        {!loading && !error && hasSearched && filteredTeeTimes.length === 0 && (
+          <div className="w-full max-w-full">
+            {/* Show marketing card even when no tee times found */}
+            <div className="p-2 mb-6">
+              <MarketingTeeCard index={0} />
+            </div>
+            <div className="flex flex-col items-center justify-center py-12 text-slate-600">
+              <HeartCrack className="w-10 h-10 text-slate-400 mb-2" />
+              <p className="font-medium">Unfortunately, no tee times found.</p>
+            </div>
           </div>
         )}
       
-        {!loading && !error && (() => {
-          const filtered = filteredTeeTimes(teeTimes);
-          const grouped = groupTeeTimesByDate(filtered);
-          
-          // If only one date, show header with day/date and then results without accordion
-          if (grouped.length === 1) {
-            return (
-              <div className="w-full">
-                <div className="px-1 pb-2">
-                  <span className="font-semibold text-lg">{formatDateDisplay(grouped[0].date)}</span>
+        {!loading && !error && filteredTeeTimes.length > 0 && (
+          <div className="h-full w-full max-w-full overflow-hidden">
+            {groupedTeeTimes.length === 1 ? (
+              // Single date - show header with day and date, then virtual grid
+              <div className="w-full max-w-full h-full flex flex-col">
+                <div className="px-2 pb-2 flex-shrink-0">
+                  <div className="flex items-baseline justify-between sm:gap-2">
+                    <span className="font-semibold text-base sm:text-lg">{formatDateDisplay(groupedTeeTimes[0].date)}</span>
+                    {fetchedDates && fetchedDates.length > 1 && (
+                      <span className="text-[10px] sm:text-xs text-amber-700">(Only this day has tee times)</span>
+                    )}
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {grouped[0].teeTimes.map((teeTime, index) => (
-                    <TeeTimeCard
-                      key={index}
-                      teeTime={teeTime}
-                      index={index}
-                      onRemoveCourse={onRemoveCourse}
-                      onVisibilityChange={createVisibilityCallback(index)}
-                    />
-                  ))}
+                <div className="flex-1 min-h-0 w-full">
+                  <VirtuosoGrid
+                    ref={virtuosoRef}
+                    data={singleDayItems}
+                    itemContent={(index, item) => renderTeeTimeItem(index, item)}
+                    listClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-2 w-full"
+                    className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 w-full max-w-full"
+                    style={{ height: '100%' }}
+                  />
                 </div>
               </div>
-            );
-          }
-          
-          // If multiple dates, show with accordion
-          return (
-            <Accordion type="multiple" defaultValue={grouped.map((_, index) => `date-${index}`)} className="w-full">
-              {grouped.map((group, groupIndex) => (
-                <AccordionItem key={groupIndex} value={`date-${groupIndex}`}>
-                  <AccordionTrigger className="text-left">
-                    <div className="flex items-center justify-between w-full mr-4">
-                      <span className="font-semibold text-lg">
-                        {formatDateDisplay(group.date)}
-                      </span>
-                      <span className="text-sm text-slate-500">
-                        {group.teeTimes.length} tee time{group.teeTimes.length !== 1 ? 's' : ''}
-                      </span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-4">
-                      {group.teeTimes.map((teeTime, index) => (
-                        <TeeTimeCard
-                          key={index}
-                          teeTime={teeTime}
-                          index={index}
-                          onRemoveCourse={onRemoveCourse}
-                          onVisibilityChange={createVisibilityCallback(index)}
-                        />
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          );
-        })()}
+            ) : (
+              // Multiple dates - use accordion with virtual scrolling for each group
+              <Accordion type="multiple" defaultValue={groupedTeeTimes.map((_, index) => `date-${index}`)} className="w-full h-full max-w-full">
+                {groupedTeeTimes.map((group, groupIndex) => {
+                  const groupTeeTimes = [null, ...group.teeTimes]; // Add marketing card as first item
+                  
+                  return (
+                    <AccordionItem key={groupIndex} value={`date-${groupIndex}`} className="border-b">
+                      <AccordionTrigger className="text-left px-4 py-3">
+                        <div className="flex items-center justify-between w-full mr-4">
+                          <span className="font-semibold text-lg">
+                            {formatDateDisplay(group.date)}
+                          </span>
+                          <span className="text-sm text-slate-500">
+                            {group.teeTimes.length} tee time{group.teeTimes.length !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="px-4 pb-4">
+                        <div className="h-[400px] w-full max-w-full">
+                          <VirtuosoGrid
+                            data={groupTeeTimes}
+                            itemContent={(index, item) => renderTeeTimeItem(index, item)}
+                            listClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-2 w-full"
+                            className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 w-full max-w-full"
+                            style={{ height: '100%' }}
+                          />
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  );
+                })}
+              </Accordion>
+            )}
+          </div>
+        )}
         
         {/* Subscription Component with Fade-in Animation */}
         {showSubscription && (
-          <div className={`transition-all duration-1000 ease-in-out ${
+          <div className={`transition-all duration-1000 ease-in-out w-full max-w-full ${
             showSubscription ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}>
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-slate-200">
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-slate-200 w-full max-w-full">
               <SubscriptionSignup 
                 isOpen={showSubscription} 
                 onOpenChange={setShowSubscription}

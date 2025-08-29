@@ -7,11 +7,12 @@ import {
   getVancouverToday,
   formatDateForAPI
 } from "@/services/timezoneService";
-import VirtualizedTeeTimeCards, { VirtualizedTeeTimeCardsRef } from "@/components/VirtualizedTeeTimeCards";
+import TeeTimeCards, { TeeTimeCardsRef } from "@/components/TeeTimeCards";
 import MobileTeeTimeCards from "@/components/MobileTeeTimeCards";
 import Sidebar from "@/components/Sidebar";
 import MobileSidebar from "@/components/MobileSidebar";
 import { useAppStore } from '@/stores/appStore'
+import { checkLocationPermission } from "@/utils/Geo";
 
 // Custom hook for managing region with localStorage persistence
 const useRegionIdWithStorage = (defaultRegionId: string = '1') => {
@@ -44,6 +45,7 @@ export default function SearchPage() {
   const router = useRouter();
   const pathname = usePathname();
   const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
+  
   // State for filters
   const [selectedDates, setSelectedDates] = useState<Date[] | undefined>(undefined);
   const [fetchedDates, setFetchedDates] = useState<Date[] | undefined>(undefined);
@@ -54,7 +56,7 @@ export default function SearchPage() {
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
   const [removedCourseIds, setRemovedCourseIds] = useState<number[]>([]);
   const {selectedRegionId, setSelectedRegionId, isInitialized } = useRegionIdWithStorage();
-  const [sortBy, setSortBy] = useState<'startTime' | 'priceAsc' | 'priceDesc' | 'rating'>('startTime');
+  const [sortBy, setSortBy] = useState<'startTime' | 'closest' | 'priceAsc' | 'priceDesc' | 'rating'>('startTime');
   // tee times now from store
   const teeTimes = useAppStore((s) => s.teeTimes)
   const loading = useAppStore((s) => s.teeTimesLoading)
@@ -88,7 +90,7 @@ export default function SearchPage() {
   const [isClient, setIsClient] = useState(false);
   const [todayDate, setTodayDate] = useState<Date | null>(null);
   const [visibleTeeTimeCount, setVisibleTeeTimeCount] = useState(0);
-  const resultsSectionRef = useRef<VirtualizedTeeTimeCardsRef>(null);
+  const resultsSectionRef = useRef<TeeTimeCardsRef>(null);
   const initialAutoSearchTriggeredRef = useRef(false);
   const lastQueryKeyRef = useRef<string | null>(null);
 
@@ -217,8 +219,22 @@ export default function SearchPage() {
 
       // Sort
       const sortParam = params.get('sort');
-      if (sortParam && ['startTime','priceAsc','priceDesc','rating'].includes(sortParam)) {
-        setSortBy(sortParam as typeof sortBy);
+      if (sortParam && ['startTime','closest','priceAsc','priceDesc','rating'].includes(sortParam)) {
+        if (sortParam === 'closest') {
+          // For URL parameters, silently fall back to startTime if location permission not available
+          // We don't want to prompt user for permission during page load
+          checkLocationPermission().then(hasPermission => {
+            if (hasPermission) {
+              setSortBy('closest');
+            } else {
+              setSortBy('startTime');
+            }
+          }).catch(() => {
+            setSortBy('startTime');
+          });
+        } else {
+          setSortBy(sortParam as typeof sortBy);
+        }
       }
 
       // Region
@@ -639,7 +655,7 @@ export default function SearchPage() {
         {(!isMobile || teeTimes.length > 0 || loading || !!(error || storeError) || hasEverSearched) && (
           <div className="flex-1 lg:p-10 lg:pl-10 lg:pr-10 lg:py-4 px-4 sm:px-10 lg:px-0 w-full max-w-full overflow-x-hidden lg:h-[calc(100vh-64px)] lg:min-h-[calc(100vh-64px)]">
             {(() => {
-              const ResultsComponent = isMobile ? MobileTeeTimeCards : VirtualizedTeeTimeCards;
+              const ResultsComponent = isMobile ? MobileTeeTimeCards : TeeTimeCards;
               return (
                 <ResultsComponent
                   ref={resultsSectionRef}
