@@ -207,7 +207,7 @@ const Tooltip = ({ children, text, containerRef }: { children: React.ReactNode; 
     const tooltipRect = tooltipEl.getBoundingClientRect();
 
     const triggerCenterX = wrapperRect.left + (wrapperRect.width / 2);
-    let desiredLeft = triggerCenterX - (tooltipRect.width / 2);
+    const desiredLeft = triggerCenterX - (tooltipRect.width / 2);
 
     const padding = 8; // Keep a small margin from card edges
     const minLeft = containerRect.left + padding;
