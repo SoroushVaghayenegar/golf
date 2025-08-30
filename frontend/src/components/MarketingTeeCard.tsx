@@ -32,7 +32,7 @@ export default function MarketingTeeCard({ index }: MarketingTeeCardProps) {
       className="bg-gradient-to-br from-indigo-200 to-amber-200 rounded-xl shadow-sm hover:shadow-lg transition-all duration-200 border-2 border-blue-200 overflow-hidden w-full max-w-full relative"
     >
       {/* Attention-grabbing badge */}
-      <div className="absolute top-3 right-3 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+      <div className="absolute top-1 right-1 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">
         NEW
       </div>
       

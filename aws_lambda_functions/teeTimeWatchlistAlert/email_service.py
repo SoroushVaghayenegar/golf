@@ -15,7 +15,7 @@ def send_watchlist_email(email: str, full_name: Optional[str], tee_times: List[D
     ses = boto3.client("ses", region_name="us-west-2")
 
     count = len(tee_times)
-    subject = f"⛳ TeeClub: {count} tee time{'s' if count != 1 else ''} found for you"
+    subject = f"🛎️ TeeClub: {count} tee time{'s' if count != 1 else ''} found for you"
     html_body = generate_watchlist_email_html(full_name, tee_times, params)
     text_body = generate_watchlist_email_text(full_name, tee_times, params)
 

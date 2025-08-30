@@ -1,16 +1,17 @@
 "use client";
 
 import { forwardRef, useRef, useImperativeHandle, useState, useEffect, useMemo, useCallback } from "react";
-import { Listbox } from "@headlessui/react";
 import { Virtuoso } from 'react-virtuoso';
-import { ChevronDown, ArrowUp, ArrowDown, HeartCrack } from "lucide-react";
+import { HeartCrack } from "lucide-react";
 import { type TeeTime } from "../services/teeTimeService";
 import { SubscriptionSignup } from "@/components/SubscriptionSignup";
 import LottiePlayer from "@/components/LottiePlayer";
 import TeeTimeCard from "@/components/TeeTimeCard";
 import MarketingTeeCard from "@/components/MarketingTeeCard";
 import ShareButton from "@/components/ShareButton";
-import type { VirtualizedTeeTimeCardsRef } from "@/components/VirtualizedTeeTimeCards";
+import SortBySelector, { type SortOption } from "@/components/SortBySelector";
+import { haversine, getCurrentPosition } from "@/utils/Geo";
+import type { TeeTimeCardsRef } from "@/components/TeeTimeCards";
 
 interface MobileTeeTimeCardsProps {
   teeTimes: TeeTime[];
@@ -19,8 +20,8 @@ interface MobileTeeTimeCardsProps {
   removedCourseIds: number[];
   onRemoveCourse: (courseId: number, courseName?: string) => void;
   fetchedDates: Date[] | undefined;
-  sortBy: 'startTime' | 'priceAsc' | 'priceDesc' | 'rating';
-  setSortBy: (sortBy: 'startTime' | 'priceAsc' | 'priceDesc' | 'rating') => void;
+  sortBy: SortOption;
+  setSortBy: (sortBy: SortOption) => void;
   showSubscription: boolean;
   setShowSubscription: (show: boolean) => void;
   handleSubscriptionDismiss: () => void;
@@ -40,7 +41,7 @@ type FlatItem =
   | { type: 'card'; teeTime: TeeTime; cardIndex: number; date: string }
   | { type: 'marketing'; cardIndex: number; date: string };
 
-const MobileTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, MobileTeeTimeCardsProps>(({ 
+const MobileTeeTimeCards = forwardRef<TeeTimeCardsRef, MobileTeeTimeCardsProps>(({ 
   teeTimes,
   loading,
   error,
@@ -81,6 +82,7 @@ const MobileTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, MobileTeeTimeC
 
   const sectionRef = useRef<HTMLElement>(null);
   const [visibleCountFromRange, setVisibleCountFromRange] = useState<number>(0);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
   useImperativeHandle(ref, () => ({
     scrollableElement: null,
@@ -95,6 +97,18 @@ const MobileTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, MobileTeeTimeC
       onTeeTimeVisibilityChange(visibleCountFromRange);
     }
   }, [visibleCountFromRange, onTeeTimeVisibilityChange]);
+
+  // Get user location for distance display
+  useEffect(() => {
+    if (!userLocation) {
+      getCurrentPosition()
+        .then(setUserLocation)
+        .catch((error) => {
+          console.error('Failed to get user location:', error);
+          // Silently handle location failure - distance won't be shown
+        });
+    }
+  }, [userLocation]);
 
   const filteredTeeTimes = useMemo(() => {
     let filtered = teeTimes;
@@ -115,6 +129,30 @@ const MobileTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, MobileTeeTimeC
           const timeB = parseDateTimeInTimeZone(b.start_datetime, effectiveTimeZone);
           return timeA.getTime() - timeB.getTime();
         }
+        case 'closest': {
+          if (!userLocation) {
+            // If user location is not available, fall back to start time sorting
+            const timeA = parseDateTimeInTimeZone(a.start_datetime, effectiveTimeZone);
+            const timeB = parseDateTimeInTimeZone(b.start_datetime, effectiveTimeZone);
+            return timeA.getTime() - timeB.getTime();
+          }
+          
+          // Calculate distance from user to each course
+          const distanceA = haversine(
+            userLocation.latitude,
+            userLocation.longitude,
+            a.course.latitude,
+            a.course.longitude
+          );
+          const distanceB = haversine(
+            userLocation.latitude,
+            userLocation.longitude,
+            b.course.latitude,
+            b.course.longitude
+          );
+          
+          return distanceA - distanceB;
+        }
         case 'priceAsc':
           return Number(a.price) - Number(b.price);
         case 'priceDesc':
@@ -129,7 +167,7 @@ const MobileTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, MobileTeeTimeC
       }
     });
     return copy;
-  }, [filteredTeeTimes, sortBy, effectiveTimeZone]);
+  }, [filteredTeeTimes, sortBy, effectiveTimeZone, userLocation]);
 
   const groupedTeeTimes = useMemo(() => {
     const grouped = sortedTeeTimes.reduce((acc, teeTime) => {
@@ -202,16 +240,29 @@ const MobileTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, MobileTeeTimeC
         </div>
       );
     }
+
+    // Calculate distance if user location is available
+    let distance: number | null = null;
+    if (userLocation && item.teeTime) {
+      distance = haversine(
+        userLocation.latitude,
+        userLocation.longitude,
+        item.teeTime.course.latitude,
+        item.teeTime.course.longitude
+      );
+    }
+
     return (
       <div key={`card-${key}`} className="p-2">
         <TeeTimeCard
           teeTime={item.teeTime}
           index={item.cardIndex}
           onRemoveCourse={onRemoveCourse}
+          distance={distance}
         />
       </div>
     );
-  }, [onRemoveCourse, formatDateDisplay]);
+  }, [onRemoveCourse, formatDateDisplay, userLocation]);
 
   return (
     <section ref={sectionRef} className="flex-1 flex flex-col lg:h-full lg:overflow-hidden w-full max-w-full">
@@ -220,46 +271,7 @@ const MobileTeeTimeCards = forwardRef<VirtualizedTeeTimeCardsRef, MobileTeeTimeC
           {shareUrl && (
             <ShareButton url={shareUrl} buttonLabel="Share tee times" className="px-6 py-6 text-lg lg:text-base" text={shareText}/>
           )}
-          <div className="bg-white rounded-lg shadow p-3 flex-shrink-0 w-full sm:w-auto">
-            <div className="flex items-center justify-between gap-4 w-full sm:w-auto">
-              <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase flex-shrink-0">Sort By</span>
-              <Listbox value={sortBy} onChange={setSortBy}>
-                <div className="relative flex-shrink-0">
-                  <Listbox.Button className="px-3 sm:px-4 py-2 text-left bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary hover:border-primary transition-colors w-full sm:min-w-[180px] max-w-[200px]">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-slate-700 text-xs sm:text-sm truncate">
-                        {sortBy === 'startTime' && 'Start Time'}
-                        {sortBy === 'priceAsc' && 'Price (Low to High)'}
-                        {sortBy === 'priceDesc' && 'Price (High to Low)'}
-                        {sortBy === 'rating' && 'Rating'}
-                      </span>
-                      <div className="flex items-center gap-1 flex-shrink-0 ml-2">
-                        {sortBy === 'startTime' && <ArrowUp className="w-3 h-3 text-slate-500" />}
-                        {sortBy === 'priceAsc' && <ArrowUp className="w-3 h-3 text-slate-500" />}
-                        {sortBy === 'priceDesc' && <ArrowDown className="w-3 h-3 text-slate-500" />}
-                        {sortBy === 'rating' && <ArrowDown className="w-3 h-3 text-slate-500" />}
-                        <ChevronDown className="w-4 h-4 text-slate-400" />
-                      </div>
-                    </div>
-                  </Listbox.Button>
-                  <Listbox.Options className="absolute z-10 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg overflow-auto focus:outline-none max-h-60 w-full sm:min-w-[200px] max-w-[250px]">
-                    <Listbox.Option value="startTime" className={({ active }) => `px-4 py-2.5 cursor-pointer flex items-center justify-between text-sm ${active ? 'bg-primary text-primary-foreground' : 'text-slate-700'}`}>
-                      {({ selected }) => (<><span className="font-medium">Start Time</span><div className="flex items-center gap-1"><ArrowUp className="w-3 h-3" />{selected && <div className="w-2 h-2 bg-white rounded-full" />}</div></>)}
-                    </Listbox.Option>
-                    <Listbox.Option value="priceAsc" className={({ active }) => `px-4 py-2.5 cursor-pointer flex items-center justify-between text-sm ${active ? 'bg-primary text-primary-foreground' : 'text-slate-700'}`}>
-                      {({ selected }) => (<><span className="font-medium">Price (Low to High)</span><div className="flex items-center gap-1"><ArrowUp className="w-3 h-3" />{selected && <div className="w-2 h-2 bg-white rounded-full" />}</div></>)}
-                    </Listbox.Option>
-                    <Listbox.Option value="priceDesc" className={({ active }) => `px-4 py-2.5 cursor-pointer flex items-center justify-between text-sm ${active ? 'bg-primary text-primary-foreground' : 'text-slate-700'}`}>
-                      {({ selected }) => (<><span className="font-medium">Price (High to Low)</span><div className="flex items-center gap-1"><ArrowDown className="w-3 h-3" />{selected && <div className="w-2 h-2 bg-white rounded-full" />}</div></>)}
-                    </Listbox.Option>
-                    <Listbox.Option value="rating" className={({ active }) => `px-4 py-2.5 cursor-pointer flex items-center justify-between text-sm ${active ? 'bg-primary text-primary-foreground' : 'text-slate-700'}`}>
-                      {({ selected }) => (<><span className="font-medium">Rating</span><div className="flex items-center gap-1"><ArrowDown className="w-3 h-3" />{selected && <div className="w-2 h-2 bg-white rounded-full" />}</div></>)}
-                    </Listbox.Option>
-                  </Listbox.Options>
-                </div>
-              </Listbox>
-            </div>
-          </div>
+          <SortBySelector sortBy={sortBy} setSortBy={setSortBy} />
         </div>
       )}
 

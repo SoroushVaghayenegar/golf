@@ -3,6 +3,18 @@
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
+export interface CourseInfo {
+    name: string;
+    display_name: string;
+    club_name: string;
+    rating: number;
+    city: string;
+    latitude: number;
+    longitude: number;
+    address: string;
+    phone_number: string;
+}
+
 export interface TeeTime {
     start_date: string;
     start_time: string;
@@ -23,6 +35,7 @@ export interface TeeTime {
     cloud_cover: number | null;
     uv_index: number | null;
     precipitation: number | null;
+    course: CourseInfo;
 }
 
 interface TeeTimeFilters {

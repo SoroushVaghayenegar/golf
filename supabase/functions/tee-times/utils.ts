@@ -14,6 +14,10 @@ interface CourseData {
         latitude: number;
         longitude: number;
     };
+    latitude: number;
+    longitude: number;
+    address: string;
+    phone_number: string;
 }
 
 interface TeeTimeData {
@@ -41,6 +45,18 @@ interface ForecastData {
     } | number | string;
 }
 
+interface CourseInfo {
+    name: string;
+    display_name: string;
+    club_name: string;
+    rating: number;
+    city: string;
+    latitude: number;
+    longitude: number;
+    address: string;
+    phone_number: string;
+}
+
 export interface TeeTime {
     id: string;
     start_date: string;
@@ -62,6 +78,7 @@ export interface TeeTime {
     cloud_cover: number | null;
     uv_index: number | null;
     precipitation: number | null;
+    course: CourseInfo;
 }
 
 export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[], startTime: string | null, endTime: string | null, numOfPlayers: string | null, holes: string | null, courseIds: number[], region_id: string, regionTimeZone: string) {
@@ -101,7 +118,11 @@ export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[
                     name,
                     latitude,
                     longitude
-                )
+                ),
+                latitude,
+                longitude,
+                address,
+                phone_number
             )
         `)
         .in('date', dates)
@@ -176,6 +197,18 @@ export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[
                 return;
             }
 
+            const courseInfo: CourseInfo = {
+                name: typedCourseTeeTimes.courses.name,
+                display_name: typedCourseTeeTimes.courses.display_name,
+                club_name: typedCourseTeeTimes.courses.club_name,
+                rating: typedCourseTeeTimes.courses.rating,
+                city: typedCourseTeeTimes.courses.cities.name,
+                latitude: typedCourseTeeTimes.courses.latitude,
+                longitude: typedCourseTeeTimes.courses.longitude,
+                address: typedCourseTeeTimes.courses.address,
+                phone_number: typedCourseTeeTimes.courses.phone_number
+            }
+
             const teeTimeObj: TeeTime = {
                 id: teeTime.tee_time_id,
                 start_date: typedCourseTeeTimes.date,
@@ -196,7 +229,8 @@ export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[
                 wind_gusts: getForecastNumber(forecast, 'wind_gusts_10m', teetimeStartTime),
                 cloud_cover: getForecastNumber(forecast, 'cloud_cover', teetimeStartTime),
                 uv_index: getForecastNumber(forecast, 'uv_index', teetimeStartTime),
-                precipitation: getForecastNumber(forecast, 'precipitation', teetimeStartTime)
+                precipitation: getForecastNumber(forecast, 'precipitation', teetimeStartTime),
+                course: courseInfo
             }
             
             result.push(teeTimeObj)
