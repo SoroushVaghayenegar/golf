@@ -110,18 +110,17 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
     }
   }, [visibleTeeTimes.size, onTeeTimeVisibilityChange]);
 
-  // Get user location when sorting by closest
+  // Get user location for distance display
   useEffect(() => {
-    if (sortBy === 'closest' && !userLocation) {
+    if (!userLocation) {
       getCurrentPosition()
         .then(setUserLocation)
         .catch((error) => {
           console.error('Failed to get user location:', error);
-          // Silently fall back to another sort method if location fails
-          // Note: The parent component should handle this via SortBySelector validation
+          // Silently handle location failure - distance won't be shown
         });
     }
-  }, [sortBy, userLocation]);
+  }, [userLocation]);
 
   const filteredTeeTimes = useMemo(() => {
     let filtered = teeTimes;
@@ -257,6 +256,17 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
   }, [fetchedDates]);
 
   const renderTeeTimeItem = useCallback((index: number, teeTime: TeeTime | null) => {
+    // Calculate distance if user location is available
+    let distance: number | null = null;
+    if (userLocation && teeTime) {
+      distance = haversine(
+        userLocation.latitude,
+        userLocation.longitude,
+        teeTime.course.latitude,
+        teeTime.course.longitude
+      );
+    }
+
     return (
       <div className="p-2">
         {teeTime === null ? (
@@ -266,6 +276,7 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
             teeTime={teeTime}
             index={index}
             onRemoveCourse={onRemoveCourse}
+            distance={distance}
             onVisibilityChange={(isVisible) => {
               setVisibleTeeTimes(prev => {
                 const newSet = new Set(prev);
@@ -281,7 +292,7 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
         )}
       </div>
     );
-  }, [onRemoveCourse]);
+  }, [onRemoveCourse, userLocation]);
 
   return (
     <section ref={sectionRef} className="flex-1 flex flex-col lg:h-full lg:overflow-hidden w-full max-w-full">

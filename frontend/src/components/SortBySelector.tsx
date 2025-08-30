@@ -20,12 +20,12 @@ const SortBySelector = ({ sortBy, setSortBy, className = "" }: SortBySelectorPro
         const hasPermission = await checkLocationPermission();
         if (!hasPermission) {
           // Permission denied - don't change the sort option
-          alert('Location access is required to sort by closest golf courses. Please enable location permissions in your browser settings and try again.');
+          alert('Location access is required to sort by closest golf courses. Please enable location permissions in your browser settings and reload the page.');
           return;
         }
       } catch (error) {
         console.error('Failed to check location permission:', error);
-        alert('Unable to access location. Please ensure location services are enabled and try again.');
+        alert('Unable to access location. Please ensure location services are enabled and reload the page.');
         return;
       }
     }
