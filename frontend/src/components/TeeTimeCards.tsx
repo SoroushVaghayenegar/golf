@@ -8,7 +8,7 @@ import { SubscriptionSignup } from "@/components/SubscriptionSignup";
 import LottiePlayer from "@/components/LottiePlayer";
 import TeeTimeCard from "@/components/TeeTimeCard";
 import MarketingTeeCard from "@/components/MarketingTeeCard";
-import ShareButton from "@/components/ShareButton";
+import DonationButton from "@/components/DonationButton";
 import SortBySelector, { type SortOption } from "@/components/SortBySelector";
 import { haversine, getCurrentPosition } from "@/utils/Geo";
 import {
@@ -68,8 +68,7 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
   selectedRegionId,
   regionTimeZone,
   useSkeletonWhileLoading,
-  disableInitialEmptyState,
-  shareUrl
+  disableInitialEmptyState
 }, ref) => {
   
   const DEFAULT_TIMEZONE = 'America/Vancouver';
@@ -245,15 +244,15 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
   }, [groupedTeeTimes]);
 
   // Build share text from fetched dates in format like "Aug 12"
-  const shareText = useMemo(() => {
-    if (fetchedDates && fetchedDates.length > 0) {
-      const formatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
-      const formattedUniqueDates = Array.from(new Set(fetchedDates.map((d) => formatter.format(d))));
-      const datesStr = formattedUniqueDates.join(', ');
-      return `Found some good tee times for ${datesStr}`;
-    }
-    return 'Found some good tee times';
-  }, [fetchedDates]);
+  // const shareText = useMemo(() => {
+  //   if (fetchedDates && fetchedDates.length > 0) {
+  //     const formatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
+  //     const formattedUniqueDates = Array.from(new Set(fetchedDates.map((d) => formatter.format(d))));
+  //     const datesStr = formattedUniqueDates.join(', ');
+  //     return `Found some good tee times for ${datesStr}`;
+  //   }
+  //   return 'Found some good tee times';
+  // }, [fetchedDates]);
 
   const renderTeeTimeItem = useCallback((index: number, teeTime: TeeTime | null) => {
     // Calculate distance if user location is available
@@ -299,9 +298,9 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
       {/* Sort row: white sort container + Share button as siblings */}
       {!loading && !error && filteredTeeTimes.length > 0 && (
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-7 w-full max-w-full mb-4 px-2">
-          {shareUrl && (
-            <ShareButton url={shareUrl} buttonLabel="Share tee times" className="px-6 py-6 text-lg lg:text-base" text={shareText}/>
-          )}
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <DonationButton className="w-full" />
+          </div>
           <SortBySelector sortBy={sortBy} setSortBy={setSortBy} />
         </div>
       )}

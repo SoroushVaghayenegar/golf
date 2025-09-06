@@ -305,7 +305,7 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
       email_days_count: emailDays.length,
       email_field_filled: email.trim().length > 0,
     })
-    sessionStorage.setItem('subscription-dismissed', 'true')
+    localStorage.setItem('subscription-dismissed', 'true')
     if (onDismiss) {
       onDismiss()
     }
@@ -360,8 +360,8 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
         time_to: timeTo,
       })
 
-      // Set sessionStorage to dismiss the subscription dialog
-      sessionStorage.setItem('subscription-dismissed', 'true')
+      // Set localStorage to dismiss the subscription dialog
+      localStorage.setItem('subscription-dismissed', 'true')
       
       // Close the dialog on success
       onOpenChange(false)

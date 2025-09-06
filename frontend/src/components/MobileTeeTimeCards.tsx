@@ -8,8 +8,8 @@ import { SubscriptionSignup } from "@/components/SubscriptionSignup";
 import LottiePlayer from "@/components/LottiePlayer";
 import TeeTimeCard from "@/components/TeeTimeCard";
 import MarketingTeeCard from "@/components/MarketingTeeCard";
-import ShareButton from "@/components/ShareButton";
 import SortBySelector, { type SortOption } from "@/components/SortBySelector";
+import DonationButton from "@/components/DonationButton";
 import { haversine, getCurrentPosition } from "@/utils/Geo";
 import type { TeeTimeCardsRef } from "@/components/TeeTimeCards";
 
@@ -47,7 +47,6 @@ const MobileTeeTimeCards = forwardRef<TeeTimeCardsRef, MobileTeeTimeCardsProps>(
   error,
   removedCourseIds,
   onRemoveCourse,
-  fetchedDates,
   sortBy,
   setSortBy,
   showSubscription,
@@ -59,8 +58,7 @@ const MobileTeeTimeCards = forwardRef<TeeTimeCardsRef, MobileTeeTimeCardsProps>(
   selectedRegionId,
   regionTimeZone,
   useSkeletonWhileLoading,
-  disableInitialEmptyState,
-  shareUrl
+  disableInitialEmptyState
 }, ref) => {
 
   const DEFAULT_TIMEZONE = 'America/Vancouver';
@@ -213,17 +211,6 @@ const MobileTeeTimeCards = forwardRef<TeeTimeCardsRef, MobileTeeTimeCardsProps>(
     return items;
   }, [groupedTeeTimes]);
 
-  // Virtual row sizes not needed since we render in normal flow for mobile
-
-  const shareText = useMemo(() => {
-    if (fetchedDates && fetchedDates.length > 0) {
-      const formatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
-      const formattedUniqueDates = Array.from(new Set(fetchedDates.map((d) => formatter.format(d))));
-      const datesStr = formattedUniqueDates.join(', ');
-      return `Found some good tee times for ${datesStr}`;
-    }
-    return 'Found some good tee times';
-  }, [fetchedDates]);
 
   const renderItem = useCallback((item: FlatItem, key: number) => {
     if (item.type === 'header') {
@@ -268,9 +255,9 @@ const MobileTeeTimeCards = forwardRef<TeeTimeCardsRef, MobileTeeTimeCardsProps>(
     <section ref={sectionRef} className="flex-1 flex flex-col lg:h-full lg:overflow-hidden w-full max-w-full">
       {!loading && !error && filteredTeeTimes.length > 0 && (
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-7 w-full max-w-full mb-4 px-2">
-          {shareUrl && (
-            <ShareButton url={shareUrl} buttonLabel="Share tee times" className="px-6 py-6 text-lg lg:text-base" text={shareText}/>
-          )}
+          <div className="flex items-center gap-3">
+            <DonationButton className="w-full" />
+          </div>
           <SortBySelector sortBy={sortBy} setSortBy={setSortBy} />
         </div>
       )}
