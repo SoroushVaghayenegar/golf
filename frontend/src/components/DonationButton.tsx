@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Gift } from "lucide-react";
+import posthog from 'posthog-js'
 
 interface DonationButtonProps {
   className?: string;
@@ -21,6 +22,12 @@ export default function DonationButton({ className = "" }: DonationButtonProps) 
         target="_blank"
         rel="noopener noreferrer"
         className="flex w-full sm:inline-flex sm:w-auto items-center justify-center gap-2.5 px-5 py-2.5 rounded-lg font-semibold text-slate-900 bg-yellow-300 hover:bg-yellow-400 transition-all duration-200 shadow-sm hover:shadow-md group"
+        onClick={() => {
+          posthog.capture('donation_button_clicked', {
+            href: 'https://www.buymeacoffee.com/teeclub',
+            component: 'DonationButton'
+          })
+        }}
       >
         <Icon className="w-5 h-5 group-hover:scale-110 transition-transform" />
         <span className="text-sm">Buy us a golf ball!</span>
