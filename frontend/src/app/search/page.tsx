@@ -94,14 +94,14 @@ export default function SearchPage() {
   const initialAutoSearchTriggeredRef = useRef(false);
   const lastQueryKeyRef = useRef<string | null>(null);
 
-  // Check sessionStorage and set mobile state on component mount
+  // Check localStorage and set mobile state on component mount
   useEffect(() => {
     // Mark as client-side rendered
     setIsClient(true);
     
-    const dismissed = sessionStorage.getItem('subscription-dismissed') === 'true';
+    const dismissed = localStorage.getItem('subscription-dismissed') === 'true';
     setSubscriptionDismissed(dismissed);
-    const shown = sessionStorage.getItem('subscription-shown') === 'true';
+    const shown = localStorage.getItem('subscription-shown') === 'true';
     setSubscriptionShown(shown);
     
     // Set mobile state after hydration
@@ -418,14 +418,14 @@ export default function SearchPage() {
     if (visibleTeeTimeCount >= threshold) {
       setShowSubscription(true);
       setSubscriptionShown(true);
-      sessionStorage.setItem('subscription-shown', 'true');
+      localStorage.setItem('subscription-shown', 'true');
     }
   }, [visibleTeeTimeCount, teeTimes.length, subscriptionShown, subscriptionDismissed, isMobile, isMobileSidebarOpen]);
 
   const handleSubscriptionDismiss = () => {
     setShowSubscription(false);
     setSubscriptionDismissed(true);
-    sessionStorage.setItem('subscription-dismissed', 'true');
+    localStorage.setItem('subscription-dismissed', 'true');
   };
 
   // Course removal helper remains unchanged
