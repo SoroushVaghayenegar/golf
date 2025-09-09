@@ -348,7 +348,7 @@ export default function WatchlistFilters({
                   <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase">Players</span>
                 </div>
                 <div className="flex gap-2">
-                  {["2", "3", "4", "any"].map((option) => (
+                  {["1", "2", "3", "4", "any"].map((option) => (
                     <button
                       key={option}
                       onClick={() => setNumOfPlayers(option)}

@@ -182,7 +182,7 @@ export default function SearchPage() {
 
       // Players
       const playersParam = params.get('players') || params.get('numOfPlayers');
-      if (playersParam && ["2","3","4","any"].includes(playersParam)) {
+      if (playersParam && ["1","2","3","4","any"].includes(playersParam)) {
         setNumOfPlayers(playersParam);
       }
 
