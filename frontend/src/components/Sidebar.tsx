@@ -365,20 +365,28 @@ export default function Sidebar({
               <Users className="w-5 h-5 text-slate-600" />
               <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase">Players</span>
             </div>
-            <div className="flex gap-2">
-              {["2", "3", "4", "any"].map((option) => (
-                <button
-                  key={option}
-                  onClick={() => setNumOfPlayers(option)}
-                  className={`flex-1 px-3 py-2 rounded-lg border text-sm transition-all duration-200 ${
-                    numOfPlayers === option
-                      ? 'bg-sidebar-primary text-white border-sidebar-primary shadow-md'
-                      : 'bg-white hover:bg-green-200 border-slate-200 text-slate-700 hover:border-sidebar-primary'
-                  }`}
-                >
-                  {option === "any" ? "Any" : option}
-                </button>
-              ))}
+            <div className="flex">
+              {["1", "2", "3", "4", "any"].map((option, idx, arr) => {
+                const isFirst = idx === 0;
+                const isLast = idx === arr.length - 1;
+                return (
+                  <button
+                    key={option}
+                    onClick={() => setNumOfPlayers(option)}
+                    className={`flex-1 px-3 py-2 border text-sm transition-all duration-200 ${
+                      isFirst ? 'rounded-l-lg' : isLast ? 'rounded-r-lg' : 'rounded-none'
+                    } ${
+                      idx > 0 ? '-ml-px' : ''
+                    } ${
+                      numOfPlayers === option
+                        ? 'bg-sidebar-primary text-white border-sidebar-primary shadow-md'
+                        : 'bg-white hover:bg-green-200 border-slate-200 text-slate-700 hover:border-sidebar-primary'
+                    }`}
+                  >
+                    {option === "any" ? "Any" : option}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -400,7 +408,7 @@ export default function Sidebar({
             </div>
             <Listbox value={holes} onChange={setHoles}>
               <div className="relative">
-                <Listbox.Button className="w-full px-4 py-2 text-left bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sidebar-primary hover:border-sidebar-primary transition-colors font-medium text-slate-700">
+                <Listbox.Button className="w-full px-4 py-2 text-left bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sidebar-primary hover:border-sidebar-primary transition-colors font-medium text-sm text-slate-700">
                   <span>{holes === "any" ? "Any" : holes}</span>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 </Listbox.Button>

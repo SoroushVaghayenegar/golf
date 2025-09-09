@@ -431,8 +431,8 @@ export default function MobileSidebar({
                       <Users className="w-5 h-5 text-slate-600" />
                       <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase">Players</span>
                     </div>
-                    <div className="grid grid-cols-4 gap-2">
-                      {["2", "3", "4", "any"].map((option) => (
+                    <div className="grid grid-cols-5 gap-2">
+                      {["1", "2", "3", "4", "any"].map((option) => (
                         <button
                           key={option}
                           onClick={() => setNumOfPlayers(option)}
