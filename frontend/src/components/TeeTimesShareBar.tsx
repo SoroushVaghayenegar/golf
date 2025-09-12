@@ -48,7 +48,6 @@ export default function TeeTimesShareBar({ className, regionId }: TeeTimesShareB
       if (cachedToken) {
         // Use cached token - this makes it extremely fast for repeat shares
         token = cachedToken
-        isFromCache = true
         console.log('Using cached share token for tee times combination')
       } else {
         // Create new share and cache the token
