@@ -234,7 +234,7 @@ export default function SharePlanPage() {
               className="bg-purple-500 hover:bg-purple-600 text-white"
             >
               <Share2 className="w-4 h-4" />
-              Share to friends to vote!
+              Share with friends to vote!
             </Button>
           </div>
         </div>
