@@ -5,6 +5,7 @@ export class TeeTime {
   price: number;
   booking_link: string;
   tee_time_id: string;
+  starting_tee: number;
 
   constructor(
     start_datetime: Date,
@@ -12,7 +13,8 @@ export class TeeTime {
     holes: number,
     price: number,
     booking_link: string,
-    tee_time_id: string
+    tee_time_id: string,
+    starting_tee: number,
   ) {
     this.start_datetime = start_datetime;
     this.players_available = players_available;
@@ -20,6 +22,7 @@ export class TeeTime {
     this.price = price;
     this.booking_link = booking_link;
     this.tee_time_id = tee_time_id;
+    this.starting_tee = starting_tee;
   }
 
   // Helper method to create a TeeTime from a plain object
@@ -30,7 +33,8 @@ export class TeeTime {
       obj.holes,
       obj.price,
       obj.booking_link,
-      obj.tee_time_id
+      obj.tee_time_id,
+      obj.starting_tee
     );
   }
 
@@ -42,7 +46,8 @@ export class TeeTime {
       holes: this.holes,
       price: this.price,
       booking_link: this.booking_link,
-      tee_time_id: this.tee_time_id
+      tee_time_id: this.tee_time_id,
+      starting_tee: this.starting_tee
     };
   }
 } 

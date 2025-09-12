@@ -112,7 +112,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-amber-100`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gradient-to-br from-blue-50 to-slate-100`}
       >
         <ClientLayout>{children}</ClientLayout>
         <Analytics />

@@ -66,6 +66,7 @@ export interface TeeTime {
     course_id: number;
     course_name: string;
     holes: number;
+    starting_tee: number;
     price: number;
     city: string;
     booking_link: string | null;
@@ -220,6 +221,7 @@ export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[
                 rating: typedCourseTeeTimes.courses.rating,
                 holes: teeTime.holes,
                 price: teeTime.price,
+                starting_tee: teeTime.starting_tee ?? 1,
                 city: typedCourseTeeTimes.courses.cities.name,
                 booking_link: teeTime.booking_link,
                 temperature: getForecastNumber(forecast, 'temperature_2m', teetimeStartTime),

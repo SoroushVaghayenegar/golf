@@ -44,6 +44,8 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith('/auth') &&
     !request.nextUrl.pathname.startsWith('/ingest') &&
     !request.nextUrl.pathname.startsWith('/search') &&
+    !request.nextUrl.pathname.startsWith('/api/create-share') &&
+    !request.nextUrl.pathname.startsWith('/share-plan') &&
     request.nextUrl.pathname !== '/'
 
   ) {

@@ -28,8 +28,8 @@ Deno.serve(async (req)=>{
     const datesParam = url.searchParams.get('dates')
     const startTime = url.searchParams.get('startTime') || "5"
     const endTime = url.searchParams.get('endTime') || "22"
-    const numOfPlayers = url.searchParams.get('numOfPlayers')
-    const holes = url.searchParams.get('holes')
+    const numOfPlayers = url.searchParams.get('numOfPlayers') || "any"
+    const holes = url.searchParams.get('holes') || "any"
     const courseIdsParam = url.searchParams.get('courseIds')
     const region_id = url.searchParams.get('region_id')
     

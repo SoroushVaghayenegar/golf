@@ -16,6 +16,7 @@ export interface CourseInfo {
 }
 
 export interface TeeTime {
+    id: string;
     start_date: string;
     start_time: string;
     start_datetime: string;
@@ -23,6 +24,7 @@ export interface TeeTime {
     course_id: number;
     course_name: string;
     holes: number;
+    starting_tee: number;
     price: number;
     city: string;
     booking_link: string | null;
