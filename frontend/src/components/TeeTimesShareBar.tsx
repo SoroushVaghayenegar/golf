@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { ExternalLink, RotateCcw, Loader2 } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { createTeeTimesShare } from '@/services/shareTeeTimesService'
+import posthog from 'posthog-js'
 
 interface TeeTimesShareBarProps {
   className?: string
@@ -35,6 +36,12 @@ export default function TeeTimesShareBar({ className, regionId }: TeeTimesShareB
       
       const response = await createTeeTimesShare(teeTimesToShare, finalRegionId)
       const { token } = response
+      
+      // Track the share creation event
+      posthog.capture('tee_time_share_created', {
+        tee_times_count: teeTimesToShare.length,
+        region_id: finalRegionId
+      })
       
       // Open new tab with the token
       window.open(`/share-plan?token=${token}`, '_blank')
