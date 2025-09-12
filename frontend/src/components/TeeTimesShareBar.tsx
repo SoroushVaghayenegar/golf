@@ -37,7 +37,7 @@ export default function TeeTimesShareBar({ className, regionId }: TeeTimesShareB
       const { token } = response
       
       // Open new tab with the token
-      window.open(`/shared-plan?token=${token}`, '_blank')
+      window.open(`/share-plan?token=${token}`, '_blank')
       
     } catch (err) {
       console.error('Error sharing tee times:', err)

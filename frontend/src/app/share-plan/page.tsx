@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Share2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { getSharedTeeTimes, type ShareTeeTime, type GetShareResponse } from '@/services/shareTeeTimesService';
 import { type TeeTime } from '@/services/teeTimeService';
 import TeeTimeShareCard from '@/components/TeeTimeShareCard';
@@ -18,6 +19,12 @@ export default function SharePlanPage() {
   const [shareData, setShareData] = useState<GetShareResponse | null>(null);
   const [teeTimes, setTeeTimes] = useState<TeeTime[]>([]);
   const [clientId, setClientId] = useState<string>('');
+
+  // Detect if user is on mobile device
+  const isMobile = useMemo(() => {
+    if (typeof navigator === "undefined") return false;
+    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  }, []);
 
   // Get or generate client ID on component mount
   useEffect(() => {
@@ -108,6 +115,58 @@ export default function SharePlanPage() {
     // This shouldn't be called with the new implementation
   };
 
+  // Handle share functionality - native share on mobile, clipboard + toast on web
+  const handleNativeShare = async () => {
+    const url = window.location.href;
+    const shareText = `Check out these Tee Times I'm sharing with you! ${teeTimes.length} great tee time${teeTimes.length !== 1 ? 's' : ''} available.`;
+    
+    try {
+      // Use native share on mobile devices
+      if (isMobile && typeof navigator !== "undefined" && "share" in navigator) {
+        await navigator.share({
+          url,
+          title: "Shared Tee Times",
+          text: shareText,
+        });
+        return;
+      }
+
+      // Web (or fallback): copy to clipboard and show toast
+      if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(`${shareText}\n${url}`);
+        toast.success(
+          <>
+            Link copied to clipboard
+            <br />
+            You can now share it with your friends to vote!
+          </>
+        );
+      } else {
+        // Legacy fallback for older browsers
+        const temp = document.createElement("input");
+        temp.value = `${shareText}\n${url}`;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand("copy");
+        document.body.removeChild(temp);
+        toast.success(
+          <>
+            Link copied to clipboard
+            <br />
+            You can now share it with your friends to vote!
+          </>
+        );
+      }
+    } catch (error) {
+      // Don't show error toast if user cancelled the share
+      if (error instanceof Error && error.name === 'AbortError') {
+        return;
+      }
+      
+      toast.error("Failed to share. Please try again.");
+    }
+  };
+
   // Show loading state while checking parameters
   if (isLoading) {
     return (
@@ -164,11 +223,20 @@ export default function SharePlanPage() {
           <p className="text-gray-600 mb-4">
             {teeTimes.length} tee time{teeTimes.length !== 1 ? 's' : ''} shared with you
           </p>
-          <Link href="/">
-            <Button variant="outline">
-              Find More Tee Times
+          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+            <Link href="/">
+              <Button variant="outline">
+                Find More Tee Times
+              </Button>
+            </Link>
+            <Button 
+              onClick={handleNativeShare}
+              className="bg-purple-500 hover:bg-purple-600 text-white"
+            >
+              <Share2 className="w-4 h-4" />
+              Share to friends to vote!
             </Button>
-          </Link>
+          </div>
         </div>
         
         {teeTimes.length > 0 && (
