@@ -115,8 +115,8 @@ const Rating = ({ rating }: { rating: number | null }) => {
 };
 
 // Weather display component
-const WeatherInfo = ({ teeTime }: { teeTime: TeeTime }) => {
-  if (!teeTime.weather_code && !teeTime.temperature && !teeTime.precipitation_probability && !teeTime.wind_speed) {
+const WeatherInfo = ({ teeTime, available = true }: { teeTime: TeeTime; available?: boolean }) => {
+  if (!available || (!teeTime.weather_code && !teeTime.temperature && !teeTime.precipitation_probability && !teeTime.wind_speed)) {
     return null;
   }
 
@@ -405,7 +405,7 @@ export default function TeeTimeShareCard({
         className={`bg-white rounded-xl shadow-sm transition-all duration-200 border overflow-hidden w-full max-w-full relative ${
           available 
             ? 'hover:shadow-lg border-gray-100' 
-            : 'opacity-50 bg-gray-50 border-gray-200 cursor-not-allowed'
+            : 'border-gray-200'
         }`}
       >
         {/* Loading Overlay */}
@@ -418,15 +418,9 @@ export default function TeeTimeShareCard({
           </div>
         )}
 
-        {/* Unavailable Overlay */}
+        {/* Unavailable Overlay - Semi-transparent */}
         {!available && (
-          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-40 rounded-xl">
-            <div className="bg-white rounded-lg px-4 py-3 shadow-lg mx-4">
-              <p className="text-center text-gray-800 font-semibold text-sm">
-                Tee time not available anymore
-              </p>
-            </div>
-          </div>
+          <div className="absolute inset-0 bg-gray-900/30 z-40 rounded-xl"></div>
         )}
         <div className="p-3 w-full max-w-full">
           {/* Mobile Layout */}
@@ -445,7 +439,7 @@ export default function TeeTimeShareCard({
               {/* Row 2: Rating and Weather */}
               <div className="space-y-2">
                 <Rating rating={teeTime.rating} />
-                <WeatherInfo teeTime={teeTime} />
+                <WeatherInfo teeTime={teeTime} available={available} />
               </div>
 
               {/* Row 3: Date, Time, Details, and Price */}
@@ -521,7 +515,7 @@ export default function TeeTimeShareCard({
                       {distance && <DistanceInfo distance={distance} />}
                     </div>
                     <Rating rating={teeTime.rating} />
-                    <WeatherInfo teeTime={teeTime} />
+                    <WeatherInfo teeTime={teeTime} available={available} />
                   </div>
 
                   {/* Middle Column: Date and Time */}
