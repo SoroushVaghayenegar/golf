@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { useAppStore } from '@/stores/appStore'
 import { Button } from '@/components/ui/button'
 import { ExternalLink, RotateCcw, Loader2 } from 'lucide-react'
@@ -25,11 +25,6 @@ export default function TeeTimesShareBar({ className, regionId }: TeeTimesShareB
   const clearTeeTimesToShare = useAppStore((state) => state.clearTeeTimesToShare)
   const isShareFull = useAppStore((state) => state.isShareFull)
 
-  // Detect if user is on mobile device
-  const isMobile = useMemo(() => {
-    if (typeof navigator === "undefined") return false;
-    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  }, [])
   
   // Don't render if no tee times are selected
   if (!teeTimesToShare || teeTimesToShare.length === 0) {
@@ -70,40 +65,9 @@ export default function TeeTimesShareBar({ className, regionId }: TeeTimesShareB
         })
       }
       
-      const shareUrl = `${window.location.origin}/share-plan?token=${token}`
-      const shareText = `Check out these Tee Times I'm sharing with you! ${teeTimesToShare.length} great tee time${teeTimesToShare.length !== 1 ? 's' : ''} available.`
-      
-      // Use native share on mobile devices
-      if (isMobile && typeof navigator !== "undefined" && "share" in navigator) {
-        try {
-          await navigator.share({
-            url: shareUrl,
-            title: "Shared Tee Times",
-            text: shareText,
-          });
-          // Successfully shared, we're done
-          return;
-        } catch (shareError) {
-          // Don't show error toast if user cancelled the share
-          if (shareError instanceof Error && shareError.name === 'AbortError') {
-            return;
-          }
-          // If native share fails, fall back to modal
-          console.log('Native share failed, falling back to modal:', shareError);
-        }
-      }
-
-      // Desktop or fallback: Store token and open modal
+      // Always open modal for sharing
       setShareToken(token)
       setIsModalOpen(true)
-      
-      // Track when cached tokens are reused (for analytics)
-      if (isFromCache) {
-        posthog.capture('tee_time_share_reused', {
-          tee_times_count: teeTimesToShare.length,
-          region_id: finalRegionId
-        })
-      }
       
     } catch (err) {
       console.error('Error sharing tee times:', err)
