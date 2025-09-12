@@ -43,7 +43,6 @@ export default function TeeTimesShareBar({ className, regionId }: TeeTimesShareB
       const cachedToken = getCachedShareToken(teeTimesToShare, finalRegionId)
       
       let token: string
-      let isFromCache = false
       
       if (cachedToken) {
         // Use cached token - this makes it extremely fast for repeat shares
