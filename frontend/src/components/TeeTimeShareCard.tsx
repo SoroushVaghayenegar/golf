@@ -186,6 +186,7 @@ interface TeeTimeShareCardProps {
   shareTeeTimeId?: number;
   clientId?: string;
   onVoteUpdate?: (shareTeeTimeId: number, approvals: number, disapprovals: number, userVote: 'approve' | 'disapprove' | null, approvalsArray?: string[], disapprovalsArray?: string[]) => void;
+  available?: boolean;
 }
 
 // Distance display component
@@ -318,7 +319,8 @@ export default function TeeTimeShareCard({
   disapprovals = [],
   shareTeeTimeId,
   clientId,
-  onVoteUpdate
+  onVoteUpdate,
+  available = true
 }: TeeTimeShareCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -400,7 +402,11 @@ export default function TeeTimeShareCard({
       <div
         ref={cardRef}
         key={index}
-        className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-200 border border-gray-100 overflow-hidden w-full max-w-full relative"
+        className={`bg-white rounded-xl shadow-sm transition-all duration-200 border overflow-hidden w-full max-w-full relative ${
+          available 
+            ? 'hover:shadow-lg border-gray-100' 
+            : 'opacity-50 bg-gray-50 border-gray-200 cursor-not-allowed'
+        }`}
       >
         {/* Loading Overlay */}
         {isLoading && (
@@ -408,6 +414,17 @@ export default function TeeTimeShareCard({
             <div className="flex flex-col items-center gap-2">
               <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
               <span className="text-sm font-medium text-slate-600">Casting vote...</span>
+            </div>
+          </div>
+        )}
+
+        {/* Unavailable Overlay */}
+        {!available && (
+          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-40 rounded-xl">
+            <div className="bg-white rounded-lg px-4 py-3 shadow-lg mx-4">
+              <p className="text-center text-gray-800 font-semibold text-sm">
+                Tee time not available anymore
+              </p>
             </div>
           </div>
         )}
@@ -456,27 +473,33 @@ export default function TeeTimeShareCard({
               {/* Row 4: Book Button */}
               {teeTime.booking_link && (
                 <div className="pt-2">
-                  <a
-                    href={teeTime.booking_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => {
-                      posthog.capture('booking_link_clicked', {
-                        course_name: teeTime.course_name,
-                        booking_link: teeTime.booking_link,
-                        price: teeTime.price,
-                        players_available: teeTime.players_available,
-                        booking_source: teeTime.booking_link?.includes('cps') ? 'Course Website' : 'ChronoGolf'
-                      });
-                    }}
-                    className={`${
-                      teeTime.booking_link.includes('cps')
-                        ? 'w-full flex items-center justify-center px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-200 text-center transform hover:scale-[1.02] active:scale-[0.98] bg-black hover:bg-gray-800 text-white shadow-lg hover:shadow-xl'
-                        : 'w-full flex items-center justify-center px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-200 text-center transform hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl'
-                    }`}
-                  >
-                    {teeTime.booking_link.includes('cps') ? 'Book on Course Website' : 'Book on ChronoGolf'}
-                  </a>
+                  {available ? (
+                    <a
+                      href={teeTime.booking_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => {
+                        posthog.capture('booking_link_clicked', {
+                          course_name: teeTime.course_name,
+                          booking_link: teeTime.booking_link,
+                          price: teeTime.price,
+                          players_available: teeTime.players_available,
+                          booking_source: teeTime.booking_link?.includes('cps') ? 'Course Website' : 'ChronoGolf'
+                        });
+                      }}
+                      className={`${
+                        teeTime.booking_link.includes('cps')
+                          ? 'w-full flex items-center justify-center px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-200 text-center transform hover:scale-[1.02] active:scale-[0.98] bg-black hover:bg-gray-800 text-white shadow-lg hover:shadow-xl'
+                          : 'w-full flex items-center justify-center px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-200 text-center transform hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl'
+                      }`}
+                    >
+                      {teeTime.booking_link.includes('cps') ? 'Book on Course Website' : 'Book on ChronoGolf'}
+                    </a>
+                  ) : (
+                    <div className="w-full flex items-center justify-center px-4 py-3 text-sm font-semibold rounded-lg bg-gray-300 text-gray-500 cursor-not-allowed">
+                      Not Available
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -528,27 +551,33 @@ export default function TeeTimeShareCard({
               {/* Right Side: Book Button */}
               {teeTime.booking_link && (
                 <div className="flex items-stretch">
-                  <a
-                    href={teeTime.booking_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => {
-                      posthog.capture('booking_link_clicked', {
-                        course_name: teeTime.course_name,
-                        booking_link: teeTime.booking_link,
-                        price: teeTime.price,
-                        players_available: teeTime.players_available,
-                        booking_source: teeTime.booking_link?.includes('cps') ? 'Course Website' : 'ChronoGolf'
-                      });
-                    }}
-                    className={`${
-                      teeTime.booking_link.includes('cps')
-                        ? 'flex items-center justify-center px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-200 text-center transform hover:scale-[1.02] active:scale-[0.98] bg-black hover:bg-gray-800 text-white shadow-lg hover:shadow-xl'
-                        : 'flex items-center justify-center px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-200 text-center transform hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl'
-                    } whitespace-nowrap h-full`}
-                  >
-                    {teeTime.booking_link.includes('cps') ? 'Book on Course Website' : 'Book on ChronoGolf'}
-                  </a>
+                  {available ? (
+                    <a
+                      href={teeTime.booking_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => {
+                        posthog.capture('booking_link_clicked', {
+                          course_name: teeTime.course_name,
+                          booking_link: teeTime.booking_link,
+                          price: teeTime.price,
+                          players_available: teeTime.players_available,
+                          booking_source: teeTime.booking_link?.includes('cps') ? 'Course Website' : 'ChronoGolf'
+                        });
+                      }}
+                      className={`${
+                        teeTime.booking_link.includes('cps')
+                          ? 'flex items-center justify-center px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-200 text-center transform hover:scale-[1.02] active:scale-[0.98] bg-black hover:bg-gray-800 text-white shadow-lg hover:shadow-xl'
+                          : 'flex items-center justify-center px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-200 text-center transform hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl'
+                      } whitespace-nowrap h-full`}
+                    >
+                      {teeTime.booking_link.includes('cps') ? 'Book on Course Website' : 'Book on ChronoGolf'}
+                    </a>
+                  ) : (
+                    <div className="flex items-center justify-center px-4 py-3 text-sm font-semibold rounded-lg bg-gray-300 text-gray-500 cursor-not-allowed whitespace-nowrap h-full">
+                      Not Available
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -560,10 +589,10 @@ export default function TeeTimeShareCard({
           {/* Bottom Section: Voting Buttons */}
           <div className="flex items-center justify-center gap-4 w-full">
             <div className="flex items-center gap-3">
-              <Tooltip text="Vote Yes" containerRef={cardRef}>
+              <Tooltip text={available ? "Vote Yes" : "Tee time not available"} containerRef={cardRef}>
                 <button
                   onClick={() => handleVote('approve')}
-                  disabled={isLoading}
+                  disabled={isLoading || !available}
                   className={`flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none ${
                     hasApproved
                       ? 'bg-green-800 text-white shadow-lg'
@@ -575,10 +604,10 @@ export default function TeeTimeShareCard({
                 </button>
               </Tooltip>
               
-              <Tooltip text="Vote No" containerRef={cardRef}>
+              <Tooltip text={available ? "Vote No" : "Tee time not available"} containerRef={cardRef}>
                 <button
                   onClick={() => handleVote('disapprove')}
-                  disabled={isLoading}
+                  disabled={isLoading || !available}
                   className={`flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none ${
                     hasDisapproved
                       ? 'bg-red-800 text-white shadow-lg'

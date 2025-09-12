@@ -254,6 +254,7 @@ export default function SharePlanPage() {
                   shareTeeTimeId={shareTeeTime.id}
                   clientId={clientId}
                   onVoteUpdate={handleVoteUpdate}
+                  available={shareTeeTime.available}
                 />
               );
             })}
