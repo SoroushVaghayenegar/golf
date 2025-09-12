@@ -11,6 +11,7 @@ import TeeTimeCards, { TeeTimeCardsRef } from "@/components/TeeTimeCards";
 import MobileTeeTimeCards from "@/components/MobileTeeTimeCards";
 import Sidebar from "@/components/Sidebar";
 import MobileSidebar from "@/components/MobileSidebar";
+import TeeTimesShareBar from "@/components/TeeTimesShareBar";
 import { useAppStore } from '@/stores/appStore'
 import { checkLocationPermission } from "@/utils/Geo";
 
@@ -653,37 +654,45 @@ export default function SearchPage() {
         {/* On mobile, only show results section if there are results, loading, or error */}
         {/* On desktop, always show to display initial state */}
         {(!isMobile || teeTimes.length > 0 || loading || !!(error || storeError) || hasEverSearched) && (
-          <div className="flex-1 lg:p-10 lg:pl-10 lg:pr-10 lg:py-4 px-4 sm:px-10 lg:px-0 w-full max-w-full overflow-x-hidden lg:h-[calc(100vh-64px)] lg:min-h-[calc(100vh-64px)]">
-            {(() => {
-              const ResultsComponent = isMobile ? MobileTeeTimeCards : TeeTimeCards;
-              return (
-                <ResultsComponent
-                  ref={resultsSectionRef}
-                  teeTimes={teeTimes}
-                  loading={loading}
-                  error={error || storeError}
-                  removedCourseIds={removedCourseIds}
-                  onRemoveCourse={handleRemoveCourse}
-                  fetchedDates={fetchedDates}
-                  sortBy={sortBy}
-                  setSortBy={setSortBy}
-                  showSubscription={showSubscription}
-                  setShowSubscription={setShowSubscription}
-                  handleSubscriptionDismiss={handleSubscriptionDismiss}
-                  isMobile={isMobile}
-                  hasSearched={hasEverSearched}
-                  courseCityMapping={courseCityMapping}
-                  onTeeTimeVisibilityChange={setVisibleTeeTimeCount}
-                  selectedRegionId={selectedRegionId}
-                  regionTimeZone={regionTimeZone}
-                  useSkeletonWhileLoading={hasEverSearched}
-                  disableInitialEmptyState
-                  shareUrl={currentUrl}
-                />
-              );
-            })()}
+          <div className="flex-1 lg:p-10 lg:pl-10 lg:pr-10 lg:py-4 px-4 sm:px-10 lg:px-0 w-full max-w-full overflow-x-hidden lg:h-[calc(100vh-64px)] lg:min-h-[calc(100vh-64px)] flex flex-col">
+            {/* Share Bar - Desktop positioning */}
+            {!isMobile && <TeeTimesShareBar className="mb-4" />}
+            
+            <div className="flex-1 overflow-hidden">
+              {(() => {
+                const ResultsComponent = isMobile ? MobileTeeTimeCards : TeeTimeCards;
+                return (
+                  <ResultsComponent
+                    ref={resultsSectionRef}
+                    teeTimes={teeTimes}
+                    loading={loading}
+                    error={error || storeError}
+                    removedCourseIds={removedCourseIds}
+                    onRemoveCourse={handleRemoveCourse}
+                    fetchedDates={fetchedDates}
+                    sortBy={sortBy}
+                    setSortBy={setSortBy}
+                    showSubscription={showSubscription}
+                    setShowSubscription={setShowSubscription}
+                    handleSubscriptionDismiss={handleSubscriptionDismiss}
+                    isMobile={isMobile}
+                    hasSearched={hasEverSearched}
+                    courseCityMapping={courseCityMapping}
+                    onTeeTimeVisibilityChange={setVisibleTeeTimeCount}
+                    selectedRegionId={selectedRegionId}
+                    regionTimeZone={regionTimeZone}
+                    useSkeletonWhileLoading={hasEverSearched}
+                    disableInitialEmptyState
+                    shareUrl={currentUrl}
+                  />
+                );
+              })()}
+            </div>
           </div>
         )}
+        
+        {/* Share Bar - Mobile positioning (sticks to bottom) */}
+        {isMobile && <TeeTimesShareBar />}
       </main>
     </div>
   );

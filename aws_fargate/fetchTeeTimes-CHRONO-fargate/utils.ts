@@ -93,7 +93,7 @@ export async function fetchTeeTimesFromChronoLightspeed(page: any, dbCourseId: n
     const playersAvailable = teeTime["green_fees"].length
     const price = teeTime["green_fees"][0]["green_fee"]
     const bookingLink = getChronoLightspeedBookingLink(clubLinkName, course_id, course_holes, searchDate, affiliation_type_id, playersAvailable, teeTime["id"])
-    const teeTimeId = dbCourseId + teeTime["date"].replaceAll('-', '') + teeTime["start_time"].replaceAll(':', '')
+    const teeTimeId = dbCourseId + teeTime["date"].replaceAll('-', '') + teeTime["start_time"].replaceAll(':', '') + "-" + course_holes
     teeTimes.push(new TeeTime(startDateTime, playersAvailable, course_holes, price, bookingLink, teeTimeId))
    }
    return teeTimes

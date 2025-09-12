@@ -1,12 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Listbox } from "@headlessui/react";
-import { ChevronDown, Users, Clock, School, LandPlot, MapPin, Info } from "lucide-react";
+import { ChevronDown, Users, Clock, School, LandPlot, MapPin, Info, Loader } from "lucide-react";
 import { Range } from "react-range";
 import Select, { MultiValue, StylesConfig } from 'react-select';
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchCourseDisplayNamesAndTheirCities, fetchRegions } from "../services/supabaseService";
 import CompactCalendar from "./CompactCalendar";
+import { useAppStore } from "@/stores/appStore";
 
 interface SelectOption {
   value: string;
@@ -84,6 +85,7 @@ export default function Sidebar({
   const [showHolesTooltip, setShowHolesTooltip] = useState(false);
   // Track slider drag state so we only commit on release
   const [pendingTimeRange, setPendingTimeRange] = useState<number[] | null>(null);
+  const teeTimesCount = useAppStore((s) => s.teeTimes.length);
 
   // Respect parent instruction to show/hide course selector (once)
   useEffect(() => {
@@ -666,9 +668,20 @@ export default function Sidebar({
         </button>
       )}
       {hideSubmitButton && (
-        <p className="mt-4 text-xs text-slate-500 italic">
-          * Changing filters will automatically refresh results
-        </p>
+        <div className="mt-2">
+          <p className="text-sm text-green-700 font-medium mb-8 text-center">
+            {loading ? (
+              <span className="inline-flex items-center justify-center">
+                <Loader className="w-5 h-5 animate-spin" />
+              </span>
+            ) : (
+              `${teeTimesCount} tee time${teeTimesCount === 1 ? "" : "s"}`
+            )}
+          </p>
+          <p className="text-xs text-slate-500 italic">
+            * Changing filters will automatically refresh results
+          </p>
+        </div>
       )}
     </section>
   );

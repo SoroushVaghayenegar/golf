@@ -124,7 +124,7 @@ export async function fetchTeeTimesFromCPS(
         const playersAvailable = teeTimeObject["availableParticipantNo"].length;
         const holes = parseInt(holesStr);
         const booking_link = `https://${subdomain}.cps.golf`
-        const tee_time_id = courseId + startDateTime.toISOString().split('T')[0].replaceAll('-', '') + startDateTime.getHours() + startDateTime.getMinutes()
+        const tee_time_id = courseId + startDateTime.toISOString().split('T')[0].replaceAll('-', '') + startDateTime.getHours() + startDateTime.getMinutes() + "-" + holesStr
         teeTimes.push(new TeeTime(startDateTime, playersAvailable, holes, price, booking_link, tee_time_id));
       }
     }

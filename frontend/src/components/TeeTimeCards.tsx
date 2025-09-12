@@ -7,6 +7,7 @@ import { type TeeTime } from "../services/teeTimeService";
 import { SubscriptionSignup } from "@/components/SubscriptionSignup";
 import LottiePlayer from "@/components/LottiePlayer";
 import TeeTimeCard from "@/components/TeeTimeCard";
+import TeeTimeCardSkeleton from "@/components/TeeTimeCardSkeleton";
 import MarketingTeeCard from "@/components/MarketingTeeCard";
 import DonationButton from "@/components/DonationButton";
 import SortBySelector, { type SortOption } from "@/components/SortBySelector";
@@ -317,13 +318,10 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
           </div>
         )}
         {loading && useSkeletonWhileLoading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-2">
             {Array.from({ length: 6 }).map((_, idx) => (
-              <div key={idx} className="bg-white rounded-lg shadow p-4">
-                <div className="h-6 w-1/3 bg-slate-200 rounded mb-3" />
-                <div className="h-4 w-1/2 bg-slate-200 rounded mb-2" />
-                <div className="h-4 w-2/3 bg-slate-200 rounded mb-2" />
-                <div className="h-48 w-full bg-slate-200 rounded" />
+              <div key={idx} className="p-2">
+                <TeeTimeCardSkeleton />
               </div>
             ))}
           </div>

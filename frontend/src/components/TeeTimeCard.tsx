@@ -5,10 +5,13 @@ import {
   Sun, Cloud, CloudRain, CloudSnow, CloudDrizzle, 
   CloudLightning, CloudFog, Zap, CloudHail,
   CloudSunRain, CloudRainWind, Snowflake, Thermometer,
-  Droplets, X, Navigation
+  Droplets, X, Navigation, Wind,
+  HeartPlus,
+  HeartMinus
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { getTeeTime } from '@/utils/DateAndTime';
+import { useAppStore } from '@/stores/appStore';
 
 // Weather icon mapping utility
 const getWeatherIcon = (weatherCode: string | null) => {
@@ -101,7 +104,7 @@ const Rating = ({ rating }: { rating: number | null }) => {
 
 // Weather display component
 const WeatherInfo = ({ teeTime }: { teeTime: TeeTime }) => {
-  if (!teeTime.weather_code && !teeTime.temperature && !teeTime.precipitation_probability) {
+  if (!teeTime.weather_code && !teeTime.temperature && !teeTime.precipitation_probability && !teeTime.wind_speed) {
     return null;
   }
 
@@ -117,7 +120,7 @@ const WeatherInfo = ({ teeTime }: { teeTime: TeeTime }) => {
       
       {/* Weather Details */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-4 text-sm">
+        <div className="flex items-center gap-4 text-sm flex-wrap">
           {/* Temperature */}
           {teeTime.temperature !== null && (
             <div className="flex items-center gap-1">
@@ -134,6 +137,16 @@ const WeatherInfo = ({ teeTime }: { teeTime: TeeTime }) => {
               <Droplets className="w-4 h-4 text-blue-400" />
               <span className="font-medium text-slate-700">
                 {Math.round(teeTime.precipitation_probability)}%
+              </span>
+            </div>
+          )}
+          
+          {/* Wind Speed */}
+          {teeTime.wind_speed !== null && (
+            <div className="flex items-center gap-1">
+              <Wind className="w-4 h-4 text-slate-400" />
+              <span className="font-medium text-slate-700">
+                {Math.round(teeTime.wind_speed * 3.6)} km/h
               </span>
             </div>
           )}
@@ -254,6 +267,9 @@ const Tooltip = ({ children, text, containerRef }: { children: React.ReactNode; 
 export default function TeeTimeCard({ teeTime, index, onRemoveCourse, onVisibilityChange, distance }: TeeTimeCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [hasBeenVisible, setHasBeenVisible] = useState(false);
+  
+  // Share functionality
+  const { addTeeTimeToShare, removeTeeTimeFromShare, isTeeTimeInShareList, isShareFull } = useAppStore();
 
   useEffect(() => {
     if (!onVisibilityChange || hasBeenVisible) return;
@@ -356,34 +372,77 @@ export default function TeeTimeCard({ teeTime, index, onRemoveCourse, onVisibili
           </div>
         </div>
 
-        {/* Booking Button */}
-        {teeTime.booking_link && (
-          <div className="mt-5 pt-4 border-t border-gray-100 w-full max-w-full">
-            <a
-              href={teeTime.booking_link}
-              target="_blank"
-              rel="noopener noreferrer"
+        {/* Action Buttons */}
+        <div className="mt-5 pt-4 border-t border-gray-100 w-full max-w-full">
+          <div className="flex gap-3 w-full">
+            {/* Booking Button */}
+            {teeTime.booking_link && (
+              <a
+                href={teeTime.booking_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => {
+                  posthog.capture('booking_link_clicked', {
+                    course_name: teeTime.course_name,
+                    booking_link: teeTime.booking_link,
+                    price: teeTime.price,
+                    players_available: teeTime.players_available,
+                    booking_source: teeTime.booking_link?.includes('cps') ? 'Course Website' : 'ChronoGolf'
+                  });
+                }}
+                className={`flex-1 px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-200 text-center block transform hover:scale-[1.02] active:scale-[0.98] max-w-full overflow-hidden ${
+                  teeTime.booking_link.includes('cps')
+                    ? 'bg-black hover:bg-gray-800 text-white shadow-lg hover:shadow-xl'
+                    : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl'
+                }`}
+              >
+                <span className="truncate block">
+                  {teeTime.booking_link.includes('cps') ? 'Book on Course Website' : 'Book on ChronoGolf'}
+                </span>
+              </a>
+            )}
+            
+            {/* Share Button */}
+            <button
               onClick={() => {
-                posthog.capture('booking_link_clicked', {
-                  course_name: teeTime.course_name,
-                  booking_link: teeTime.booking_link,
-                  price: teeTime.price,
-                  players_available: teeTime.players_available,
-                  booking_source: teeTime.booking_link?.includes('cps') ? 'Course Website' : 'ChronoGolf'
-                });
+                const isInShareList = isTeeTimeInShareList(teeTime.id);
+                if (isInShareList) {
+                  removeTeeTimeFromShare(teeTime.id);
+                  posthog.capture('tee_time_removed_from_share', {
+                    course_name: teeTime.course_name,
+                    tee_time_id: teeTime.id,
+                    price: teeTime.price
+                  });
+                } else if (!isShareFull()) {
+                  addTeeTimeToShare(teeTime);
+                  posthog.capture('tee_time_added_to_share', {
+                    course_name: teeTime.course_name,
+                    tee_time_id: teeTime.id,
+                    price: teeTime.price
+                  });
+                }
               }}
-              className={`w-full px-4 py-3 font-semibold rounded-lg transition-all duration-200 text-center block transform hover:scale-[1.02] active:scale-[0.98] max-w-full overflow-hidden ${
-                teeTime.booking_link.includes('cps')
-                  ? 'bg-black hover:bg-gray-800 text-white shadow-lg hover:shadow-xl'
-                  : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl'
+              disabled={!isTeeTimeInShareList(teeTime.id) && isShareFull()}
+              className={`flex items-center justify-center gap-1 px-3 py-1 text-sm font-small rounded-lg transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex-shrink-0 ${
+                !isTeeTimeInShareList(teeTime.id) && isShareFull()
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : isTeeTimeInShareList(teeTime.id)
+                    ? 'bg-red-500 hover:bg-red-600 text-white shadow-lg hover:shadow-xl'
+                    : 'bg-purple-500 hover:bg-purple-600 text-white shadow-lg hover:shadow-xl'
               }`}
             >
-              <span className="truncate block">
-                {teeTime.booking_link.includes('cps') ? 'Book on Course Website' : 'Book on ChronoGolf'}
-              </span>
-            </a>
+              {isTeeTimeInShareList(teeTime.id) ? (
+                <>
+                  <HeartMinus className="w-4 h-4" />
+                </>
+              ) : (
+                <>
+                  <HeartPlus className="w-4 h-4" />
+                </>
+              )}
+            </button>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

@@ -3,6 +3,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { createTeeTimesSlice, type TeeTimesSlice } from '@/stores/createTeeTimesSlice'
+import { createShareSlice, type ShareSlice } from '@/stores/createShareSlice'
 
 type Theme = 'light' | 'dark'
 
@@ -13,11 +14,11 @@ type ThemeSlice = {
   resetAll: () => void
 }
 
-export type AppState = ThemeSlice & TeeTimesSlice
+export type AppState = ThemeSlice & TeeTimesSlice & ShareSlice
 
 export const useAppStore = create<AppState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       // Theme slice
       theme: 'light',
       setTheme: (theme) => set({ theme }),
@@ -26,6 +27,9 @@ export const useAppStore = create<AppState>()(
 
       // Tee times slice
       ...createTeeTimesSlice(set),
+
+      // Share slice
+      ...createShareSlice(set, get),
     }),
     {
       name: 'app-store',
