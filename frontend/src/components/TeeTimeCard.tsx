@@ -361,6 +361,11 @@ export default function TeeTimeCard({ teeTime, index, onRemoveCourse, onVisibili
                 <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full whitespace-nowrap">
                   {teeTime.players_available} spots
                 </span>
+                {teeTime.starting_tee !== 1 && (
+                  <span className="bg-orange-400 text-white px-2 py-1 rounded-full whitespace-nowrap">
+                    Tee {teeTime.starting_tee}
+                  </span>
+                )}
               </div>
             </div>
             <div className="text-right flex-shrink-0">

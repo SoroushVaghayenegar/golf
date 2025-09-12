@@ -449,13 +449,18 @@ export default function TeeTimeShareCard({
                   <p className="text-lg font-bold text-slate-900">{time}</p>
                 </div>
                 <div className="text-right">
-                  <div className="flex gap-1 mb-1 justify-end">
+                  <div className="flex gap-1 mb-1 justify-end flex-wrap">
                     <span className="bg-blue-100 px-2 py-1 rounded-full text-xs whitespace-nowrap">
                       {teeTime.holes} holes
                     </span>
                     <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs whitespace-nowrap">
                       {teeTime.players_available} spots
                     </span>
+                    {teeTime.starting_tee !== 1 && (
+                      <span className="bg-orange-400 text-white px-2 py-1 rounded-full text-xs whitespace-nowrap">
+                        Tee {teeTime.starting_tee}
+                      </span>
+                    )}
                   </div>
                   <div>
                     <p className="text-lg font-bold text-green-700">${Number(teeTime.price).toFixed(2)}</p>
@@ -532,6 +537,11 @@ export default function TeeTimeShareCard({
                     <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs whitespace-nowrap mb-1">
                       {teeTime.players_available} spots
                     </span>
+                    {teeTime.starting_tee !== 1 && (
+                      <span className="bg-orange-400 text-white px-2 py-1 rounded-full text-xs whitespace-nowrap mb-1">
+                        Tee {teeTime.starting_tee}
+                      </span>
+                    )}
                     <div className="flex flex-col items-end gap-2">
                       <div className="text-right">
                         <p className="text-lg font-bold text-green-700">${Number(teeTime.price).toFixed(2)}</p>
