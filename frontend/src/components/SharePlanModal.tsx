@@ -1,20 +1,28 @@
 "use client";
 
 import { useEffect, useState, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, Share2 } from 'lucide-react';
+import { AlertTriangle, Share2, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle 
+} from '@/components/ui/dialog';
 import { getSharedTeeTimes, type ShareTeeTime, type GetShareResponse } from '@/services/shareTeeTimesService';
 import { type TeeTime } from '@/services/teeTimeService';
 import TeeTimeShareCard from '@/components/TeeTimeShareCard';
 import TeeTimeCardSkeleton from '@/components/TeeTimeCardSkeleton';
 
-export default function SharePlanPage() {
-  const searchParams = useSearchParams();
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [hasError, setHasError] = useState<boolean>(false);
+interface SharePlanModalProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  shareToken: string | null;
+}
+
+export default function SharePlanModal({ isOpen, onOpenChange, shareToken }: SharePlanModalProps) {
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [shareData, setShareData] = useState<GetShareResponse | null>(null);
   const [teeTimes, setTeeTimes] = useState<TeeTime[]>([]);
@@ -53,13 +61,9 @@ export default function SharePlanPage() {
     setClientId(getOrGenerateClientId());
   }, []);
 
+  // Fetch share data when modal opens and token is available
   useEffect(() => {
-    const tokenParam = searchParams.get('token');
-    
-    // If token is missing, show error
-    if (!tokenParam) {
-      setHasError(true);
-      setIsLoading(false);
+    if (!isOpen || !shareToken) {
       return;
     }
     
@@ -69,23 +73,33 @@ export default function SharePlanPage() {
         setIsLoading(true);
         setError(null);
         
-        const response = await getSharedTeeTimes(tokenParam);
+        const response = await getSharedTeeTimes(shareToken);
         setShareData(response);
         
         // Extract tee times from the share tee times objects
         const extractedTeeTimes = response.tee_times.map((shareTeeTime: ShareTeeTime) => shareTeeTime.tee_time_object);
         setTeeTimes(extractedTeeTimes);
         
-        setIsLoading(false);
       } catch (err) {
         console.error('Error fetching shared tee times:', err);
         setError(err instanceof Error ? err.message : 'Failed to load shared tee times');
+      } finally {
         setIsLoading(false);
       }
     };
     
     fetchSharedData();
-  }, [searchParams]);
+  }, [isOpen, shareToken]);
+
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setShareData(null);
+      setTeeTimes([]);
+      setError(null);
+      setIsLoading(false);
+    }
+  }, [isOpen]);
 
   // Handle vote updates from TeeTimeShareCard
   const handleVoteUpdate = (shareTeeTimeId: number, approvals: number, disapprovals: number, userVote: 'approve' | 'disapprove' | null, approvalsArray?: string[], disapprovalsArray?: string[]) => {
@@ -117,7 +131,9 @@ export default function SharePlanPage() {
 
   // Handle share functionality - native share on mobile, clipboard + toast on web
   const handleNativeShare = async () => {
-    const url = window.location.href;
+    if (!shareToken) return;
+    
+    const url = `${window.location.origin}/share-plan?token=${shareToken}`;
     const shareText = `Check out these Tee Times I'm sharing with you! ${teeTimes.length} great tee time${teeTimes.length !== 1 ? 's' : ''} available.`;
     
     try {
@@ -167,106 +183,115 @@ export default function SharePlanPage() {
     }
   };
 
-  // Show loading state while checking parameters
-  if (isLoading) {
-    return (
-      <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-blue-50 to-slate-100 p-4 pt-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-6 text-center">
-            <div className="h-8 w-64 bg-gray-200 rounded mx-auto mb-2 animate-pulse"></div>
-            <div className="h-4 w-48 bg-gray-200 rounded mx-auto mb-4 animate-pulse"></div>
-            <div className="h-10 w-40 bg-gray-200 rounded mx-auto animate-pulse"></div>
-          </div>
-          
-          <div className="grid grid-cols-1 gap-4">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <TeeTimeCardSkeleton key={index} />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Open in new tab functionality
+  const handleOpenInNewTab = () => {
+    if (!shareToken) return;
+    window.open(`/share-plan?token=${shareToken}`, '_blank');
+  };
 
-  // Show error state if token is missing or if there's an API error
-  if (hasError || error) {
-    return (
-      <div className="fixed inset-0 bg-gradient-to-br from-blue-50 to-slate-100 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6 text-center">
-          <div className="mb-4">
-            <AlertTriangle className="mx-auto h-12 w-12 text-red-500" />
-          </div>
-          <h1 className="text-xl font-semibold text-gray-900 mb-2">
-            Error Finding Share Plan
-          </h1>
-          <p className="text-gray-600 mb-6">
-            {error || 'The share plan link appears to be invalid or expired.'}
-          </p>
-          <Link href="/">
-            <Button className="w-full">
-              Return Home
-            </Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  // Show tee time cards when data is loaded
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-blue-50 to-slate-100 p-4 pt-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-6 text-center">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">
-            Shared Tee Times
-          </h1>
-          <p className="text-gray-600 mb-4">
-            {teeTimes.length} tee time{teeTimes.length !== 1 ? 's' : ''} shared with you
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
-            <Link href="/">
-              <Button variant="outline">
-                Find More Tee Times
-              </Button>
-            </Link>
-            <Button 
-              onClick={handleNativeShare}
-              className="bg-purple-500 hover:bg-purple-600 text-white"
-            >
-              <Share2 className="w-4 h-4" />
-              Share with friends to vote!
-            </Button>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl lg:max-w-2xl xl:max-w-4xl w-full max-h-[90vh] p-0 gap-0">
+        <div className="flex flex-col h-full max-h-[90vh]">
+          {/* Header */}
+          <div className="border-b border-gray-200 px-6 py-4 flex-shrink-0">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold">
+                Shared Tee Times
+              </DialogTitle>
+            </DialogHeader>
+            
+            {!isLoading && !error && teeTimes.length > 0 && (
+              <>
+                <p className="text-gray-600 mt-2">
+                  {teeTimes.length} tee time{teeTimes.length !== 1 ? 's' : ''} shared with you
+                </p>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <Button 
+                    onClick={handleNativeShare}
+                    size="sm"
+                    className="bg-purple-500 hover:bg-purple-600 text-white"
+                  >
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Share with friends
+                  </Button>
+                  <Button 
+                    onClick={handleOpenInNewTab}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Open in new tab
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 min-h-0 overflow-auto">
+            <div className="p-6">
+              {/* Loading state */}
+              {isLoading && (
+                <div className="space-y-4">
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <TeeTimeCardSkeleton key={index} />
+                  ))}
+                </div>
+              )}
+
+              {/* Error state */}
+              {error && !isLoading && (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <AlertTriangle className="h-12 w-12 text-red-500 mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Error Loading Share Plan
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    {error}
+                  </p>
+                  <Button 
+                    onClick={() => onOpenChange(false)}
+                    variant="outline"
+                  >
+                    Close
+                  </Button>
+                </div>
+              )}
+
+              {/* Tee times content */}
+              {!isLoading && !error && teeTimes.length > 0 && (
+                <div className="space-y-4">
+                  {shareData?.tee_times.map((shareTeeTime, index) => {
+                    const teeTime = shareTeeTime.tee_time_object;
+                    return (
+                      <TeeTimeShareCard
+                        key={`${teeTime.id}-${index}`}
+                        teeTime={teeTime}
+                        index={index}
+                        onVote={handleVote}
+                        approvals={shareTeeTime.approvals || []}
+                        disapprovals={shareTeeTime.disapprovals || []}
+                        shareTeeTimeId={shareTeeTime.id}
+                        clientId={clientId}
+                        onVoteUpdate={handleVoteUpdate}
+                        available={shareTeeTime.available}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Empty state */}
+              {!isLoading && !error && teeTimes.length === 0 && shareData && (
+                <div className="text-center py-8">
+                  <p className="text-gray-600">No tee times found in this share plan.</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-        
-        {teeTimes.length > 0 && (
-          <div className="grid grid-cols-1 gap-4">
-            {shareData?.tee_times.map((shareTeeTime, index) => {
-              const teeTime = shareTeeTime.tee_time_object;
-              return (
-                <TeeTimeShareCard
-                  key={`${teeTime.id}-${index}`}
-                  teeTime={teeTime}
-                  index={index}
-                  onVote={handleVote}
-                  approvals={shareTeeTime.approvals || []}
-                  disapprovals={shareTeeTime.disapprovals || []}
-                  shareTeeTimeId={shareTeeTime.id}
-                  clientId={clientId}
-                  onVoteUpdate={handleVoteUpdate}
-                  available={shareTeeTime.available}
-                />
-              );
-            })}
-          </div>
-        )}
-        
-        {teeTimes.length === 0 && (
-          <div className="text-center py-8">
-            <p className="text-gray-600">No tee times found in this share plan.</p>
-          </div>
-        )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

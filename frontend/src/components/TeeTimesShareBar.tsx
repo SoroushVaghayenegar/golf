@@ -1,11 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useAppStore } from '@/stores/appStore'
 import { Button } from '@/components/ui/button'
 import { ExternalLink, RotateCcw, Loader2 } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { createTeeTimesShare } from '@/services/shareTeeTimesService'
+import { getCachedShareToken, cacheShareToken } from '@/services/shareCacheService'
+import SharePlanModal from '@/components/SharePlanModal'
 import posthog from 'posthog-js'
 
 interface TeeTimesShareBarProps {
@@ -16,10 +18,18 @@ interface TeeTimesShareBarProps {
 export default function TeeTimesShareBar({ className, regionId }: TeeTimesShareBarProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [shareToken, setShareToken] = useState<string | null>(null)
   
   const teeTimesToShare = useAppStore((state) => state.tee_times_to_share)
   const clearTeeTimesToShare = useAppStore((state) => state.clearTeeTimesToShare)
   const isShareFull = useAppStore((state) => state.isShareFull)
+
+  // Detect if user is on mobile device
+  const isMobile = useMemo(() => {
+    if (typeof navigator === "undefined") return false;
+    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  }, [])
   
   // Don't render if no tee times are selected
   if (!teeTimesToShare || teeTimesToShare.length === 0) {
@@ -34,17 +44,66 @@ export default function TeeTimesShareBar({ className, regionId }: TeeTimesShareB
       // Get regionId from prop or fallback to localStorage
       const finalRegionId = regionId || parseInt(localStorage.getItem('selectedRegion') || '1', 10)
       
-      const response = await createTeeTimesShare(teeTimesToShare, finalRegionId)
-      const { token } = response
+      // First, check if we already have a cached token for this combination
+      const cachedToken = getCachedShareToken(teeTimesToShare, finalRegionId)
       
-      // Track the share creation event
-      posthog.capture('tee_time_share_created', {
-        tee_times_count: teeTimesToShare.length,
-        region_id: finalRegionId
-      })
+      let token: string
+      let isFromCache = false
       
-      // Open new tab with the token
-      window.open(`/share-plan?token=${token}`, '_blank')
+      if (cachedToken) {
+        // Use cached token - this makes it extremely fast for repeat shares
+        token = cachedToken
+        isFromCache = true
+        console.log('Using cached share token for tee times combination')
+      } else {
+        // Create new share and cache the token
+        const response = await createTeeTimesShare(teeTimesToShare, finalRegionId)
+        token = response.token
+        
+        // Cache the token for future use
+        cacheShareToken(teeTimesToShare, finalRegionId, token)
+        
+        // Track the share creation event only for new shares
+        posthog.capture('tee_time_share_created', {
+          tee_times_count: teeTimesToShare.length,
+          region_id: finalRegionId
+        })
+      }
+      
+      const shareUrl = `${window.location.origin}/share-plan?token=${token}`
+      const shareText = `Check out these Tee Times I'm sharing with you! ${teeTimesToShare.length} great tee time${teeTimesToShare.length !== 1 ? 's' : ''} available.`
+      
+      // Use native share on mobile devices
+      if (isMobile && typeof navigator !== "undefined" && "share" in navigator) {
+        try {
+          await navigator.share({
+            url: shareUrl,
+            title: "Shared Tee Times",
+            text: shareText,
+          });
+          // Successfully shared, we're done
+          return;
+        } catch (shareError) {
+          // Don't show error toast if user cancelled the share
+          if (shareError instanceof Error && shareError.name === 'AbortError') {
+            return;
+          }
+          // If native share fails, fall back to modal
+          console.log('Native share failed, falling back to modal:', shareError);
+        }
+      }
+
+      // Desktop or fallback: Store token and open modal
+      setShareToken(token)
+      setIsModalOpen(true)
+      
+      // Track when cached tokens are reused (for analytics)
+      if (isFromCache) {
+        posthog.capture('tee_time_share_reused', {
+          tee_times_count: teeTimesToShare.length,
+          region_id: finalRegionId
+        })
+      }
       
     } catch (err) {
       console.error('Error sharing tee times:', err)
@@ -56,11 +115,16 @@ export default function TeeTimesShareBar({ className, regionId }: TeeTimesShareB
 
   const handleReset = () => {
     clearTeeTimesToShare()
+    // Clear modal state when resetting selection
+    setIsModalOpen(false)
+    setShareToken(null)
+    setError(null)
   }
 
   // Show skeleton version when sharing is in progress
   if (isLoading) {
     return (
+      <>
       <div className={`
         fixed bottom-0 left-0 right-0 z-50
         lg:sticky lg:bottom-auto lg:top-0 lg:left-auto lg:right-auto lg:z-auto
@@ -80,10 +144,19 @@ export default function TeeTimesShareBar({ className, regionId }: TeeTimesShareB
           <Skeleton className="h-10 w-24 lg:h-8 lg:w-16 rounded-lg" />
         </div>
       </div>
+
+      {/* Share Plan Modal */}
+      <SharePlanModal 
+        isOpen={isModalOpen} 
+        onOpenChange={setIsModalOpen} 
+        shareToken={shareToken} 
+      />
+      </>
     )
   }
 
   return (
+    <>
     <div className={`
       fixed bottom-0 left-0 right-0 z-50
       lg:sticky lg:bottom-auto lg:top-0 lg:left-auto lg:right-auto lg:z-auto
@@ -135,5 +208,13 @@ export default function TeeTimesShareBar({ className, regionId }: TeeTimesShareB
         </Button>
       </div>
     </div>
+
+    {/* Share Plan Modal */}
+    <SharePlanModal 
+      isOpen={isModalOpen} 
+      onOpenChange={setIsModalOpen} 
+      shareToken={shareToken} 
+    />
+  </>
   )
 }

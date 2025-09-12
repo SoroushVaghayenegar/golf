@@ -15,7 +15,13 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   // Generate client_id on first visit
   useEffect(() => {
     if (typeof window !== 'undefined' && !localStorage.getItem('client_id')) {
-      const clientId = crypto.randomUUID()
+      let clientId: string;
+      if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        clientId = crypto.randomUUID();
+      } else {
+        // Fallback for environments that don't support crypto.randomUUID()
+        clientId = 'client_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now().toString(36);
+      }
       localStorage.setItem('client_id', clientId)
     }
   }, [])
