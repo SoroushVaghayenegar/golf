@@ -20,7 +20,7 @@ export interface GetShareResponse {
     tee_times: ShareTeeTime[];
 }
 
-export const createTeeTimesShare = async (teeTimes: TeeTime[]): Promise<CreateShareResponse> => {
+export const createTeeTimesShare = async (teeTimes: TeeTime[], regionId: number): Promise<CreateShareResponse> => {
     try {
         // Validate input
         if (!Array.isArray(teeTimes)) {
@@ -35,12 +35,21 @@ export const createTeeTimesShare = async (teeTimes: TeeTime[]): Promise<CreateSh
             throw new Error('Maximum 5 TeeTime objects allowed');
         }
 
+        if (!regionId || typeof regionId !== 'number') {
+            throw new Error('Valid region ID is required');
+        }
+
+        const requestBody = {
+            teeTimes,
+            regionId
+        };
+
         const response = await fetch('/api/create-share-plan', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(teeTimes),
+            body: JSON.stringify(requestBody),
         });
         
         if (!response.ok) {

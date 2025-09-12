@@ -9,9 +9,10 @@ import { createTeeTimesShare } from '@/services/shareTeeTimesService'
 
 interface TeeTimesShareBarProps {
   className?: string
+  regionId?: number
 }
 
-export default function TeeTimesShareBar({ className }: TeeTimesShareBarProps) {
+export default function TeeTimesShareBar({ className, regionId }: TeeTimesShareBarProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
@@ -29,7 +30,10 @@ export default function TeeTimesShareBar({ className }: TeeTimesShareBarProps) {
       setIsLoading(true)
       setError(null)
       
-      const response = await createTeeTimesShare(teeTimesToShare)
+      // Get regionId from prop or fallback to localStorage
+      const finalRegionId = regionId || parseInt(localStorage.getItem('selectedRegion') || '1', 10)
+      
+      const response = await createTeeTimesShare(teeTimesToShare, finalRegionId)
       const { token } = response
       
       // Open new tab with the token
