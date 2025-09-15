@@ -12,9 +12,9 @@ export const metadata: Metadata = {
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow-lg p-8">
+    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
+      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="p-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-6">About TeeClub</h1>
           
           <div className="prose prose-lg max-w-none">
@@ -46,7 +46,7 @@ export default function AboutPage() {
             <p className="text-gray-600 mb-6">
               We partner with golf courses throughout British Columbia, including public courses, 
               semi-private clubs, and resort courses. From the scenic views of Vancouver&apos;s North Shore to the 
-              challenging layouts in the Fraser Valley, and courses across Victoria, Calgary, and beyond, we help you discover the perfect course for your game.
+              challenging layouts in the Fraser Valley, and courses across Whistler, Kelowna, Ottawa, and beyond, we help you discover the perfect course for your game.
             </p>
             
             <div className="bg-green-50 border border-green-200 rounded-lg p-6 mt-8">
