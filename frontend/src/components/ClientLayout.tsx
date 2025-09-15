@@ -4,13 +4,15 @@ import { usePathname } from 'next/navigation'
 import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 import Navbar from '@/components/Navbar'
+import Footer from '@/components/Footer'
 import FeatureRequest from '@/components/FeatureRequest'
 import Toaster from '@/components/ui/sonner'
 
 export default function ClientLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const isAuthRoute = pathname?.startsWith('/auth')
-  const isHome = pathname === '/' || pathname === '/search' || pathname === '/share-plan'
+  const isNotStickyRoute = pathname === '/about' || pathname === '/privacy' || pathname === '/terms' || pathname === '/contact' || pathname === '/faq' || pathname === '/cities'
+  const hasFooter = pathname === '/' || isNotStickyRoute
 
   // Generate client_id on first visit
   useEffect(() => {
@@ -27,14 +29,15 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <>
-      {!isAuthRoute && <Navbar variant={isHome ? 'home' : 'sticky'} />}
-      <div className={!isAuthRoute ? 'sm:pt-16' : ''}>
+    <div className="min-h-screen flex flex-col">
+      {!isAuthRoute && <Navbar variant={isNotStickyRoute ? 'home' : 'sticky'} />}
+      <div className={`${isNotStickyRoute ? 'sm:pt-16' : ''}`}>
         {children}
       </div>
+      {hasFooter && <Footer />}
       <FeatureRequest />
       <Toaster />
-    </>
+    </div>
   )
 }
 

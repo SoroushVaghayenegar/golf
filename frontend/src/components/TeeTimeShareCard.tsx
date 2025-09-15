@@ -579,7 +579,7 @@ export default function TeeTimeShareCard({
                     </a>
                   ) : (
                     <div className="flex items-center justify-center px-4 py-3 text-sm font-semibold rounded-lg bg-gray-300 text-gray-500 cursor-not-allowed whitespace-nowrap h-full">
-                      Not Available
+                      Not Available Anymore ☹️
                     </div>
                   )}
                 </div>
