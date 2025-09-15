@@ -59,7 +59,7 @@ export default function CitiesPage() {
       id: 21,
       name: "University Golf Club",
       description: "Classic parkland course near Pacific Spirit Park, known for its walkability and year-round play.",
-      image: "/university.jpg",
+      image: "/University.png",
       courseIds: "21"
     }
   ];
