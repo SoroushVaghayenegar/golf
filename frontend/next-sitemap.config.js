@@ -11,4 +11,6 @@ module.exports = {
   },
   changefreq: 'daily',
   priority: 0.7,
+  // Disable static sitemap generation since we're using dynamic sitemap
+  generateStaticParams: false,
 } 
