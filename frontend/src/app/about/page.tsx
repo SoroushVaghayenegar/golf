@@ -19,17 +19,15 @@ export default function AboutPage() {
           
           <div className="prose prose-lg max-w-none">
             <p className="text-gray-600 mb-6">
-              TeeClub is BC&apos;s number 1 golf tee times platform and your premier destination for finding and booking the best golf deals in British Columbia. 
-              We aggregate tee times from multiple golf courses across BC, making it easy 
-              for golfers to compare prices and find the perfect time to hit the links.
+              TeeClub is Canada&apos;s leading tee time platform. The easiest way to find, compare, and book golf across Canada. We bring together tee times from multiple courses in one place, saving you time and helping you get out on the course.
             </p>
             
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">Our Mission</h2>
             <p className="text-gray-600 mb-6">
-              We believe that golf should be accessible to everyone. Our platform helps golfers discover 
-              affordable tee times, compare course options, and book their next round with confidence. 
-              Whether you&apos;re a seasoned pro or just starting out, we&apos;re here to help you find the perfect 
-              golf experience.
+              Golf is about fresh air, community, and a challenge. Yet finding a tee time has often been harder than it should be. Our mission is connect golfers to the game, one tee time at a time. 
+            </p>
+            <p className="text-gray-600 mb-6">
+              We believe golfers of all skill levels deserve an easy way to discover courses, connect with the game, and get out to play. TeeClub exists to make golf seamless, accessible, and connected.
             </p>
             
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">Why Choose TeeClub?</h2>
@@ -42,11 +40,9 @@ export default function AboutPage() {
               <li>Comprehensive BC golf course coverage</li>
             </ul>
             
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">British Columbia Golf Courses</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Golf Courses</h2>
             <p className="text-gray-600 mb-6">
-              We partner with golf courses throughout British Columbia, including public courses, 
-              semi-private clubs, and resort courses. From the scenic views of Vancouver&apos;s North Shore to the 
-              challenging layouts in the Fraser Valley, and courses across Whistler, Kelowna, Ottawa, and beyond, we help you discover the perfect course for your game.
+              We partner with golf courses throughout Canada, including public courses, semi-private clubs, and resort courses. From the scenic views of Vancouver&apos;s North Shore to the challenging layouts in the Fraser Valley, and courses across Whistler, Kelowna, Ottawa, and beyond, we help you discover the perfect course for your game.
             </p>
             
             <div className="bg-green-50 border border-green-200 rounded-lg p-6 mt-8">

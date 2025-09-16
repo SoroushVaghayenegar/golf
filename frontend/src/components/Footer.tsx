@@ -37,7 +37,7 @@ export default function Footer() {
                 />
               </Link>
               <p className="text-gray-600 text-sm leading-relaxed">
-                Find and book your perfect tee time with TeeClub. Your go-to platform for golf course reservations.
+              We make finding your next round effortless, so you can play more.
               </p>
             </div>
 
@@ -52,15 +52,6 @@ export default function Footer() {
                     onClick={() => handleLinkClick('Cities', '/cities')}
                   >
                     Cities
-                  </Link>
-                </li>
-                <li>
-                  <Link 
-                    href="/faq" 
-                    className="text-gray-600 hover:text-gray-900 text-sm transition-colors duration-200"
-                    onClick={() => handleLinkClick('FAQ', '/faq')}
-                  >
-                    FAQ
                   </Link>
                 </li>
                 <li>
@@ -157,7 +148,7 @@ export default function Footer() {
               © {currentYear} TeeClub. All rights reserved.
             </p>
             <p className="text-gray-600 text-sm mt-2 sm:mt-0">
-              Made with ⛳ for golf enthusiasts
+              Made with <span className="text-pink-500">❤️</span> for golf enthusiasts
             </p>
           </div>
         </div>
