@@ -1,19 +1,9 @@
 'use client';
 
-import { Metadata } from 'next';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useState } from 'react';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
-
-export const metadata: Metadata = {
-  title: 'Vancouver Golf Tee Times | Book Multiple Courses in One Place',
-  description: 'Find Vancouver golf tee times across Fraserview, Langara, McCleery, University & more. Search multiple courses at once and book faster with TeeClub.',
-  openGraph: {
-    title: 'Vancouver Golf Tee Times | Book Multiple Courses in One Place',
-    description: 'Find Vancouver golf tee times across Fraserview, Langara, McCleery, University & more. Search multiple courses at once and book faster with TeeClub.',
-  },
-};
 
 interface FAQItem {
   question: string
