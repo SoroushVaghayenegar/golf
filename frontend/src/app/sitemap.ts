@@ -1,38 +1,36 @@
 import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://teeclub.golf'
+  const baseUrl = process.env.SITE_URL || 'https://teeclub.golf'
   
-  return [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 1,
-    },
-    {
-      url: `${baseUrl}/about`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/contact`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/privacy`,
-      lastModified: new Date(),
-      changeFrequency: 'yearly',
-      priority: 0.5,
-    },
-    {
-      url: `${baseUrl}/terms`,
-      lastModified: new Date(),
-      changeFrequency: 'yearly',
-      priority: 0.5,
-    },
+  // Static routes
+  const staticRoutes = [
+    '',
+    '/auth/callback',
+    '/cities',
+    '/auth/sign-up',
+    '/share-plan',
+    '/auth/request-invite',
+    '/auth/login',
+    '/tee-time-watchlist/create',
+    '/unsubscribe',
+    '/tee-time-watchlist',
+    '/about',
+    '/auth/sign-up-success',
+    '/contact',
+    '/search',
+    '/terms',
+    '/privacy',
+    '/auth/finish-invite',
+    '/auth/set-password',
+    '/auth/update-password',
+    '/auth/forgot-password',
   ]
-} 
+
+  return staticRoutes.map((route) => ({
+    url: `${baseUrl}${route}`,
+    lastModified: new Date(),
+    changeFrequency: 'daily' as const,
+    priority: 0.7,
+  }))
+}
