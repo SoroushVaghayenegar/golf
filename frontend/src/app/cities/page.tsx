@@ -102,7 +102,7 @@ export default function CitiesPage() {
 
   const handleBrowseTeeTimesClick = () => {
     const searchDate = getVancouverDate();
-    const searchUrl = `/search?dates=${searchDate}&players=any&holes=any&timeRange=5-22&region=1&sort=startTime&courseIds=1%2C2%2C3%2C21%2C23&cities=Vancouver`;
+    const searchUrl = `/search?dates=${searchDate}&players=any&holes=any&timeRange=5-22&region=1&sort=startTime&cities=Vancouver`;
     router.push(searchUrl);
   };
 
@@ -265,6 +265,50 @@ export default function CitiesPage() {
                 Contact Us
               </a>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Explore More Cities Section */}
+      <div className="bg-gradient-to-b from-amber-50 to-white py-16">
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            Explore More Cities
+          </h2>
+          <p className="text-lg text-gray-600 mb-8">
+            Want to golf outside Vancouver? Check out nearby tee times in:
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              onClick={() => {
+                const searchDate = getVancouverDate();
+                router.push(`/search?dates=${searchDate}&players=any&holes=any&timeRange=5-22&region=1&sort=startTime&cities=Burnaby`);
+              }}
+              className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-lg text-lg font-semibold transition-colors duration-200"
+            >
+              Burnaby
+            </button>
+            
+            <button
+              onClick={() => {
+                const searchDate = getVancouverDate();
+                router.push(`/search?dates=${searchDate}&players=any&holes=any&timeRange=5-22&region=1&sort=startTime&cities=Surrey`);
+              }}
+              className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-lg text-lg font-semibold transition-colors duration-200"
+            >
+              Surrey
+            </button>
+            
+            <button
+              onClick={() => {
+                const searchDate = getVancouverDate();
+                router.push(`/search?dates=${searchDate}&players=any&holes=any&timeRange=5-22&region=1&sort=startTime&cities=Richmond`);
+              }}
+              className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-lg text-lg font-semibold transition-colors duration-200"
+            >
+              Richmond
+            </button>
           </div>
         </div>
       </div>
