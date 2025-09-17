@@ -33,7 +33,7 @@ def lambda_handler(event, context):
             # Determine recipient email and full name
             profile = watchlist.get("profiles")
             email = profile.get("email")
-            full_name = profile.get("full_name")
+            full_name = profile.get("first_name") + " " + profile.get("last_name")
             try:
                 params = {
                     "date": watchlist.get("date"),

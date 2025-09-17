@@ -17,9 +17,9 @@ class SupabaseService:
 
     def get_tee_time_watchlists(self):
         # If a foreign key exists: tee_time_watchlists.user_id -> profiles.user_id
-        # this will embed email and full_name from profiles into each result as `profiles`
+        # this will embed email and first_name, last_name from profiles into each result as `profiles`
         # get rows with notification_sent = false
-        response = self.supabase.table("tee_time_watchlists").select("*, profiles(email, full_name)").execute()
+        response = self.supabase.table("tee_time_watchlists").select("*, profiles(email, first_name, last_name)").execute()
         return response.data
 
     def update_tee_times_as_processed(self, watchlist_id: str, updated_processed_tee_times: list[str]):

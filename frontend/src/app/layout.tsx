@@ -106,6 +106,36 @@ export default function RootLayout({
                 "@type": "SearchAction",
                 "target": "https://teeclub.golf/search?q={search_term_string}",
                 "query-input": "required name=search_term_string"
+              },
+              "mainEntity": {
+                "@type": "ItemList",
+                "name": "City Golf Pages",
+                "itemListElement": [
+                  {
+                    "@type": "ListItem",
+                    "position": 1,
+                    "name": "Vancouver Tee Times",
+                    "url": "https://teeclub.golf/vancouver"
+                  },
+                  {
+                    "@type": "ListItem", 
+                    "position": 2,
+                    "name": "Burnaby Tee Times",
+                    "url": "https://teeclub.golf/burnaby"
+                  },
+                  {
+                    "@type": "ListItem",
+                    "position": 3, 
+                    "name": "Surrey Tee Times",
+                    "url": "https://teeclub.golf/surrey"
+                  },
+                  {
+                    "@type": "ListItem",
+                    "position": 4,
+                    "name": "Richmond Tee Times", 
+                    "url": "https://teeclub.golf/richmond"
+                  }
+                ]
               }
             })
           }}

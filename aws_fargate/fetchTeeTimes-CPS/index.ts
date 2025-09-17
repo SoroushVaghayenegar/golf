@@ -1,82 +1,15 @@
 import { Course } from "./Course"
 import { fetchCourseTeeTimes, batchUpsertTeeTimes, timeStringToMinutes } from "./utils"
 import { createClient } from "@supabase/supabase-js"
-import * as Sentry from "@sentry/node"
-import puppeteer from 'puppeteer';
 
-
-Sentry.init({
-  dsn: "https://baa965932d0a9dbd6f12c98dd937d526@o4509770601332736.ingest.us.sentry.io/4509778658000896",
-
-  // Send structured logs to Sentry
-  enableLogs: true,
-
-  // Setting this option to true will send default PII data to Sentry.
-  // For example, automatic IP address collection on events
-  sendDefaultPii: true,
-
-  tracesSampleRate: 1.0,
-});
-
-export const handler = async (checkInId: string) => {
-  Sentry.startSpan(
-    {
-      name: "fetch-tee-times-ecs-fargate",
-    },
-    async (span) => {
-
-      // Start timer
-      const startTime = performance.now()
+export const handler = async () => {
+  // Start timer
+  const startTime = performance.now()
 
       // Create Supabase client
       const supabaseUrl = process.env.SUPABASE_URL!
       const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
       const supabase = createClient(supabaseUrl, supabaseServiceKey)
-
-      // Create browser and page once
-      const browser = await puppeteer.launch({
-        args: [
-          '--disable-blink-features=AutomationControlled',
-          '--hide-scrollbars',
-          '--disable-web-security',
-          '--disable-features=VizDisplayCompositor',
-          '--disable-gpu',
-          '--disable-dev-shm-usage',
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-webgl',
-          '--disable-gpu-compositing',
-          '--disable-gpu-sandbox',
-        ],
-        defaultViewport: null,
-        headless: true,
-      });
-
-      console.log(`Browser launched in ${performance.now() - startTime}ms`)
-
-      const page = await browser.newPage();
-
-      // Set realistic browser headers
-      await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15');
-      
-      await page.setRequestInterception(true);
-
-      page.on('request', (req) => {
-        const resourceType = req.resourceType();
-        const blocked = ['image', 'media', 'font', 'stylesheet', 'other'];
-
-        if (blocked.includes(resourceType)) {
-          req.abort();
-        } else {
-          req.continue();
-        }
-      });
-
-      await page.goto('https://www.chronogolf.ca', {
-        waitUntil: 'domcontentloaded',
-      });
-
-      console.log(`Chrono page loaded in ${performance.now() - startTime}ms`)
 
       // Fetch courses from the database with city name
       const { data: coursesData, error } = await supabase
@@ -85,7 +18,7 @@ export const handler = async (checkInId: string) => {
         *,
         cities!inner(name)
       `)
-      .eq('external_api', 'CHRONO_LIGHTSPEED')
+      .eq('external_api', 'CPS')
 
       if (error) {
         throw new Error(`Error fetching courses: ${error.message}`)
@@ -124,27 +57,21 @@ export const handler = async (checkInId: string) => {
           }
           const searchDate = new Date(startDate)
           searchDate.setDate(searchDate.getDate() + i)
-          return fetchCourseTeeTimes(page, course, searchDate)
+          return fetchCourseTeeTimes(course, searchDate)
         })
       }).filter(promise => promise !== null)
       
       console.log(`Fetching tee times for ${promises.length} dates`)
 
-      // Add progress tracking with zero performance impact
-      let completed = 0
-      const total = promises.length
+      
       const trackedPromises = promises.map((promise, index) => 
         promise.then(result => {
-          // console.log(`Progress: ${++completed}/${total} (${Math.round((completed/total)*100)}%)`)
           return result
         })
       )
 
       const results = await Promise.all(trackedPromises)
       const teeTimes = results.flat()
-
-      await page.close();
-      await browser.close();
 
 
       // Batch upsert all results to database
@@ -184,34 +111,20 @@ export const handler = async (checkInId: string) => {
             : "Success"
         }),
       };
-      return response;
 
-  });
+      // Send health check signal
+      await fetch('https://hc-ping.com/f1d5e07a-6beb-41ca-a0ad-0bcc6866a717');
+
+      return response;
 };
 
 // Allow direct execution when running the file directly
 if (require.main === module) {
-  const checkInId = Sentry.captureCheckIn({
-    monitorSlug: "fetch-tee-times-container",
-    status: "in_progress",
-  });
-
-  handler(checkInId).then(result => {
+  handler().then(result => {
     console.log('Direct execution completed');
     console.log('Result:', JSON.stringify(result, null, 2));
-    Sentry.captureCheckIn({
-      checkInId,
-      monitorSlug: "fetch-tee-times-container",
-      status: "ok",
-    });
     process.exit(0);
   }).catch(error => {
-    Sentry.captureCheckIn({
-      checkInId,
-      monitorSlug: "fetch-tee-times-container",
-      status: "error",
-    });
-    Sentry.captureException(error);
     console.error('Direct execution failed:', error);
     process.exit(1);
   });

@@ -8,6 +8,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '',
     '/auth/callback',
     '/cities',
+    '/vancouver',
+    '/burnaby', 
+    '/surrey',
+    '/richmond',
     '/auth/sign-up',
     '/share-plan',
     '/auth/request-invite',
@@ -31,6 +35,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     url: `${baseUrl}${route}`,
     lastModified: new Date(),
     changeFrequency: 'daily' as const,
-    priority: 0.7,
+    priority: route === '' ? 1.0 : route.startsWith('/vancouver') || route.startsWith('/burnaby') || route.startsWith('/surrey') || route.startsWith('/richmond') ? 0.9 : 0.7,
   }))
 }
