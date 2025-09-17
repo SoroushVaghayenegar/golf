@@ -1,31 +1,10 @@
 import { Course } from "./Course"
 import { fetchCourseTeeTimes, batchUpsertTeeTimes, timeStringToMinutes } from "./utils"
 import { createClient } from "@supabase/supabase-js"
-import * as Sentry from "@sentry/node"
 
-
-Sentry.init({
-  dsn: "https://cac8735554db82a8d1e1df02b2065913@o4509770601332736.ingest.us.sentry.io/4510036910800896",
-
-  // Send structured logs to Sentry
-  enableLogs: true,
-
-  // Setting this option to true will send default PII data to Sentry.
-  // For example, automatic IP address collection on events
-  sendDefaultPii: true,
-
-  tracesSampleRate: 1.0,
-});
-
-export const handler = async (checkInId: string) => {
-  Sentry.startSpan(
-    {
-      name: "fetch-tee-times-ecs-cps",
-    },
-    async (span) => {
-
-      // Start timer
-      const startTime = performance.now()
+export const handler = async () => {
+  // Start timer
+  const startTime = performance.now()
 
       // Create Supabase client
       const supabaseUrl = process.env.SUPABASE_URL!
@@ -132,33 +111,20 @@ export const handler = async (checkInId: string) => {
             : "Success"
         }),
       };
-      return response;
 
-  });
+      // Send health check signal
+      await fetch('https://hc-ping.com/f1d5e07a-6beb-41ca-a0ad-0bcc6866a717');
+
+      return response;
 };
 
 // Allow direct execution when running the file directly
 if (require.main === module) {
-  const checkInId = Sentry.captureCheckIn({
-    monitorSlug: "fetch-tee-times-container-cps",
-    status: "in_progress",
-  });
-
-  handler(checkInId).then(result => {
+  handler().then(result => {
     console.log('Direct execution completed');
     console.log('Result:', JSON.stringify(result, null, 2));
-    Sentry.captureCheckIn({
-      checkInId,
-      monitorSlug: "fetch-tee-times-container-cps",
-      status: "ok",
-    });
+    process.exit(0);
   }).catch(error => {
-    Sentry.captureCheckIn({
-      checkInId,
-      monitorSlug: "fetch-tee-times-container-cps",
-      status: "error",
-    });
-    Sentry.captureException(error);
     console.error('Direct execution failed:', error);
     process.exit(1);
   });

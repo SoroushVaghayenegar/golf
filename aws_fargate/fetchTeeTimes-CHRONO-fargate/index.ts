@@ -204,6 +204,7 @@ if (require.main === module) {
       monitorSlug: "fetch-tee-times-container",
       status: "ok",
     });
+    process.exit(0);
   }).catch(error => {
     Sentry.captureCheckIn({
       checkInId,

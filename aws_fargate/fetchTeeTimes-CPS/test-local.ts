@@ -11,7 +11,7 @@ async function testLocal() {
   };
 
   try {
-    const result = await handler("test-check-in-id");
+    const result = await handler();
     console.log('Success!');
     console.log('Result:', JSON.stringify(result, null, 2));
   } catch (error) {
