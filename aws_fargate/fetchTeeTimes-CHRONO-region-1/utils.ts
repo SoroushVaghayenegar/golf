@@ -1,6 +1,6 @@
 import { Course } from "./Course";
 import { TeeTime } from "./TeeTime";
-  import * as Sentry from "@sentry/aws-serverless";
+import * as Sentry from "@sentry/node";
 
 
 const CHRONO_LIGHTSPEED = "CHRONO_LIGHTSPEED"
@@ -21,6 +21,7 @@ export async function fetchCourseTeeTimes(page: any, course: Course, searchDate:
     const teeTimesPromises = courseHolesArray.map(holes => 
         fetchTeeTimesFromChronoLightspeed(
             page,
+            course.id,
             course.name,
             clubId,
             courseId,
@@ -42,7 +43,7 @@ export async function fetchCourseTeeTimes(page: any, course: Course, searchDate:
 }
 
 
-export async function fetchTeeTimesFromChronoLightspeed(page: any, courseName: string, club_id: number, course_id: number, affiliation_type_id: number, course_holes: number, searchDate: Date, clubLinkName: string): Promise<TeeTime[]> {
+export async function fetchTeeTimesFromChronoLightspeed(page: any, dbCourseId: number, courseName: string, club_id: number, course_id: number, affiliation_type_id: number, course_holes: number, searchDate: Date, clubLinkName: string): Promise<TeeTime[]> {
    // format to '%Y-%m-%d'
    const dateString = searchDate.toISOString().split('T')[0]
    const baseUrl = `https://www.chronogolf.ca/marketplace/clubs/${club_id}/teetimes?date=${dateString}&course_id=${course_id}&nb_holes=${course_holes}`
@@ -92,7 +93,8 @@ export async function fetchTeeTimesFromChronoLightspeed(page: any, courseName: s
     const playersAvailable = teeTime["green_fees"].length
     const price = teeTime["green_fees"][0]["green_fee"]
     const bookingLink = getChronoLightspeedBookingLink(clubLinkName, course_id, course_holes, searchDate, affiliation_type_id, playersAvailable, teeTime["id"])
-    teeTimes.push(new TeeTime(startDateTime, playersAvailable, course_holes, price, bookingLink))
+    const teeTimeId = dbCourseId + teeTime["date"].replaceAll('-', '') + teeTime["start_time"].replaceAll(':', '') + "-" + course_holes
+    teeTimes.push(new TeeTime(startDateTime, playersAvailable, course_holes, price, bookingLink, teeTimeId))
    }
    return teeTimes
 }
