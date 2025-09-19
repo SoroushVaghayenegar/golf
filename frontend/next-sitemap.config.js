@@ -3,7 +3,7 @@ module.exports = {
   siteUrl: process.env.SITE_URL || 'https://teeclub.golf',
   generateRobotsTxt: false, // We already have a custom robots.txt
   generateIndexSitemap: false,
-  exclude: ['/api/*', '/admin/*'],
+  exclude: ['/api/*', '/admin/*', '/auth/*', '/share-plan', '/tee-time-watchlist/*'],
   robotsTxtOptions: {
     additionalSitemaps: [
       'https://teeclub.golf/sitemap.xml',

@@ -18,15 +18,9 @@ Sentry.init({
   tracesSampleRate: 1.0,
 });
 
-export const handler = async (checkInId: string) => {
-  Sentry.startSpan(
-    {
-      name: "fetch-tee-times-ecs-fargate",
-    },
-    async (span) => {
-
-      // Start timer
-      const startTime = performance.now()
+export const handler = async () => {
+  // Start timer
+  const startTime = performance.now()
 
       // Create Supabase client
       const supabaseUrl = process.env.SUPABASE_URL!
@@ -83,9 +77,11 @@ export const handler = async (checkInId: string) => {
       .from('courses')
       .select(`
         *,
-        cities!inner(name)
+        cities!inner(name, region_id)
       `)
       .eq('external_api', 'CHRONO_LIGHTSPEED')
+      .eq('cities.region_id', 1)
+      
 
       if (error) {
         throw new Error(`Error fetching courses: ${error.message}`)
@@ -184,33 +180,20 @@ export const handler = async (checkInId: string) => {
             : "Success"
         }),
       };
-      return response;
 
-  });
+      // Send health check signal
+      await fetch('https://hc-ping.com/fa811e40-7fab-434b-96aa-9c18bc2f8a3f');
+
+      return response;
 };
 
 // Allow direct execution when running the file directly
 if (require.main === module) {
-  const checkInId = Sentry.captureCheckIn({
-    monitorSlug: "fetch-tee-times-container",
-    status: "in_progress",
-  });
-
-  handler(checkInId).then(result => {
+  handler().then(result => {
     console.log('Direct execution completed');
     console.log('Result:', JSON.stringify(result, null, 2));
-    Sentry.captureCheckIn({
-      checkInId,
-      monitorSlug: "fetch-tee-times-container",
-      status: "ok",
-    });
+    process.exit(0);
   }).catch(error => {
-    Sentry.captureCheckIn({
-      checkInId,
-      monitorSlug: "fetch-tee-times-container",
-      status: "error",
-    });
-    Sentry.captureException(error);
     console.error('Direct execution failed:', error);
     process.exit(1);
   });

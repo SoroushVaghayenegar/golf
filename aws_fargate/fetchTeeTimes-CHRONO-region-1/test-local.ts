@@ -1,9 +1,9 @@
-// test-local.js
-require('dotenv').config();
-const { handler } = require('./index.js');
+// test-local.ts
+import 'dotenv/config';
+import { handler } from './index';
 
 async function testLocal() {
-  console.log('Testing Lambda function locally...');
+  console.log('Testing function locally...');
   
   // Mock event object (you can modify this as needed)
   const mockEvent = {
@@ -11,7 +11,7 @@ async function testLocal() {
   };
 
   try {
-    const result = await handler(mockEvent);
+    const result = await handler();
     console.log('Success!');
     console.log('Result:', JSON.stringify(result, null, 2));
   } catch (error) {
@@ -19,4 +19,4 @@ async function testLocal() {
   }
 }
 
-testLocal();
+testLocal(); 

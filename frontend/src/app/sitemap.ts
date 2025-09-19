@@ -6,29 +6,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // Static routes
   const staticRoutes = [
     '',
-    '/auth/callback',
     '/cities',
     '/vancouver',
     '/burnaby', 
     '/surrey',
     '/richmond',
-    '/auth/sign-up',
-    '/share-plan',
-    '/auth/request-invite',
-    '/auth/login',
-    '/tee-time-watchlist/create',
-    '/unsubscribe',
-    '/tee-time-watchlist',
     '/about',
-    '/auth/sign-up-success',
     '/contact',
     '/search',
     '/terms',
-    '/privacy',
-    '/auth/finish-invite',
-    '/auth/set-password',
-    '/auth/update-password',
-    '/auth/forgot-password',
+    '/privacy'
   ]
 
   return staticRoutes.map((route) => ({
