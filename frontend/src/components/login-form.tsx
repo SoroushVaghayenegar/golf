@@ -35,8 +35,13 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
         password,
       })
       if (error) throw error
-      // Update this route to redirect to an authenticated route. The user already has an active session.
-      router.push('/')
+      
+      // Check for redirect parameter in URL
+      const urlParams = new URLSearchParams(window.location.search)
+      const redirectTo = urlParams.get('redirect')
+      
+      // Redirect to original page or default to home
+      router.push(redirectTo && redirectTo.startsWith('/') ? redirectTo : '/')
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'An error occurred')
     } finally {
