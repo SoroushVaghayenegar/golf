@@ -82,8 +82,13 @@ export async function fetchTeeTimesFromChronoLightspeed(page: any, dbCourseId: n
            }
            const startTime = teeTime["start_time"];
            if (!teeTimesMap.has(startTime)) {
+               teeTime["available_participants"] = [teeTime["green_fees"].length];
                teeTimesMap.set(startTime, teeTime);
+           } else {
+               let tempTeeTime = teeTimesMap.get(startTime);
+               tempTeeTime["available_participants"].push(teeTime["green_fees"].length);
            }
+          
        }
    }
    
@@ -91,12 +96,15 @@ export async function fetchTeeTimesFromChronoLightspeed(page: any, dbCourseId: n
    for (const teeTime of teeTimesMap.values()) {
     const startDateTime = teeTime["date"] + "T" + teeTime["start_time"]
     const playersAvailable = teeTime["green_fees"].length
+    const availableParticipants = teeTime["available_participants"].sort((a: number, b: number) => a - b); 
     const price = teeTime["green_fees"][0]["green_fee"]
     const bookingLink = getChronoLightspeedBookingLink(clubLinkName, course_id, course_holes, searchDate, affiliation_type_id, playersAvailable, teeTime["id"])
     const teeTimeId = dbCourseId + teeTime["date"].replaceAll('-', '') + teeTime["start_time"].replaceAll(':', '') + "-" + course_holes
-    teeTimes.push(new TeeTime(startDateTime, playersAvailable, course_holes, price, bookingLink, teeTimeId))
+    teeTimes.push(new TeeTime(startDateTime, playersAvailable, availableParticipants, course_holes, price, bookingLink, teeTimeId))
    }
-   return teeTimes
+  
+  teeTimes.sort((a: TeeTime, b: TeeTime) => new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime());
+  return teeTimes
 }
 
 function getChronoLightspeedBookingLink(

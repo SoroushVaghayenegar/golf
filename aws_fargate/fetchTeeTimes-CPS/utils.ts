@@ -89,13 +89,15 @@ export async function fetchTeeTimesFromCPS(
           Sentry.captureException(new Error(`[${courseName}] No price found for ${holesStr}`));
         }
         
+        // Get a range of numbers from "minPlayer" to "maxPlayer"
+        const availableParticipants = Array.from({ length: teeTimeObject["maxPlayer"] - teeTimeObject["minPlayer"] + 1 }, (_, i) => teeTimeObject["minPlayer"] + i);
         const startDateTime = new Date(teeTimeObject["startTime"]);
         const playersAvailable = teeTimeObject["availableParticipantNo"].length;
         const holes = parseInt(holesStr);
         const booking_link = `https://${subdomain}.cps.golf`;
         const starting_tee = teeTimeObject["startingTee"];
         const tee_time_id = courseId + startDateTime.toISOString().split('T')[0].replaceAll('-', '') + startDateTime.getHours() + startDateTime.getMinutes() + "-" + holesStr + "-" + starting_tee;
-        teeTimes.push(new TeeTime(startDateTime, playersAvailable, holes, price, booking_link, tee_time_id, starting_tee));
+        teeTimes.push(new TeeTime(startDateTime, playersAvailable, availableParticipants, holes, price, booking_link, tee_time_id, starting_tee));
       }
     }
     return teeTimes;

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import posthog from 'posthog-js'
-import { MenuIcon } from 'lucide-react'
+import { Menu } from 'lucide-react'
 
 import {
   DropdownMenu,
@@ -35,28 +35,28 @@ export default function UserDropdown() {
         <Button
           aria-label="Open menu"
           variant="ghost"
-          size="sm"
-          className="px-3 bg-amber-100 hover:bg-amber-200 focus-visible:ring-0 focus-visible:border-transparent"
+          size="lg"
+          className="px-4 py-4 bg-amber-100 hover:bg-amber-200 focus-visible:ring-0 focus-visible:border-transparent"
         >
-          <MenuIcon className="md:hidden" />
-          <span className="hidden md:inline">Menu</span>
+          <Menu className="size-6" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <div className="flex items-center gap-3 px-2 py-2">
+      <DropdownMenuContent align="end" className="w-72 text-base">
+        <div className="flex items-center gap-3 px-3 py-3">
           <CurrentUserAvatar />
           <div className="flex flex-col">
-            <span className="text-sm font-medium leading-none">{name}</span>
+            <span className="text-base font-medium leading-none">{name}</span>
           </div>
         </div>
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem asChild>
+        <DropdownMenuItem className="py-3" asChild>
           <Link href="/tee-time-watchlist">Tee Time Watchlist</Link>
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
         <DropdownMenuItem
+          className="py-3"
           variant="destructive"
           onSelect={(event) => {
             event.preventDefault()
