@@ -25,6 +25,15 @@ const getFormattedDateTime = (dateTimeString: string) => {
   return { date: dateStr, time: timeStr };
 };
 
+// Utility function to format available participants
+const formatAvailableParticipants = (availableParticipants: number[]): string => {
+  if (availableParticipants.length === 1) {
+    return `${availableParticipants[0]} spots`;
+  } else {
+    return `${availableParticipants[0]} - ${availableParticipants[availableParticipants.length - 1]} spots`;
+  }
+};
+
 // Weather icon mapping utility
 const getWeatherIcon = (weatherCode: string | null) => {
   if (!weatherCode) return Cloud;
@@ -454,7 +463,7 @@ export default function TeeTimeShareCard({
                       {teeTime.holes} holes
                     </span>
                     <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs whitespace-nowrap">
-                      {teeTime.players_available} spots
+                      {formatAvailableParticipants(teeTime.available_participants)}
                     </span>
                     {teeTime.starting_tee !== 1 && (
                       <span className="bg-orange-400 text-white px-2 py-1 rounded-full text-xs whitespace-nowrap">
@@ -482,7 +491,7 @@ export default function TeeTimeShareCard({
                           course_name: teeTime.course_name,
                           booking_link: teeTime.booking_link,
                           price: teeTime.price,
-                          players_available: teeTime.players_available,
+                          available_participants: teeTime.available_participants,
                           booking_source: teeTime.booking_link?.includes('cps') ? 'Course Website' : 'ChronoGolf'
                         });
                       }}
@@ -535,7 +544,7 @@ export default function TeeTimeShareCard({
                       {teeTime.holes} holes
                     </span>
                     <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs whitespace-nowrap mb-1">
-                      {teeTime.players_available} spots
+                      {formatAvailableParticipants(teeTime.available_participants)}
                     </span>
                     {teeTime.starting_tee !== 1 && (
                       <span className="bg-orange-400 text-white px-2 py-1 rounded-full text-xs whitespace-nowrap mb-1">
@@ -565,7 +574,7 @@ export default function TeeTimeShareCard({
                           course_name: teeTime.course_name,
                           booking_link: teeTime.booking_link,
                           price: teeTime.price,
-                          players_available: teeTime.players_available,
+                          available_participants: teeTime.available_participants,
                           booking_source: teeTime.booking_link?.includes('cps') ? 'Course Website' : 'ChronoGolf'
                         });
                       }}

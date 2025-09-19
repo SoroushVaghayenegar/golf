@@ -178,6 +178,13 @@ def generate_tee_time_card_html(tee_time: dict, index: int) -> str:
     rating_html = generate_rating_stars(tee_time.get("rating"))
     weather_html = generate_weather_html(tee_time)
     
+    # Format available_participants for display
+    available_participants = tee_time.get("available_participants", [tee_time.get("players_available", 1)])
+    if len(available_participants) == 1:
+        spots_text = f"{available_participants[0]} spots"
+    else:
+        spots_text = f"{available_participants[0]} - {available_participants[-1]} spots"
+    
     # Determine button style based on booking link
     button_style = ""
     button_text = "Book Now"
@@ -268,7 +275,7 @@ def generate_tee_time_card_html(tee_time: dict, index: int) -> str:
                         border-radius: 10px;
                         font-size: 11px;
                         font-weight: 500;
-                    ">{tee_time["players_available"]} spots</span>
+                    ">{spots_text}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <p style="
@@ -775,6 +782,13 @@ Check back later or adjust your subscription settings.
         time_str = format_time_for_email(tee_time["start_datetime"])
         rating_text = f" (Rating: {tee_time.get('rating', 'N/A')})" if tee_time.get("rating") else ""
         
+        # Format available_participants for display
+        available_participants = tee_time.get("available_participants", [tee_time.get("players_available", 1)])
+        if len(available_participants) == 1:
+            spots_text = f"{available_participants[0]} spots available"
+        else:
+            spots_text = f"{available_participants[0]} - {available_participants[-1]} spots available"
+        
         text += f"{i}. {tee_time['course_name']}{rating_text}\n"
         text += f"   Location: {tee_time['city']}\n"
         text += f"   Time: {time_str}\n"
@@ -791,7 +805,7 @@ Check back later or adjust your subscription settings.
         if weather_parts:
             text += f"   Weather: {' | '.join(weather_parts)}\n"
         
-        text += f"   {tee_time['holes']} holes, {tee_time['players_available']} spots available\n"
+        text += f"   {tee_time['holes']} holes, {spots_text}\n"
         text += f"   Price: ${float(tee_time['price']):.2f} per person\n"
         if tee_time.get("booking_link"):
             booking_text = "View Course Website" if "cps" in tee_time["booking_link"] else "Book on ChronoGolf"
