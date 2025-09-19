@@ -35,8 +35,13 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
         password,
       })
       if (error) throw error
-      // Update this route to redirect to an authenticated route. The user already has an active session.
-      router.push('/')
+      
+      // Check for redirect parameter in URL
+      const urlParams = new URLSearchParams(window.location.search)
+      const redirectTo = urlParams.get('redirect')
+      
+      // Redirect to original page or default to home
+      router.push(redirectTo && redirectTo.startsWith('/') ? redirectTo : '/')
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'An error occurred')
     } finally {
@@ -88,18 +93,11 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
                 {isLoading ? 'Logging in...' : 'Login'}
               </Button>
             </div>
-            {/* <div className="mt-4 text-center text-sm">
+            <div className="mt-4 text-center text-sm">
               Don&apos;t have an account?{' '}
               <Link href="/auth/sign-up" className="underline underline-offset-4">
                 Sign up
               </Link>
-            </div> */}
-            <div className="mt-4 text-center text-sm">
-              Currently membership is invite only. Click{' '}
-              <Link href="/auth/request-invite" className="underline underline-offset-4">
-                here
-              </Link>{' '}
-              to request an invite.
             </div>
           </form>
         </CardContent>

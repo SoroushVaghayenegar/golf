@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import posthog from 'posthog-js'
+import { LogIn } from 'lucide-react'
 import UserDropdown from '@/components/UserDropdown'
 
 type NavbarProps = {
@@ -48,9 +49,16 @@ export default function Navbar({ variant = 'home' }: NavbarProps) {
             <UserDropdown />
           ) : (
             <div className="flex items-center gap-3 text-sm">
-              <Link href="/auth/request-invite" className="hover:underline" onClick={() => posthog.capture('navbar-signup-clicked')}>Waitlist</Link>
+              <Link href="/auth/sign-up" className="hover:underline" onClick={() => posthog.capture('navbar-signup-clicked')}>Sign up</Link>
               <span className="text-gray-600">|</span>
-              <Link href="/auth/login" className="hover:underline" onClick={() => posthog.capture('navbar-login-clicked')}>Login</Link>
+              <Link 
+                href="/auth/login" 
+                className="bg-[#166534] text-white px-4 py-2 rounded-lg hover:bg-[#15803d] transition-colors duration-200 font-medium flex items-center gap-2" 
+                onClick={() => posthog.capture('navbar-login-clicked')}
+              >
+                <LogIn className="w-4 h-4" />
+                Login
+              </Link>
             </div>
           )}
         </div>
