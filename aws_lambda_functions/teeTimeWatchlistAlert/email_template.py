@@ -101,7 +101,13 @@ def generate_watchlist_email_html(full_name: Optional[str], tee_times: List[Dict
         formatted_time = _format_tee_time(tee_time.get("start_datetime", ""))
         course_name = tee_time.get("course_name", "Unknown Course")
         price = tee_time.get("price", 0)
-        players_available = tee_time.get("players_available", 1)
+        available_participants = tee_time.get("available_participants", [1])
+        
+        # Format available_participants for display
+        if len(available_participants) == 1:
+            spots_text = f"{available_participants[0]} spots"
+        else:
+            spots_text = f"{available_participants[0]} - {available_participants[-1]} spots"
         
         tee_time_listings += f"""
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 8px 0;">
@@ -109,7 +115,7 @@ def generate_watchlist_email_html(full_name: Optional[str], tee_times: List[Dict
                 {formatted_time} ({course_name})
             </div>
             <div style="font-size: 13px; color: #64748b;">
-                ${float(price):.2f} per person • {players_available} spots • {tee_time.get('holes', '18')} holes
+                ${float(price):.2f} per person • {spots_text} • {tee_time.get('holes', '18')} holes
             </div>
         </div>
         """
@@ -275,10 +281,16 @@ def generate_watchlist_email_text(full_name: Optional[str], tee_times: List[Dict
         formatted_time = _format_tee_time(tee_time.get("start_datetime", ""))
         course_name = tee_time.get("course_name", "Unknown Course")
         price = tee_time.get("price", 0)
-        players_available = tee_time.get("players_available", 1)
+        available_participants = tee_time.get("available_participants", [1])
+        
+        # Format available_participants for display
+        if len(available_participants) == 1:
+            spots_text = f"{available_participants[0]} spots"
+        else:
+            spots_text = f"{available_participants[0]} - {available_participants[-1]} spots"
         
         tee_time_text += f"{i}. {formatted_time} ({course_name})\n"
-        tee_time_text += f"   ${float(price):.2f} per person • {players_available} spots • {tee_time.get('holes', '18')} holes\n"
+        tee_time_text += f"   ${float(price):.2f} per person • {spots_text} • {tee_time.get('holes', '18')} holes\n"
         tee_time_text += "\n"
 
     return (

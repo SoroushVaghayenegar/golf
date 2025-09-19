@@ -23,6 +23,7 @@ interface CourseData {
 interface TeeTimeData {
     start_datetime: string;
     players_available: string | number;
+    available_participants: number[];
     holes: number;
     price: number;
     booking_link: string;
@@ -164,7 +165,7 @@ export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[
         ) as ForecastData | undefined
         
         typedCourseTeeTimes.tee_times_data.forEach((teeTime: TeeTimeData) => {
-            if ((numOfPlayers !== "any" && teeTime.players_available.toString() !== numOfPlayers) || (holes !== "any" && teeTime.holes.toString() !== holes)){
+            if ((numOfPlayers !== "any" && !teeTime.available_participants.includes(parseInt(numOfPlayers))) || (holes !== "any" && teeTime.holes.toString() !== holes)){
                 return;
             }
             
@@ -216,6 +217,7 @@ export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[
                 start_time: teetimeStartTime,
                 start_datetime: teeTimeStartTimeString,
                 players_available: typeof teeTime.players_available === 'string' ? parseInt(teeTime.players_available) : teeTime.players_available,
+                available_participants: teeTime.available_participants,
                 course_id: typedCourseTeeTimes.course_id,
                 course_name: typedCourseTeeTimes.courses.display_name,
                 rating: typedCourseTeeTimes.courses.rating,

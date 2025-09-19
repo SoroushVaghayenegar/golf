@@ -21,6 +21,7 @@ export interface TeeTime {
     start_time: string;
     start_datetime: string;
     players_available: number;
+    available_participants: number[];
     course_id: number;
     course_name: string;
     holes: number;
