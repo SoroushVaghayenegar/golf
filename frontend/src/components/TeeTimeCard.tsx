@@ -51,6 +51,22 @@ const getWeatherIcon = (weatherCode: string | null) => {
   return iconMap[weatherCode] || Cloud;
 };
 
+// Helper function to format spots display based on available_participants array
+const formatSpotsDisplay = (availableParticipants: number[]) => {
+  if (!availableParticipants || availableParticipants.length === 0) {
+    return "0 spots";
+  }
+  
+  if (availableParticipants.length === 1) {
+    return `${availableParticipants[0]} spots`;
+  }
+  
+  // Use first and last items for multiple values
+  const first = availableParticipants[0];
+  const last = availableParticipants[availableParticipants.length - 1];
+  return `${first} - ${last} spots`;
+};
+
 // Get weather icon color based on condition
 const getWeatherIconColor = (weatherCode: string | null) => {
   if (!weatherCode) return 'text-gray-400';
@@ -359,7 +375,7 @@ export default function TeeTimeCard({ teeTime, index, onRemoveCourse, onVisibili
                   {teeTime.holes} holes
                 </span>
                 <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full whitespace-nowrap">
-                  {teeTime.players_available} spots
+                  {formatSpotsDisplay(teeTime.available_participants)}
                 </span>
                 {teeTime.starting_tee !== 1 && (
                   <span className="bg-orange-400 text-white px-2 py-1 rounded-full whitespace-nowrap">
@@ -391,7 +407,7 @@ export default function TeeTimeCard({ teeTime, index, onRemoveCourse, onVisibili
                     course_name: teeTime.course_name,
                     booking_link: teeTime.booking_link,
                     price: teeTime.price,
-                    players_available: teeTime.players_available,
+                    available_participants: teeTime.available_participants,
                     booking_source: teeTime.booking_link?.includes('cps') ? 'Course Website' : 'ChronoGolf'
                   });
                 }}
