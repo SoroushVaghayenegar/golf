@@ -13,11 +13,6 @@ export default function MarketingTeeCard({ index }: MarketingTeeCardProps) {
       key={index}
       className="bg-gradient-to-br from-indigo-200 to-amber-200 rounded-xl shadow-sm hover:shadow-lg transition-all duration-200 border-2 border-blue-200 overflow-hidden w-full max-w-full relative"
     >
-      {/* Attention-grabbing badge */}
-      <div className="absolute top-1 right-1 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-        NEW
-      </div>
-      
       <div className="p-5 w-full max-w-full">
         {/* Header Section */}
         <div className="flex flex-col gap-3 mb-4">
