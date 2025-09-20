@@ -1,6 +1,7 @@
 import posthog from 'posthog-js';
 import { TeeTime } from "../services/teeTimeService";
 import { StarIcon } from "@heroicons/react/24/outline";
+import BookButton from '@/components/BookButton';
 import { 
   Sun, Cloud, CloudRain, CloudSnow, CloudDrizzle, 
   CloudLightning, CloudFog, Zap, CloudHail,
@@ -395,33 +396,11 @@ export default function TeeTimeCard({ teeTime, index, onRemoveCourse, onVisibili
 
         {/* Action Buttons */}
         <div className="mt-5 pt-4 border-t border-gray-100 w-full max-w-full">
-          <div className="flex gap-3 w-full">
-            {/* Booking Button */}
-            {teeTime.booking_link && (
-              <a
-                href={teeTime.booking_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => {
-                  posthog.capture('booking_link_clicked', {
-                    course_name: teeTime.course_name,
-                    booking_link: teeTime.booking_link,
-                    price: teeTime.price,
-                    available_participants: teeTime.available_participants,
-                    booking_source: teeTime.booking_link?.includes('cps') ? 'Course Website' : 'ChronoGolf'
-                  });
-                }}
-                className={`flex-1 px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-200 text-center block transform hover:scale-[1.02] active:scale-[0.98] max-w-full overflow-hidden ${
-                  teeTime.booking_link.includes('cps')
-                    ? 'bg-black hover:bg-gray-800 text-white shadow-lg hover:shadow-xl'
-                    : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl'
-                }`}
-              >
-                <span className="truncate block">
-                  {teeTime.booking_link.includes('cps') ? 'Book on Course Website' : 'Book on ChronoGolf'}
-                </span>
-              </a>
-            )}
+          <div className="flex gap-2 w-full">
+            {/* Book Button */}
+            <div className="flex-1 min-w-0">
+              <BookButton teeTime={teeTime} />
+            </div>
             
             {/* Share Button */}
             <button
@@ -444,7 +423,7 @@ export default function TeeTimeCard({ teeTime, index, onRemoveCourse, onVisibili
                 }
               }}
               disabled={!isTeeTimeInShareList(teeTime.id) && isShareFull()}
-              className={`flex items-center justify-center gap-1 px-3 py-1 text-sm font-small rounded-lg transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex-shrink-0 ${
+              className={`flex items-center justify-center gap-1 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex-shrink-0 ${
                 !isTeeTimeInShareList(teeTime.id) && isShareFull()
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                   : isTeeTimeInShareList(teeTime.id)
@@ -454,10 +433,12 @@ export default function TeeTimeCard({ teeTime, index, onRemoveCourse, onVisibili
             >
               {isTeeTimeInShareList(teeTime.id) ? (
                 <>
+                  <span>Share</span>
                   <HeartMinus className="w-4 h-4" />
                 </>
               ) : (
                 <>
+                  <span>Share</span>
                   <HeartPlus className="w-4 h-4" />
                 </>
               )}

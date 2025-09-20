@@ -5,6 +5,7 @@ export class TeeTime {
   holes: number;
   price: number;
   booking_link: string;
+  booking_links: { [key: number]: string };
   tee_time_id: string;
 
   constructor(
@@ -14,6 +15,7 @@ export class TeeTime {
     holes: number,
     price: number,
     booking_link: string,
+    booking_links: { [key: number]: string },
     tee_time_id: string
   ) {
     this.start_datetime = start_datetime;
@@ -22,6 +24,7 @@ export class TeeTime {
     this.holes = holes;
     this.price = price;
     this.booking_link = booking_link;
+    this.booking_links = booking_links;
     this.tee_time_id = tee_time_id;
   }
 
@@ -34,6 +37,7 @@ export class TeeTime {
       obj.holes,
       obj.price,
       obj.booking_link,
+      obj.booking_links,
       obj.tee_time_id
     );
   }
@@ -47,6 +51,7 @@ export class TeeTime {
       holes: this.holes,
       price: this.price,
       booking_link: this.booking_link,
+      booking_links: this.booking_links,
       tee_time_id: this.tee_time_id
     };
   }

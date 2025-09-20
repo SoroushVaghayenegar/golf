@@ -99,12 +99,40 @@ export async function fetchTeeTimesFromChronoLightspeed(page: any, dbCourseId: n
     const availableParticipants = teeTime["available_participants"].sort((a: number, b: number) => a - b); 
     const price = teeTime["green_fees"][0]["green_fee"]
     const bookingLink = getChronoLightspeedBookingLink(clubLinkName, course_id, course_holes, searchDate, affiliation_type_id, playersAvailable, teeTime["id"])
+    const bookingLinks = getChronoLightspeedBookingLinks(clubLinkName, course_id, course_holes, searchDate, affiliation_type_id, availableParticipants, teeTime["id"])
     const teeTimeId = dbCourseId + teeTime["date"].replaceAll('-', '') + teeTime["start_time"].replaceAll(':', '') + "-" + course_holes
-    teeTimes.push(new TeeTime(startDateTime, playersAvailable, availableParticipants, course_holes, price, bookingLink, teeTimeId))
+    teeTimes.push(new TeeTime(startDateTime, playersAvailable, availableParticipants, course_holes, price, bookingLink, bookingLinks, teeTimeId))
    }
   
   teeTimes.sort((a: TeeTime, b: TeeTime) => new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime());
   return teeTimes
+}
+
+
+function getChronoLightspeedBookingLinks(
+    clubLinkName: string, 
+    courseId: number, 
+    nbHoles: number, 
+    date: Date, 
+    affiliationTypeId: number, 
+    availableParticipants: number[], 
+    teetimeId: number
+): { [key: number]: string } {
+    const bookingLinks: { [key: number]: string } = {};
+    
+    for (const numberOfPlayers of availableParticipants) {
+        bookingLinks[numberOfPlayers] = getChronoLightspeedBookingLink(
+            clubLinkName,
+            courseId,
+            nbHoles,
+            date,
+            affiliationTypeId,
+            numberOfPlayers,
+            teetimeId
+        );
+    }
+    
+    return bookingLinks;
 }
 
 function getChronoLightspeedBookingLink(

@@ -27,6 +27,7 @@ interface TeeTimeData {
     holes: number;
     price: number;
     booking_link: string;
+    booking_links: { [key: number]: string };
 }
 
 interface CourseTeeTimes {
@@ -71,6 +72,7 @@ export interface TeeTime {
     price: number;
     city: string;
     booking_link: string | null;
+    booking_links: { [key: number]: string };
     rating: number | null;
     temperature: number | null;
     precipitation_probability: number | null;
@@ -226,6 +228,7 @@ export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[
                 starting_tee: teeTime.starting_tee ?? 1,
                 city: typedCourseTeeTimes.courses.cities.name,
                 booking_link: teeTime.booking_link,
+                booking_links: teeTime.booking_links ?? null,
                 temperature: getForecastNumber(forecast, 'temperature_2m', teetimeStartTime),
                 precipitation_probability: getForecastNumber(forecast, 'precipitation_probability', teetimeStartTime),
                 weather_code: getWeatherDescription(getForecastNumber(forecast, 'weather_code', teetimeStartTime)),
