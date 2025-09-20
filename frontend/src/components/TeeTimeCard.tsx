@@ -186,6 +186,7 @@ interface TeeTimeCardProps {
   onRemoveCourse: (courseId: number, courseName?: string) => void;
   onVisibilityChange?: (isVisible: boolean) => void;
   distance?: number | null;
+  numOfPlayersInFilter?: number;
 }
 
 // Distance display component
@@ -281,7 +282,7 @@ const Tooltip = ({ children, text, containerRef }: { children: React.ReactNode; 
   );
 };
 
-export default function TeeTimeCard({ teeTime, index, onRemoveCourse, onVisibilityChange, distance }: TeeTimeCardProps) {
+export default function TeeTimeCard({ teeTime, index, onRemoveCourse, onVisibilityChange, distance, numOfPlayersInFilter }: TeeTimeCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [hasBeenVisible, setHasBeenVisible] = useState(false);
   
@@ -399,7 +400,7 @@ export default function TeeTimeCard({ teeTime, index, onRemoveCourse, onVisibili
           <div className="flex gap-2 w-full">
             {/* Book Button */}
             <div className="flex-1 min-w-0">
-              <BookButton teeTime={teeTime} />
+              <BookButton teeTime={teeTime} numOfPlayersInFilter={numOfPlayersInFilter} />
             </div>
             
             {/* Share Button */}

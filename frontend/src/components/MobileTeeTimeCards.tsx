@@ -35,6 +35,7 @@ interface MobileTeeTimeCardsProps {
   useSkeletonWhileLoading?: boolean;
   disableInitialEmptyState?: boolean;
   shareUrl?: string;
+  numOfPlayersInFilter?: number;
 }
 
 type FlatItem =
@@ -59,7 +60,8 @@ const MobileTeeTimeCards = forwardRef<TeeTimeCardsRef, MobileTeeTimeCardsProps>(
   selectedRegionId,
   regionTimeZone,
   useSkeletonWhileLoading,
-  disableInitialEmptyState
+  disableInitialEmptyState,
+  numOfPlayersInFilter
 }, ref) => {
 
   const DEFAULT_TIMEZONE = 'America/Vancouver';
@@ -247,6 +249,7 @@ const MobileTeeTimeCards = forwardRef<TeeTimeCardsRef, MobileTeeTimeCardsProps>(
           index={item.cardIndex}
           onRemoveCourse={onRemoveCourse}
           distance={distance}
+          numOfPlayersInFilter={numOfPlayersInFilter}
         />
       </div>
     );

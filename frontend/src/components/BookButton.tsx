@@ -8,9 +8,10 @@ import { type TeeTime } from '@/services/teeTimeService';
 
 interface BookButtonProps {
   teeTime: TeeTime;
+  numOfPlayersInFilter?: number;
 }
 
-export default function BookButton({ teeTime }: BookButtonProps) {
+export default function BookButton({ teeTime, numOfPlayersInFilter }: BookButtonProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleClick = () => {
@@ -39,6 +40,7 @@ export default function BookButton({ teeTime }: BookButtonProps) {
         isOpen={isModalOpen}
         onOpenChange={setIsModalOpen}
         teeTime={teeTime}
+        numOfPlayersInFilter={numOfPlayersInFilter}
       />
     </>
   );

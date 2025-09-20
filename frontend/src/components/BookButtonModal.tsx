@@ -146,9 +146,10 @@ interface BookModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   teeTime: TeeTime;
+  numOfPlayersInFilter?: number;
 }
 
-export default function BookButtonModal({ isOpen, onOpenChange, teeTime }: BookModalProps) {
+export default function BookButtonModal({ isOpen, onOpenChange, teeTime, numOfPlayersInFilter }: BookModalProps) {
   // State for managing selected booking link when multiple options are available
   const [selectedBookingNumber, setSelectedBookingNumber] = useState<number | null>(null);
   const [step, setStep] = useState<1 | 2>(1);
@@ -161,11 +162,15 @@ export default function BookButtonModal({ isOpen, onOpenChange, teeTime }: BookM
   // Initialize selected booking number when modal opens
   React.useEffect(() => {
     if (hasBookingLinksObject && bookingLinkNumbers.length > 0 && selectedBookingNumber === null) {
-      setSelectedBookingNumber(bookingLinkNumbers[0]);
+      // If numOfPlayersInFilter is defined and matches an available option, select it
+      if (numOfPlayersInFilter !== undefined && bookingLinkNumbers.includes(numOfPlayersInFilter)) {
+        setSelectedBookingNumber(numOfPlayersInFilter);
+      }
+      // If numOfPlayersInFilter is undefined, don't select anything (keep selectedBookingNumber as null)
     } else if (!hasBookingLinksObject) {
       setSelectedBookingNumber(null);
     }
-  }, [hasBookingLinksObject, bookingLinkNumbers, selectedBookingNumber]);
+  }, [hasBookingLinksObject, bookingLinkNumbers, selectedBookingNumber, numOfPlayersInFilter]);
 
   // Reset step when modal opens/closes
   React.useEffect(() => {
@@ -412,6 +417,9 @@ export default function BookButtonModal({ isOpen, onOpenChange, teeTime }: BookM
                   onChange={(e) => setSelectedBookingNumber(Number(e.target.value))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
                 >
+                  <option value="" disabled>
+                    Choose number of players
+                  </option>
                   {bookingLinkNumbers.map((num) => (
                     <option key={num} value={num}>
                       {num} players
@@ -483,10 +491,11 @@ export default function BookButtonModal({ isOpen, onOpenChange, teeTime }: BookM
               ((hasBookingLinksObject && selectedBookingNumber !== null) || teeTime.booking_link) ? (
                 <Button
                   onClick={handleBookingClick}
+                  disabled={!!(hasBookingLinksObject && selectedBookingNumber === null)}
                   className={`flex-1 py-4 text-base ${
                     isCps
-                      ? 'bg-black hover:bg-gray-800 text-white'
-                      : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white'
+                      ? 'bg-black hover:bg-gray-800 text-white disabled:bg-gray-400 disabled:cursor-not-allowed'
+                      : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed'
                   }`}
                 >
                   {!isCps && <ExternalLink className="w-4 h-4 mr-2" />}
