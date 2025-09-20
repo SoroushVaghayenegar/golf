@@ -29,6 +29,7 @@ export interface TeeTime {
     price: number;
     city: string;
     booking_link: string | null;
+    booking_links: { [key: number]: string } | null;
     rating: number | null;
     temperature: number | null;
     precipitation_probability: number | null;
