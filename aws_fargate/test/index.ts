@@ -20,7 +20,7 @@ export const handler = async () => {
       `)
       .eq('external_api', 'CHRONO_LIGHTSPEED')
       .order('id')
-      .range(30, 35)
+      .range(1, 29)
 
       if (error) {
         throw new Error(`Error fetching courses: ${error.message}`)

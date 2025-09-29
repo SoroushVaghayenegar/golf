@@ -194,11 +194,11 @@ async function fetchWithRetry(courseName: string, clubId: number, url: string, h
             errorDetails = String(error);
           }
           
-          console.error(`[${courseName}] Attempt ${attempt}/${maxRetries} failed: ${errorDetails} | URL: ${url}`);
+          // console.error(`[${courseName}] Attempt ${attempt}/${maxRetries} failed: ${errorDetails} | URL: ${url}`);
           
           if (attempt < maxRetries) {
               const delay = Math.floor(Math.random() * maxDelay) + minDelay; // Random delay between 1000-15000ms
-              console.log(`[${courseName}] Retrying in ${delay}ms...`);
+              // console.log(`[${courseName}] Retrying in ${delay}ms...`);
               await new Promise(resolve => setTimeout(resolve, delay));
           }
           else{
