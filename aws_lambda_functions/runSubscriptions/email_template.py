@@ -300,7 +300,7 @@ def generate_tee_time_card_html(tee_time: dict, index: int) -> str:
 def generate_email_html(tee_times: list[dict], token: str = "", email: str = "", subscription=None, region_id: int = 1) -> str:
     """Generate the grouped HTML email (by day, course, time range) with the original header at the top."""
     if not tee_times:
-        return generate_no_tee_times_html()
+        return generate_no_tee_times_html(token=token, email=email, subscription=subscription, region_id=region_id)
 
     from email_service import organize_tee_times, MORNING, AFTERNOON, EVENING
     import calendar
@@ -665,9 +665,11 @@ def generate_email_html(tee_times: list[dict], token: str = "", email: str = "",
     """
     return html
 
-def generate_no_tee_times_html() -> str:
+def generate_no_tee_times_html(token: str = "", email: str = "", subscription=None, region_id: int = 1) -> str:
     """Generate HTML for when no tee times are available"""
     from datetime import datetime
+    
+    personalized_url = generate_personalized_url([], subscription, region_id)
     
     return f"""
     <!DOCTYPE html>
@@ -677,7 +679,7 @@ def generate_no_tee_times_html() -> str:
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>No Tee Times Available</title>
         <style>
-            .header-logo { 
+            .header-logo {{ 
                 width: 60px; 
                 height: 60px; 
                 border-radius: 50%; 
@@ -685,7 +687,39 @@ def generate_no_tee_times_html() -> str:
                 display: block; 
                 border: 3px solid rgba(255, 255, 255, 0.2);
                 box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            }
+            }}
+            .cta-section {{ 
+                background: #fff; 
+                border: 1px solid #e5e7eb; 
+                border-radius: 12px; 
+                margin: 16px; 
+                padding: 16px; 
+                text-align: center;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            }}
+            .cta-text {{ 
+                margin: 0 0 12px 0; 
+                font-size: 15px; 
+                color: #64748b; 
+                display: flex; 
+                align-items: center; 
+                justify-content: center; 
+                gap: 6px;
+            }}
+            .cta-button {{ 
+                display: inline-block; 
+                background: #166534; 
+                color: #fff; 
+                padding: 10px 20px; 
+                border-radius: 8px; 
+                text-decoration: none; 
+                font-weight: 600; 
+                font-size: 15px; 
+                transition: background-color 0.2s;
+            }}
+            .cta-button:hover {{ 
+                background: #14532d; 
+            }}
         </style>
     </head>
     <body style="
@@ -715,6 +749,12 @@ def generate_no_tee_times_html() -> str:
                     font-weight: 700;
                     letter-spacing: -0.025em;
                 ">⛳ Golf Tee Times</h1>
+                <p style="
+                    margin: 8px 0 0 0;
+                    color: #dcfce7;
+                    font-size: 16px;
+                    opacity: 0.9;
+                ">No tee times are available right now</p>
             </div>
             
             <!-- Content -->
@@ -742,6 +782,14 @@ def generate_no_tee_times_html() -> str:
                         Check back later or adjust your subscription settings.
                     </p>
                 </div>
+
+                <div class="cta-section">
+                    <p class="cta-text">
+                        <span>🔍</span>
+                        Explore the full schedule to check other days or times.
+                    </p>
+                    <a href="{personalized_url}" class="cta-button" target="_blank" rel="noopener noreferrer">View Full Schedule</a>
+                </div>
                 
                 <!-- Footer -->
                 <div style="
@@ -749,6 +797,9 @@ def generate_no_tee_times_html() -> str:
                     padding-top: 24px;
                     border-top: 1px solid #e5e7eb;
                 ">
+                    <div style="margin-bottom: 8px;">
+                        <a href="https://teeclub.golf/unsubscribe?token={token}&email={email}" style="color: #64748b; text-decoration: none; font-size: 13px;" target="_blank" rel="noopener noreferrer">Unsubscribe</a>
+                    </div>
                     <p style="
                         margin: 0;
                         font-size: 12px;

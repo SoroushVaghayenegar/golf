@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "TeeClub - #1 Tee Times finder in Canada",
   description: "Canada's number 1 golf tee times platform. Discover the best golf deals across Canada. Compare tee times across multiple courses, find discounts, and book your next round. Real-time availability for golf courses.",
-  keywords: "golf, tee times, golf booking, golf courses, golf deals, golf discounts, driving range, country clubs, golf reservations, golf packages, golf tournaments, golf memberships, golf lessons, golf clubs, golf equipment, golf pro shop, golf simulator, mini golf, putting green, golf cart, caddie, golf instruction, golf clinics, Canada, British Columbia, BC, Vancouver, Toronto, Montreal, Calgary, Ottawa, Edmonton, Winnipeg, Quebec City, Hamilton, Kitchener, London, Halifax, Victoria, Saskatoon, Regina, Windsor, Sherbrooke, St. John's, Barrie, Kelowna, Abbotsford, Kingston, Trois-Rivières, golf course booking, tee time reservations, Canadian golf, BC golf, golf deals Canada, golf courses Canada",
+  keywords: "golf, tee times, golf booking, golf courses, golf deals, Canadian golf, BC golf, golf reservations, golf course search, tee time search",
   authors: [{ name: "TeeClub" }],
   creator: "TeeClub",
   publisher: "TeeClub",
@@ -75,11 +75,7 @@ export const metadata: Metadata = {
     apple: "/apple-touch-icon.png",
   },
   themeColor: "#000000",
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-  },
+  viewport: "width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content",
 };
 
 export default function RootLayout({
@@ -93,6 +89,16 @@ export default function RootLayout({
         <meta name="theme-color" content="#000000" />
         <meta name="msapplication-TileColor" content="#000000" />
         <link rel="apple-touch-icon" href="/favicon.ico" />
+        
+        {/* Performance optimizations - preload critical resources */}
+        <link rel="preload" href="https://fonts.gstatic.com/s/geist/v1/UcC63EosKnWM0x7Lg0VpvFVzNQl5QFBd6hgz1bS9kNQh7yWV.woff2" as="font" type="font/woff2" crossOrigin="" />
+        <link rel="preload" href="/bg1.png" as="image" />
+        
+        {/* Hreflang for international SEO */}
+        <link rel="alternate" href="https://teeclub.golf" hrefLang="en-ca" />
+        <link rel="alternate" href="https://teeclub.golf" hrefLang="en-us" />
+        <link rel="alternate" href="https://teeclub.golf" hrefLang="en" />
+        <link rel="alternate" href="https://teeclub.golf" hrefLang="x-default" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

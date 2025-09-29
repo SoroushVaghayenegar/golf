@@ -87,13 +87,13 @@ export function formatDatesForAPI(dates: Date[]): string {
 }
 
 /**
- * Format a date to YYYY-MM-DD string in Vancouver timezone
+ * Format a date to YYYY-MM-DD string - preserves calendar date without timezone conversion
  */
 export function formatDateForAPI(date: Date): string {
-  const vancouverDate = toVancouverTime(date);
-  const year = vancouverDate.getFullYear();
-  const month = vancouverDate.getMonth() + 1;
-  const day = vancouverDate.getDate();
+  // Use the calendar date components directly to avoid timezone conversion issues
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
   return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
 }
 

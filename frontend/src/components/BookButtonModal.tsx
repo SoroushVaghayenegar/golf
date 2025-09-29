@@ -18,7 +18,8 @@ import {
 import { 
   Dialog, 
   DialogContent, 
-  DialogHeader
+  DialogHeader,
+  DialogTitle
 } from '@/components/ui/dialog';
 import { Rating } from '@/components/ui/rating';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -27,6 +28,7 @@ import { getTeeTime } from '@/utils/DateAndTime';
 import { GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api';
 import { useState } from 'react';
 import React from 'react';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
 // Weather icon mapping utility
 const getWeatherIcon = (weatherCode: string | null) => {
@@ -165,8 +167,10 @@ export default function BookButtonModal({ isOpen, onOpenChange, teeTime, numOfPl
       // If numOfPlayersInFilter is defined and matches an available option, select it
       if (numOfPlayersInFilter !== undefined && bookingLinkNumbers.includes(numOfPlayersInFilter)) {
         setSelectedBookingNumber(numOfPlayersInFilter);
+      } else {
+        // If filter doesn't match or is undefined, select the first available option
+        setSelectedBookingNumber(bookingLinkNumbers[0]);
       }
-      // If numOfPlayersInFilter is undefined, don't select anything (keep selectedBookingNumber as null)
     } else if (!hasBookingLinksObject) {
       setSelectedBookingNumber(null);
     }
@@ -281,8 +285,17 @@ export default function BookButtonModal({ isOpen, onOpenChange, teeTime, numOfPl
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md w-full">
+      <DialogContent className="
+        /* Mobile: Full screen and scrollable */
+        inset-0 translate-x-0 translate-y-0 max-w-none h-full overflow-y-auto rounded-none
+        /* Desktop: Standard centered modal */
+        sm:inset-auto sm:top-[50%] sm:left-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:max-w-md sm:h-auto sm:overflow-y-visible sm:rounded-lg
+        w-full
+      ">
         <DialogHeader>
+          <VisuallyHidden>
+            <DialogTitle>Tee time</DialogTitle>
+          </VisuallyHidden>
         </DialogHeader>
         
         <div className="space-y-4">

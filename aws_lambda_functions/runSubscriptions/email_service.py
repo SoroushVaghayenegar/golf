@@ -9,8 +9,6 @@ EVENING = {"name": "Evening", "start_hour": 17, "end_hour": 23}
 
 def send_email(email: str, tee_times: list[dict], token: str, region_id: int, subscription=None):
     import boto3
-    if len(tee_times) == 0:
-        return
     
     # Sort tee_times by datetime
     tee_times.sort(key=lambda x: x['start_datetime'])

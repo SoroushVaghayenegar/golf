@@ -171,7 +171,7 @@ export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[
                 return;
             }
             
-            const teeTimeStartTimeString = teeTime.start_datetime.replace(".000Z", "")
+            const teeTimeStartTimeString = teeTime.start_datetime.replace(":00.000Z", "")
             const teeTimeStartDatetime = new Date(teeTimeStartTimeString)
             const teetimeStartTime = teeTimeStartDatetime.toTimeString().slice(0, 5) // HH:MM format
             

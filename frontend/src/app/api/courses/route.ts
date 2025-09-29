@@ -23,12 +23,14 @@ export async function GET(request: NextRequest) {
 
         // Sort courses by display_name and merge results into a hashmap
         const sortedCourses = coursesData.sort((a, b) => a.display_name.localeCompare(b.display_name));
-        const result: Record<string, { courseId: number; city: string; region: string }> = {};
-        sortedCourses.forEach(({ id, display_name, city_name, region_name }: { id: number, display_name: string, city_name: string, region_name: string })=>{
+        const result: Record<string, { courseId: number; city: string; region: string; latitude: number; longitude: number }> = {};
+        sortedCourses.forEach(({ id, display_name, city_name, region_name, latitude, longitude }: { id: number, display_name: string, city_name: string, region_name: string, latitude: number, longitude: number })=>{
             result[display_name] = {
                 courseId: id, 
                 city: city_name,
-                region: region_name
+                region: region_name,
+                latitude: latitude,
+                longitude: longitude
             };
         });
 
