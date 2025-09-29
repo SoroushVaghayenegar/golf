@@ -1,6 +1,5 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
-import CityNavigation from "@/components/CityNavigation";
 
 export const metadata: Metadata = {
   title: 'About TeeClub - BC Golf Tee Times',
