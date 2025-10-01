@@ -89,8 +89,13 @@ export default function RootLayout({
       <head>
         <meta name="theme-color" content="#000000" />
         <meta name="msapplication-TileColor" content="#000000" />
-        <link rel="apple-touch-icon" href="/favicon.ico" />
-        
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        {/* Explicit favicon links for better cross-browser support (especially Chrome iOS) */}
+        <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/manifest.json" />
         {/* Performance optimizations - preload critical resources */}
         <link rel="preload" href="https://fonts.gstatic.com/s/geist/v1/UcC63EosKnWM0x7Lg0VpvFVzNQl5QFBd6hgz1bS9kNQh7yWV.woff2" as="font" type="font/woff2" crossOrigin="" />
         <link rel="preload" href="/bg1.png" as="image" />
