@@ -75,7 +75,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
                   <Input
                     id="firstName"
                     type="text"
-                    placeholder="John"
+                    placeholder="Tiger"
                     required
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
@@ -86,7 +86,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
                   <Input
                     id="lastName"
                     type="text"
-                    placeholder="Doe"
+                    placeholder="Woods"
                     required
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}

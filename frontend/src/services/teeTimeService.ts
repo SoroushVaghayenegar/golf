@@ -13,6 +13,7 @@ export interface CourseInfo {
     longitude: number;
     address: string;
     phone_number: string;
+    slug: string;
 }
 
 export interface TeeTime {
@@ -29,6 +30,7 @@ export interface TeeTime {
     price: number;
     city: string;
     booking_link: string | null;
+    booking_links: { [key: number]: string } | null;
     rating: number | null;
     temperature: number | null;
     precipitation_probability: number | null;

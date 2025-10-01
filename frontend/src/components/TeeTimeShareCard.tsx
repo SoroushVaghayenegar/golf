@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { getTeeTime } from '@/utils/DateAndTime';
+import BookButton from '@/components/BookButton';
 
 // Utility function to get formatted date and time
 const getFormattedDateTime = (dateTimeString: string) => {
@@ -479,30 +480,12 @@ export default function TeeTimeShareCard({
               </div>
 
               {/* Row 4: Book Button */}
-              {teeTime.booking_link && (
-                <div className="pt-2">
+              {(teeTime.booking_link || (teeTime.booking_links && Object.keys(teeTime.booking_links).length > 0)) && (
+                <div className="pt-2 w-full">
                   {available ? (
-                    <a
-                      href={teeTime.booking_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => {
-                        posthog.capture('booking_link_clicked', {
-                          course_name: teeTime.course_name,
-                          booking_link: teeTime.booking_link,
-                          price: teeTime.price,
-                          available_participants: teeTime.available_participants,
-                          booking_source: teeTime.booking_link?.includes('cps') ? 'Course Website' : 'ChronoGolf'
-                        });
-                      }}
-                      className={`${
-                        teeTime.booking_link.includes('cps')
-                          ? 'w-full flex items-center justify-center px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-200 text-center transform hover:scale-[1.02] active:scale-[0.98] bg-black hover:bg-gray-800 text-white shadow-lg hover:shadow-xl'
-                          : 'w-full flex items-center justify-center px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-200 text-center transform hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl'
-                      }`}
-                    >
-                      {teeTime.booking_link.includes('cps') ? 'Book on Course Website' : 'Book on ChronoGolf'}
-                    </a>
+                    <div className="w-full">
+                      <BookButton teeTime={teeTime} />
+                    </div>
                   ) : (
                     <div className="w-full flex items-center justify-center px-4 py-3 text-sm font-semibold rounded-lg bg-gray-300 text-gray-500 cursor-not-allowed">
                       Not Available
@@ -562,32 +545,14 @@ export default function TeeTimeShareCard({
               </div>
 
               {/* Right Side: Book Button */}
-              {teeTime.booking_link && (
-                <div className="flex items-stretch">
+              {(teeTime.booking_link || (teeTime.booking_links && Object.keys(teeTime.booking_links).length > 0)) && (
+                <div className="flex items-stretch min-w-[160px]">
                   {available ? (
-                    <a
-                      href={teeTime.booking_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => {
-                        posthog.capture('booking_link_clicked', {
-                          course_name: teeTime.course_name,
-                          booking_link: teeTime.booking_link,
-                          price: teeTime.price,
-                          available_participants: teeTime.available_participants,
-                          booking_source: teeTime.booking_link?.includes('cps') ? 'Course Website' : 'ChronoGolf'
-                        });
-                      }}
-                      className={`${
-                        teeTime.booking_link.includes('cps')
-                          ? 'flex items-center justify-center px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-200 text-center transform hover:scale-[1.02] active:scale-[0.98] bg-black hover:bg-gray-800 text-white shadow-lg hover:shadow-xl'
-                          : 'flex items-center justify-center px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-200 text-center transform hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl'
-                      } whitespace-nowrap h-full`}
-                    >
-                      {teeTime.booking_link.includes('cps') ? 'Book on Course Website' : 'Book on ChronoGolf'}
-                    </a>
+                    <div className="flex items-stretch w-full">
+                      <BookButton teeTime={teeTime} />
+                    </div>
                   ) : (
-                    <div className="flex items-center justify-center px-4 py-3 text-sm font-semibold rounded-lg bg-gray-300 text-gray-500 cursor-not-allowed whitespace-nowrap h-full">
+                    <div className="flex items-center justify-center px-4 py-3 text-sm font-semibold rounded-lg bg-gray-300 text-gray-500 cursor-not-allowed whitespace-nowrap h-full w-full">
                       Not Available Anymore ☹️
                     </div>
                   )}

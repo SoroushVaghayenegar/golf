@@ -18,6 +18,7 @@ interface CourseData {
     longitude: number;
     address: string;
     phone_number: string;
+    slug: string;
 }
 
 interface TeeTimeData {
@@ -27,6 +28,7 @@ interface TeeTimeData {
     holes: number;
     price: number;
     booking_link: string;
+    booking_links: { [key: number]: string };
 }
 
 interface CourseTeeTimes {
@@ -56,6 +58,7 @@ interface CourseInfo {
     longitude: number;
     address: string;
     phone_number: string;
+    slug: string;
 }
 
 export interface TeeTime {
@@ -71,6 +74,7 @@ export interface TeeTime {
     price: number;
     city: string;
     booking_link: string | null;
+    booking_links: { [key: number]: string };
     rating: number | null;
     temperature: number | null;
     precipitation_probability: number | null;
@@ -124,7 +128,8 @@ export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[
                 latitude,
                 longitude,
                 address,
-                phone_number
+                phone_number,
+                slug
             )
         `)
         .in('date', dates)
@@ -169,7 +174,7 @@ export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[
                 return;
             }
             
-            const teeTimeStartTimeString = teeTime.start_datetime.replace(".000Z", "")
+            const teeTimeStartTimeString = teeTime.start_datetime.replace(":00.000Z", "")
             const teeTimeStartDatetime = new Date(teeTimeStartTimeString)
             const teetimeStartTime = teeTimeStartDatetime.toTimeString().slice(0, 5) // HH:MM format
             
@@ -208,7 +213,8 @@ export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[
                 latitude: typedCourseTeeTimes.courses.latitude,
                 longitude: typedCourseTeeTimes.courses.longitude,
                 address: typedCourseTeeTimes.courses.address,
-                phone_number: typedCourseTeeTimes.courses.phone_number
+                phone_number: typedCourseTeeTimes.courses.phone_number,
+                slug: typedCourseTeeTimes.courses.slug
             }
 
             const teeTimeObj: TeeTime = {
@@ -226,6 +232,7 @@ export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[
                 starting_tee: teeTime.starting_tee ?? 1,
                 city: typedCourseTeeTimes.courses.cities.name,
                 booking_link: teeTime.booking_link,
+                booking_links: teeTime.booking_links ?? null,
                 temperature: getForecastNumber(forecast, 'temperature_2m', teetimeStartTime),
                 precipitation_probability: getForecastNumber(forecast, 'precipitation_probability', teetimeStartTime),
                 weather_code: getWeatherDescription(getForecastNumber(forecast, 'weather_code', teetimeStartTime)),

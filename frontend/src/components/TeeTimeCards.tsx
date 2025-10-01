@@ -44,6 +44,7 @@ interface TeeTimeCardsProps {
   disableInitialEmptyState?: boolean;
   // Optional share URL for the Share button
   shareUrl?: string;
+  numOfPlayersInFilter?: number;
 }
 
 export interface TeeTimeCardsRef {
@@ -69,7 +70,8 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
   selectedRegionId,
   regionTimeZone,
   useSkeletonWhileLoading,
-  disableInitialEmptyState
+  disableInitialEmptyState,
+  numOfPlayersInFilter
 }, ref) => {
   
   const DEFAULT_TIMEZONE = 'America/Vancouver';
@@ -277,6 +279,7 @@ const TeeTimeCards = forwardRef<TeeTimeCardsRef, TeeTimeCardsProps>(({
             index={index}
             onRemoveCourse={onRemoveCourse}
             distance={distance}
+            numOfPlayersInFilter={numOfPlayersInFilter}
             onVisibilityChange={(isVisible) => {
               setVisibleTeeTimes(prev => {
                 const newSet = new Set(prev);

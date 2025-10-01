@@ -545,31 +545,6 @@ export default function SearchPage() {
       if (isFirstRun) {
         setHasEverSearched(true);
       }
-      
-      // // Auto-scroll to results section after loading is complete
-      // setTimeout(() => {
-      //   if (isMobile) {
-      //     // On mobile, only scroll on the first search
-      //     if (isFirstRun) {
-      //       const sectionElement = resultsSectionRef.current?.sectionElement;
-      //       if (sectionElement) {
-      //         sectionElement.scrollIntoView({ 
-      //           behavior: 'smooth', 
-      //           block: 'start' 
-      //         });
-      //       }
-      //     }
-      //   } else {
-      //     // On desktop, always scroll to top of the scrollable div
-      //     const scrollableElement = resultsSectionRef.current?.scrollableElement;
-      //     if (scrollableElement) {
-      //       scrollableElement.scrollTo({ 
-      //         top: 0, 
-      //         behavior: 'smooth' 
-      //       });
-      //     }
-      //   }
-      // }, 100); // Small delay to ensure DOM is updated
     }
   };
 
@@ -684,6 +659,7 @@ export default function SearchPage() {
                     useSkeletonWhileLoading={hasEverSearched}
                     disableInitialEmptyState
                     shareUrl={currentUrl}
+                    numOfPlayersInFilter={numOfPlayers !== "any" ? parseInt(numOfPlayers) : undefined}
                   />
                 );
               })()}

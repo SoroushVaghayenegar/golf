@@ -1,8 +1,9 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from "react"
-import Select, { MultiValue, StylesConfig } from 'react-select'
+import { MultiValue } from 'react-select'
 import posthog from 'posthog-js'
+import TeeClubSelect from "./TeeClubSelect"
 import { toast } from "sonner"
 import {
   Dialog,
@@ -21,7 +22,6 @@ import {
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
 import { createSubscription, fetchCourseDisplayNamesAndTheirCities, fetchRegions } from "@/services/supabaseService"
 import { MapPin } from "lucide-react"
 
@@ -165,74 +165,6 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
     };
   });
 
-  // Custom styles for React Select with green colors
-  const selectStyles: StylesConfig<SelectOption, true> = {
-    control: (provided) => ({
-      ...provided,
-      minHeight: '42px',
-      border: '1px solid #e2e8f0',
-      borderRadius: '8px',
-      fontSize: '14px',
-      fontWeight: '500',
-      '&:hover': {
-        borderColor: '#cbd5e0'
-      },
-      '&:focus-within': {
-        borderColor: '#166534', // green-800
-        boxShadow: '0 0 0 2px rgba(22, 101, 52, 0.1)' // green-800 with opacity
-      }
-    }),
-    placeholder: (provided) => ({
-      ...provided,
-      color: '#64748b'
-    }),
-    multiValue: (provided) => ({
-      ...provided,
-      backgroundColor: '#166534', // green-800
-      borderRadius: '4px'
-    }),
-    multiValueLabel: (provided) => ({
-      ...provided,
-      color: 'white',
-      fontSize: '12px'
-    }),
-    multiValueRemove: (provided) => ({
-      ...provided,
-      color: 'white',
-      '&:hover': {
-        backgroundColor: '#15803d', // green-700
-        color: 'white'
-      }
-    }),
-    option: (provided, state) => ({
-      ...provided,
-      color: state.isDisabled ? '#9ca3af' : provided.color,
-      backgroundColor: state.isDisabled 
-        ? '#f9fafb' 
-        : state.isSelected 
-          ? '#166534' // green-800
-          : state.isFocused 
-            ? '#f0fdf4' // green-50
-            : 'white',
-      cursor: state.isDisabled ? 'not-allowed' : 'pointer',
-      opacity: state.isDisabled ? 0.6 : 1,
-      '&:hover': {
-        backgroundColor: state.isDisabled 
-          ? '#f9fafb' 
-          : state.isSelected 
-            ? '#166534' // green-800
-            : '#f0fdf4' // green-50
-      }
-    })
-  };
-
-  // Common props for React Select to fix aria-activedescendant issue
-  const commonSelectProps = {
-    'aria-activedescendant': '',
-    inputProps: {
-      'aria-activedescendant': ''
-    }
-  };
 
   const handleGolfDayChange = (day: string) => {
     setGolfDays(prev => 
@@ -456,26 +388,15 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
               Select your cities{selectedCities.length > 0 ? ` (${selectedCities.length})` : ''}
             </label>
             <div className="mt-2">
-              {citiesLoading ? (
-                <Skeleton className="h-[42px] w-full rounded-lg" />
-              ) : (
-                <Select
-                  isMulti
-                  closeMenuOnSelect={false}
-                  options={cityOptions}
-                  value={cityOptions.filter(option => selectedCities.includes(option.value))}
-                  onChange={handleCityChange}
-                  placeholder="Select cities..."
-                  isSearchable
-                  noOptionsMessage={() => "No cities found"}
-                  styles={selectStyles}
-                  className="react-select-container"
-                  classNamePrefix="react-select"
-                  instanceId="subscription-cities-select"
-                  menuPlacement="top"
-                  {...commonSelectProps}
-                />
-              )}
+              <TeeClubSelect
+                options={cityOptions}
+                selectedValues={selectedCities}
+                onChange={handleCityChange}
+                placeholder="Select cities..."
+                instanceId="subscription-cities-select"
+                isLoading={citiesLoading}
+                menuPlacement="top"
+              />
             </div>
           </div>
 
@@ -484,27 +405,15 @@ export function SubscriptionSignup({ isOpen, onOpenChange, onDismiss, selectedRe
               Select your courses{selectedCourses.length > 0 ? ` (${selectedCourses.length})` : ''}
             </label>
             <div className="mt-2">
-              {coursesLoading ? (
-                <Skeleton className="h-[42px] w-full rounded-lg" />
-              ) : (
-                <Select
-                  isMulti
-                  closeMenuOnSelect={false}
-                  options={courseOptions}
-                  value={courseOptions.filter(option => selectedCourses.includes(option.value))}
-                  onChange={handleCourseChange}
-                  placeholder="Select courses..."
-                  isSearchable
-                  noOptionsMessage={() => "No courses found"}
-                  isOptionDisabled={(option) => option.isDisabled || false}
-                  styles={selectStyles}
-                  className="react-select-container"
-                  classNamePrefix="react-select"
-                  instanceId="subscription-courses-select"
-                  menuPlacement="top"
-                  {...commonSelectProps}
-                />
-              )}
+              <TeeClubSelect
+                options={courseOptions}
+                selectedValues={selectedCourses}
+                onChange={handleCourseChange}
+                placeholder="Select courses..."
+                instanceId="subscription-courses-select"
+                isLoading={coursesLoading}
+                menuPlacement="top"
+              />
             </div>
           </div>
 

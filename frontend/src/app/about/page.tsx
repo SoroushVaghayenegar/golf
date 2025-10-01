@@ -1,6 +1,5 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
-import CityNavigation from "@/components/CityNavigation";
 
 export const metadata: Metadata = {
   title: 'About TeeClub - BC Golf Tee Times',
@@ -14,7 +13,6 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-100">
-      <CityNavigation />
       <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="p-8">
