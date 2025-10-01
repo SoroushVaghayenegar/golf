@@ -3,6 +3,7 @@
 import posthog from 'posthog-js';
 import { useState, useEffect, useRef } from "react";
 import { Calendar } from "@/components/ui/calendar";
+import { Switch } from "@/components/ui/switch";
 import { CalendarIcon, X } from "lucide-react";
 import {
   isPastDate,
@@ -32,8 +33,12 @@ export default function CompactCalendar({
   selectionMode = 'multiple'
 }: CompactCalendarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isMultiDay, setIsMultiDay] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const calendarRef = useRef<HTMLDivElement>(null);
+  
+  // Use internal state for selection mode if not explicitly controlled
+  const effectiveSelectionMode = isMultiDay ? 'multiple' : 'single';
 
   // Close calendar when clicking outside
   useEffect(() => {
@@ -114,7 +119,7 @@ export default function CompactCalendar({
       );
     }
 
-    if (selectionMode === 'single') {
+    if (effectiveSelectionMode === 'single') {
       return (
         <Calendar
           mode="single"
@@ -198,7 +203,7 @@ export default function CompactCalendar({
             <span className="text-slate-500 text-sm">Select date...</span>
           ) : (
             <div className="flex flex-wrap gap-1.5 flex-1">
-              {selectionMode === 'multiple' ? (
+              {effectiveSelectionMode === 'multiple' ? (
                 <>
                   {/* Desktop: show all selected dates */}
                   <div className="hidden sm:flex flex-wrap gap-1.5">
@@ -303,6 +308,28 @@ export default function CompactCalendar({
                 Done
               </button>
             </div>
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-200">
+              <Switch
+                checked={isMultiDay}
+                onCheckedChange={(checked) => {
+                  setIsMultiDay(checked);
+                  // Clear selections when switching modes
+                  if (!checked && selectedDates && selectedDates.length > 1) {
+                    setSelectedDates([selectedDates[0]]);
+                  }
+                  posthog.capture('calendar_mode_switched', {
+                    mode: checked ? 'multi-day' : 'single'
+                  });
+                }}
+                id="mobile-selection-mode"
+              />
+              <label 
+                htmlFor="mobile-selection-mode" 
+                className="text-md font-small text-slate-700 cursor-pointer"
+              >
+                {isMultiDay ? 'Multiple days' : 'Single day'}
+              </label>
+            </div>
             <div className="flex-1 overflow-y-auto p-3">
               {renderCalendar()}
             </div>
@@ -314,7 +341,7 @@ export default function CompactCalendar({
               ref={calendarRef}
               className={`bg-white border border-slate-200 rounded-lg shadow-xl ${expandedContainerClassName ?? 'p-3 max-w-sm mx-auto'}`}
             >
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex justify-between items-center mb-3">
                 <h3 className="text-sm font-semibold text-slate-800">Select Dates</h3>
                 <button
                   onClick={() => setIsExpanded(false)}
@@ -323,6 +350,28 @@ export default function CompactCalendar({
                 >
                   <X className="w-4 h-4 text-slate-500" />
                 </button>
+              </div>
+              <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-200">
+                <Switch
+                  checked={isMultiDay}
+                  onCheckedChange={(checked) => {
+                    setIsMultiDay(checked);
+                    // Clear selections when switching modes
+                    if (!checked && selectedDates && selectedDates.length > 1) {
+                      setSelectedDates([selectedDates[0]]);
+                    }
+                    posthog.capture('calendar_mode_switched', {
+                      mode: checked ? 'multi-day' : 'single'
+                    });
+                  }}
+                  id="desktop-selection-mode"
+                />
+                <label 
+                  htmlFor="desktop-selection-mode" 
+                  className="text-sm font-medium text-slate-700 cursor-pointer"
+                >
+                  {isMultiDay ? 'Multiple days' : 'Single day'}
+                </label>
               </div>
               {renderCalendar()}
               {selectedDates && selectedDates.length > 0 && (

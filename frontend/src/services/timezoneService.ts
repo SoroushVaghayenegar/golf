@@ -22,23 +22,18 @@ export function createDate(year: number, month: number, day: number, hour: numbe
 
 /**
  * Get today's date in user's local timezone (start of day)
- * Returns tomorrow if current time is between 9:59pm and 11:59pm
  */
 export function getToday(): Date {
   const now = getNow();
-  const hour = now.getHours();
-  const minute = now.getMinutes();
-  
-  // Between 9:59pm and 11:59pm, return tomorrow as "today"
-  const isLateEvening = hour >= 21;
-  
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  
-  if (isLateEvening) {
-    today.setDate(today.getDate() + 1);
-  }
-  
-  return today;
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+/**
+ * Check if it's evening (after 9:00pm user's local time)
+ */
+export function isEvening(): boolean {
+  const now = getNow();
+  return now.getHours() >= 21; // 9pm or later
 }
 
 /**
@@ -52,14 +47,11 @@ export function isPastDate(date: Date): boolean {
 }
 
 /**
- * Check if the actual current calendar day should be disabled
- * (after 9:59pm user's local time)
+ * Check if today should be disabled (after 10pm user's local time)
  */
 export function isTodayDisabled(): boolean {
   const now = getNow();
-  const hour = now.getHours();
-  const minute = now.getMinutes();
-  return hour >= 22 || (hour === 21 && minute >= 59); // 9:59pm or later
+  return now.getHours() >= 22; // 10pm or later
 }
 
 /**
@@ -87,7 +79,7 @@ export function isDateDisabled(date: Date): boolean {
     return true;
   }
   
-  // Disable the actual current calendar day if it's after 9:59pm user's local time
+  // Disable today if it's after 10pm user's local time
   if (compareDate.getTime() === today.getTime() && isTodayDisabled()) {
     return true;
   }

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { 
   getToday, 
+  isEvening,
 } from "../services/timezoneService";
 import Sidebar from "@/components/Sidebar";
 
@@ -57,7 +58,11 @@ export default function Home() {
     // Initialize dates after hydration
     const today = getToday();
     setTodayDate(today);
-    setSelectedDates([today]);
+    if (isEvening()) {
+    setSelectedDates([new Date(today.setDate(today.getDate() + 1))]);
+    } else {
+      setSelectedDates([today]);
+    }
   }, []);
 
   // Helper to format a Date as YYYY-MM-DD without timezone shifts
