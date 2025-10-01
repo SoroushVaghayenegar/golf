@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { fetchCityCourses, CityData, Course } from '@/services/coursesService';
+import { fetchCityCourses, CityCoursesData, Course } from '@/services/coursesService';
 import { fetchCityBySlug, City } from '@/services/cityService';
 import { CityMetadataGenerator } from '@/utils/Metadata';
 import { Metadata } from 'next';
@@ -18,11 +18,16 @@ export async function generateMetadata({ params }: CityPageProps): Promise<Metad
   
   console.log('Generating metadata for city:', citySlug); // Debug log
   
-  let cityData: CityData;
+  let coursesData: CityCoursesData;
+  let cityInfo: City;
   
   try {
-    cityData = await fetchCityCourses(citySlug);
-    console.log('City data fetched:', cityData); // Debug log
+    // Fetch both in parallel for better performance
+    [coursesData, cityInfo] = await Promise.all([
+      fetchCityCourses(citySlug),
+      fetchCityBySlug(citySlug)
+    ]);
+    console.log('City courses data fetched:', coursesData); // Debug log
   } catch (error) {
     console.error('Error fetching city courses for metadata:', error);
     // Return fallback metadata instead of empty object
@@ -33,8 +38,8 @@ export async function generateMetadata({ params }: CityPageProps): Promise<Metad
   }
 
   // Check if city data is valid - be less restrictive
-  if (!cityData || !cityData.city) {
-    console.log('Invalid city data, returning fallback metadata'); // Debug log
+  if (!coursesData || !coursesData.city) {
+    console.log('Invalid city courses data, returning fallback metadata'); // Debug log
     return {
       title: `Golf Courses | TeeClub`,
       description: 'Find the best golf courses and book tee times faster with TeeClub - Canada\'s #1 tee time search platform.',
@@ -43,14 +48,14 @@ export async function generateMetadata({ params }: CityPageProps): Promise<Metad
 
   // Map courses to the format expected by CityMetadataGenerator
   // Allow empty courses array - the CityMetadataGenerator can handle it
-  const coursesForMeta = cityData.courses.map((course: Course) => ({
+  const coursesForMeta = coursesData.courses.map((course: Course) => ({
     name: course.name,
     image: course.image_url || '/golf-course.png',
     slug: course.slug,
   }));
 
   console.log('Generating metadata with:', {
-    cityName: cityData.city.name,
+    cityName: coursesData.city.name,
     citySlug,
     coursesCount: coursesForMeta.length
   }); // Debug log
@@ -58,10 +63,11 @@ export async function generateMetadata({ params }: CityPageProps): Promise<Metad
   // Use CityMetadataGenerator to create comprehensive metadata
   try {
     const metadata = CityMetadataGenerator({
-      cityName: cityData.city.name,
+      cityName: cityInfo.name,
       citySlug: citySlug,
       courses: coursesForMeta,
-      cityImage: cityData.courses.length > 0 ? cityData.courses[0].image_url : undefined,
+      // Use city image if available, otherwise fall back to first course image
+      cityImage: cityInfo.image_url || undefined,
     });
     console.log('Metadata generated successfully:', metadata.title); // Debug log
     return metadata;
@@ -69,8 +75,8 @@ export async function generateMetadata({ params }: CityPageProps): Promise<Metad
     console.error('Error generating metadata:', metadataError);
     // Return fallback metadata
     return {
-      title: `${cityData.city.name} Golf Courses | TeeClub`,
-      description: `Find golf courses and book tee times in ${cityData.city.name} with TeeClub - Canada's #1 tee time search platform.`,
+      title: `${cityInfo.name} Golf Courses | TeeClub`,
+      description: `Find golf courses and book tee times in ${cityInfo.name} with TeeClub - Canada's #1 tee time search platform.`,
     };
   }
 }
@@ -78,12 +84,15 @@ export async function generateMetadata({ params }: CityPageProps): Promise<Metad
 export default async function CityPage({ params }: CityPageProps) {
   const { slug: citySlug } = await params;
   
-  let cityData: CityData;
-  let cityInfo: City | null = null;
+  let cityData: CityCoursesData;
+  let cityInfo: City;
   
   try {
-    cityData = await fetchCityCourses(citySlug);
-    cityInfo = await fetchCityBySlug(citySlug);
+    // Fetch both in parallel for better performance
+    [cityData, cityInfo] = await Promise.all([
+      fetchCityCourses(citySlug),
+      fetchCityBySlug(citySlug)
+    ]);
   } catch (error) {
     console.error('Error fetching city data:', error);
     notFound();
