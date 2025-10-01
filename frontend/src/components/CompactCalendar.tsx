@@ -5,9 +5,9 @@ import { useState, useEffect, useRef } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon, X } from "lucide-react";
 import {
-  isPastDateInVancouver,
-  getMinSelectableDateInVancouver, 
-  isDateDisabledInVancouver
+  isPastDate,
+  getMinSelectableDate, 
+  isDateDisabled
 } from "../services/timezoneService";
 
 interface CompactCalendarProps {
@@ -122,8 +122,8 @@ export default function CompactCalendar({
           onSelect={(date?: Date) => {
             handleDateSelect(date ? [date] : undefined);
           }}
-          fromDate={getMinSelectableDateInVancouver()}
-          disabled={isDateDisabledInVancouver}
+          fromDate={getMinSelectableDate()}
+          disabled={isDateDisabled}
           className="w-full [--cell-size:1.75rem] sm:[--cell-size:2rem]"
           classNames={{
             root: "!w-full",
@@ -132,7 +132,7 @@ export default function CompactCalendar({
             today: "bg-green-100 text-green-800 rounded-md [&_button]:bg-green-100 [&_button]:text-green-800 [&_button[data-selected-single=true]]:!bg-sidebar-primary [&_button[data-selected-single=true]]:!text-sidebar-primary-foreground"
           }}
           modifiers={{
-            past: (date: Date) => isPastDateInVancouver(date),
+            past: (date: Date) => isPastDate(date),
             today: (date: Date) => todayDate ? (date.toDateString() === todayDate.toDateString()) : false
           }}
           modifiersStyles={{
@@ -150,8 +150,8 @@ export default function CompactCalendar({
         onSelect={(dates?: Date[]) => {
           handleDateSelect(dates);
         }}
-        fromDate={getMinSelectableDateInVancouver()}
-        disabled={isDateDisabledInVancouver}
+        fromDate={getMinSelectableDate()}
+        disabled={isDateDisabled}
         className="w-full [--cell-size:1.75rem] sm:[--cell-size:2rem]"
         classNames={{
           root: "!w-full",
@@ -160,7 +160,7 @@ export default function CompactCalendar({
           today: "bg-green-100 text-green-800 rounded-md [&_button]:bg-green-100 [&_button]:text-green-800 [&_button[data-selected-single=true]]:!bg-sidebar-primary [&_button[data-selected-single=true]]:!text-sidebar-primary-foreground"
         }}
         modifiers={{
-          past: (date: Date) => isPastDateInVancouver(date),
+          past: (date: Date) => isPastDate(date),
           today: (date: Date) => todayDate ? (date.toDateString() === todayDate.toDateString()) : false
         }}
         modifiersStyles={{

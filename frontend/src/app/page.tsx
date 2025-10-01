@@ -3,7 +3,7 @@ import posthog from 'posthog-js';
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { 
-  getVancouverToday, 
+  getToday, 
 } from "../services/timezoneService";
 import Sidebar from "@/components/Sidebar";
 
@@ -55,7 +55,7 @@ export default function Home() {
     setIsClient(true);
 
     // Initialize dates after hydration
-    const today = getVancouverToday();
+    const today = getToday();
     setTodayDate(today);
     setSelectedDates([today]);
   }, []);

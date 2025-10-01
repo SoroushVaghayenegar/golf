@@ -1,81 +1,94 @@
-// Vancouver timezone utilities
-const VANCOUVER_TIMEZONE = 'America/Vancouver';
-
+// Timezone utilities for user's local time
 /**
- * Get current date and time in Vancouver timezone
+ * Get current date and time in user's local timezone
  */
-export function getVancouverNow(): Date {
-  return new Date(new Date().toLocaleString("en-US", { timeZone: VANCOUVER_TIMEZONE }));
+export function getNow(): Date {
+  return new Date();
 }
 
 /**
- * Convert a date to Vancouver timezone
+ * Convert a date to user's local timezone
  */
-export function toVancouverTime(date: Date): Date {
-  return new Date(date.toLocaleString("en-US", { timeZone: VANCOUVER_TIMEZONE }));
+export function toLocalTime(date: Date): Date {
+  return new Date(date);
 }
 
 /**
- * Create a date in Vancouver timezone with specific components
+ * Create a date with specific components in user's local timezone
  */
-export function createVancouverDate(year: number, month: number, day: number, hour: number = 0, minute: number = 0, second: number = 0): Date {
-  const dateString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')}`;
-  return new Date(dateString + 'T00:00:00.000Z');
+export function createDate(year: number, month: number, day: number, hour: number = 0, minute: number = 0, second: number = 0): Date {
+  return new Date(year, month - 1, day, hour, minute, second);
 }
 
 /**
- * Get today's date in Vancouver timezone (start of day)
+ * Get today's date in user's local timezone (start of day)
+ * Returns tomorrow if current time is between 9:59pm and 11:59pm
  */
-export function getVancouverToday(): Date {
-  const now = getVancouverNow();
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+export function getToday(): Date {
+  const now = getNow();
+  const hour = now.getHours();
+  const minute = now.getMinutes();
+  
+  // Between 9:59pm and 11:59pm, return tomorrow as "today"
+  const isLateEvening = hour >= 21;
+  
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  
+  if (isLateEvening) {
+    today.setDate(today.getDate() + 1);
+  }
+  
+  return today;
 }
 
 /**
- * Check if a date is in the past relative to Vancouver time
+ * Check if a date is in the past relative to user's local time
  */
-export function isPastDateInVancouver(date: Date): boolean {
-  const vancouverToday = getVancouverToday();
+export function isPastDate(date: Date): boolean {
+  const today = getToday();
   const compareDate = new Date(date);
   compareDate.setHours(0, 0, 0, 0);
-  return compareDate < vancouverToday;
+  return compareDate < today;
 }
 
 /**
- * Check if today should be disabled (after 10pm Vancouver time)
+ * Check if the actual current calendar day should be disabled
+ * (after 9:59pm user's local time)
  */
-export function isTodayDisabledInVancouver(): boolean {
-  const vancouverNow = getVancouverNow();
-  return vancouverNow.getHours() >= 22; // 10pm or later
+export function isTodayDisabled(): boolean {
+  const now = getNow();
+  const hour = now.getHours();
+  const minute = now.getMinutes();
+  return hour >= 22 || (hour === 21 && minute >= 59); // 9:59pm or later
 }
 
 /**
- * Get the minimum selectable date in Vancouver timezone
+ * Get the minimum selectable date in user's local timezone
  */
-export function getMinSelectableDateInVancouver(): Date {
-  if (isTodayDisabledInVancouver()) {
-    const tomorrow = getVancouverToday();
+export function getMinSelectableDate(): Date {
+  if (isTodayDisabled()) {
+    const tomorrow = getToday();
     tomorrow.setDate(tomorrow.getDate() + 1);
     return tomorrow;
   }
-  return getVancouverToday();
+  return getToday();
 }
 
 /**
- * Check if a date should be disabled in Vancouver timezone
+ * Check if a date should be disabled in user's local timezone
  */
-export function isDateDisabledInVancouver(date: Date): boolean {
-  const vancouverToday = getVancouverToday();
+export function isDateDisabled(date: Date): boolean {
+  const today = getToday();
   const compareDate = new Date(date);
   compareDate.setHours(0, 0, 0, 0);
   
   // Disable past dates
-  if (compareDate < vancouverToday) {
+  if (compareDate < today) {
     return true;
   }
   
-  // Disable today if it's after 10pm Vancouver time
-  if (compareDate.getTime() === vancouverToday.getTime() && isTodayDisabledInVancouver()) {
+  // Disable the actual current calendar day if it's after 9:59pm user's local time
+  if (compareDate.getTime() === today.getTime() && isTodayDisabled()) {
     return true;
   }
   
@@ -98,21 +111,20 @@ export function formatDateForAPI(date: Date): string {
 }
 
 /**
- * Parse a datetime string and return it in Vancouver timezone
+ * Parse a datetime string and return it in user's local timezone
  */
-export function parseDateTimeInVancouver(dateTimeString: string): Date {
+export function parseDateTime(dateTimeString: string): Date {
   // Remove 'T' and replace with space for better parsing
   const dateString = dateTimeString.replace('T', ' ');
   const date = new Date(dateString);
-  return toVancouverTime(date);
+  return toLocalTime(date);
 }
 
 /**
- * Format a date to display Vancouver time
+ * Format a date to display user's local time
  */
-export function formatVancouverTime(date: Date): string {
+export function formatLocalTime(date: Date): string {
   return date.toLocaleTimeString('en-US', {
-    timeZone: 'America/Vancouver',
     hour: 'numeric',
     minute: '2-digit',
     hour12: true
@@ -120,8 +132,8 @@ export function formatVancouverTime(date: Date): string {
 }
 
 /**
- * Get current Vancouver time as a formatted string
+ * Get current user's local time as a formatted string
  */
-export function getCurrentVancouverTime(): string {
-  return formatVancouverTime(new Date());
+export function getCurrentTime(): string {
+  return formatLocalTime(new Date());
 } 
