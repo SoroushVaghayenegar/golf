@@ -327,7 +327,7 @@ export function CityMetadataGenerator({
   cityImage
 }: CityMetadataParams): Metadata {
   // Generate course names list for dynamic content
-  const courseNames = courses.map(course => course.name).slice(0, 5); // Limit to top 5 for readability
+  const courseNames = courses.map(course => course.name); // Use all courses
   const courseNamesText = courseNames.length > 0 
     ? courseNames.slice(0, -1).join(', ') + (courseNames.length > 1 ? ' & ' + courseNames[courseNames.length - 1] : courseNames[0])
     : 'multiple golf courses';
@@ -337,7 +337,7 @@ export function CityMetadataGenerator({
   
   // Generate optimized title and description
   const title = `${cityName} Golf Tee Times | Book Multiple Courses in One Place | TeeClub`;
-  const description = `Find ${cityName} golf tee times across ${courseNamesText}${courses.length > 5 ? ' & more' : ''}. Search multiple courses at once and book faster with TeeClub - Canada's #1 tee time search platform.`;
+  const description = `Find ${cityName} golf tee times across ${courseNamesText}. Search multiple courses at once and book faster with TeeClub - Canada's #1 tee time search platform.`;
   
   // Generate keywords for SEO
   const baseKeywords = [
