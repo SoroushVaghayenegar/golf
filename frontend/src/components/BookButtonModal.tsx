@@ -6,7 +6,8 @@ import { ExternalLink, MapPin, Clock, Users, DollarSign, Clock2,
   Sun, Cloud, CloudRain, CloudSnow, CloudDrizzle, 
   CloudLightning, CloudFog, Zap, CloudHail,
   CloudSunRain, CloudRainWind, Snowflake, Thermometer,
-  Droplets, Wind, ChevronDown, Info, LandPlot } from 'lucide-react';
+  Droplets, Wind, ChevronDown, Info, LandPlot, BadgeInfo } from 'lucide-react';
+import Link from 'next/link';
 import { 
   Breadcrumb,
   BreadcrumbList,
@@ -25,7 +26,7 @@ import { Rating } from '@/components/ui/rating';
 import { Skeleton } from '@/components/ui/skeleton';
 import { type TeeTime } from '@/services/teeTimeService';
 import { getTeeTime } from '@/utils/DateAndTime';
-import { GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api';
+import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps';
 import { useState } from 'react';
 import React from 'react';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
@@ -243,44 +244,9 @@ export default function BookButtonModal({ isOpen, onOpenChange, teeTime, numOfPl
   // Check if we should load the map (only when modal is open and has coordinates)
   const shouldLoadMap = isOpen && teeTime.course?.latitude && teeTime.course?.longitude;
 
-  // Lazy load Google Maps API only when needed
-  const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
-    // Only load when modal is open and has coordinates
-    ...(shouldLoadMap ? {} : { preventGoogleFontsLoading: true })
-  });
-
-  // Google Maps configuration
-  const mapContainerStyle = {
-    width: '100%',
-    height: '200px'
-  };
-
   const center = {
     lat: teeTime.course?.latitude ? parseFloat(teeTime.course.latitude.toString()) : 0,
     lng: teeTime.course?.longitude ? parseFloat(teeTime.course.longitude.toString()) : 0
-  };
-
-  const mapOptions = {
-    disableDefaultUI: true,
-    zoomControl: true,
-    zoom: 12,
-    styles: [
-      {
-        featureType: "poi",
-        elementType: "labels",
-        stylers: [{ visibility: "off" }]
-      }
-    ]
-  };
-
-  // Custom marker icon using favicon
-  const customMarkerIcon = {
-    url: '/favicon.ico',
-    scaledSize: { width: 32, height: 32 } as google.maps.Size,
-    origin: { x: 0, y: 0 } as google.maps.Point,
-    anchor: { x: 16, y: 32 } as google.maps.Point,
   };
 
   return (
@@ -318,10 +284,23 @@ export default function BookButtonModal({ isOpen, onOpenChange, teeTime, numOfPl
           {/* Course Information (hide on CPS step 2) */}
           {(!isCps || step === 1) && (
             <div className="bg-gradient-to-r from-amber-50 to-yellow-100 rounded-lg p-4">
-              <div className="mb-1">
+              <div className="mb-2 flex items-center justify-between gap-3">
                 <h3 className="font-semibold text-lg text-gray-900">
                   {teeTime.course?.name}
                 </h3>
+                {teeTime.course?.slug && (
+                  <Link
+                    href={`/course/${teeTime.course.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white transition-all shadow-sm hover:shadow-md group flex-shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                    title="View course details"
+                  >
+                    <BadgeInfo className="w-3.5 h-3.5" />
+                    <span className="text-xs font-medium">Course Info</span>
+                  </Link>
+                )}
               </div>
               <div className="flex items-center text-gray-600 mb-2">
                 <MapPin className="w-4 h-4 mr-1" />
@@ -344,25 +323,33 @@ export default function BookButtonModal({ isOpen, onOpenChange, teeTime, numOfPl
 
           {/* Google Map - Lazy loaded (hide on step 2 for CPS to focus on booking) */}
           {shouldLoadMap && (!isCps || step === 1) && (
-            <div className="bg-gray-50 rounded-lg overflow-hidden">
-              {isLoaded ? (
-                <GoogleMap
-                  mapContainerStyle={mapContainerStyle}
-                  center={center}
-                  zoom={12}
-                  options={mapOptions}
+            <div className="bg-gray-50 rounded-lg overflow-hidden w-full h-[200px] [&_.gm-style-cc]:!hidden [&_a[href^='https://maps.google.com']]:!hidden [&_.gmnoprint]:!hidden [&_.gm-style-cc+div]:!hidden [&_button[aria-label*='Zoom']]:!block [&_div[aria-label='Zoom']]:!block">
+              <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}>
+                <Map
+                  defaultCenter={center}
+                  defaultZoom={12}
+                  disableDefaultUI={true}
+                  zoomControl={true}
+                  mapId="booking-modal-map"
+                  clickableIcons={true}
+                  gestureHandling="greedy"
+                  styles={[
+                    {
+                      featureType: "poi",
+                      elementType: "labels",
+                      stylers: [{ visibility: "off" }]
+                    }
+                  ]}
                 >
-                  <Marker
-                    position={center}
-                    icon={customMarkerIcon}
-                    title={teeTime.course?.name}
-                  />
-                </GoogleMap>
-              ) : (
-                <Skeleton 
-                  className="w-full h-[200px] bg-gray-100"
-                />
-              )}
+                  <AdvancedMarker position={center} title={teeTime.course?.name}>
+                    <img 
+                      src="/favicon.ico" 
+                      alt="Course location marker" 
+                      style={{ width: 32, height: 32 }}
+                    />
+                  </AdvancedMarker>
+                </Map>
+              </APIProvider>
             </div>
           )}
 

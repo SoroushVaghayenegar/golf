@@ -18,6 +18,7 @@ interface CourseData {
     longitude: number;
     address: string;
     phone_number: string;
+    slug: string;
 }
 
 interface TeeTimeData {
@@ -57,6 +58,7 @@ interface CourseInfo {
     longitude: number;
     address: string;
     phone_number: string;
+    slug: string;
 }
 
 export interface TeeTime {
@@ -126,7 +128,8 @@ export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[
                 latitude,
                 longitude,
                 address,
-                phone_number
+                phone_number,
+                slug
             )
         `)
         .in('date', dates)
@@ -210,7 +213,8 @@ export async function getTeeTimes(supabaseClient: SupabaseClient, dates: string[
                 latitude: typedCourseTeeTimes.courses.latitude,
                 longitude: typedCourseTeeTimes.courses.longitude,
                 address: typedCourseTeeTimes.courses.address,
-                phone_number: typedCourseTeeTimes.courses.phone_number
+                phone_number: typedCourseTeeTimes.courses.phone_number,
+                slug: typedCourseTeeTimes.courses.slug
             }
 
             const teeTimeObj: TeeTime = {

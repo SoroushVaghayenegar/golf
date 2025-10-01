@@ -3,8 +3,8 @@ import { useState, useEffect } from "react";
 import { Listbox } from "@headlessui/react";
 import { ChevronDown, Users, Clock, School, LandPlot, MapPin, Info, Loader } from "lucide-react";
 import { Range } from "react-range";
-import Select, { MultiValue, StylesConfig } from 'react-select';
-import { Skeleton } from "@/components/ui/skeleton";
+import { MultiValue } from 'react-select';
+import TeeClubSelect from "./TeeClubSelect";
 import { fetchCourseDisplayNamesAndTheirCities, fetchRegions } from "../services/supabaseService";
 import CompactCalendar from "./CompactCalendar";
 import { useAppStore } from "@/stores/appStore";
@@ -272,81 +272,6 @@ export default function Sidebar({
     setShowCourseSelector(!showCourseSelector);
   };
 
-  const selectStyles: StylesConfig<SelectOption, true> = {
-    control: (provided) => ({
-      ...provided,
-      minHeight: '42px',
-      maxHeight: '70px', // Reduced from 84px for more compact height
-      border: '1px solid #e2e8f0',
-      borderRadius: '8px',
-      fontSize: '14px',
-      fontWeight: '500',
-      '&:hover': {
-        borderColor: '#cbd5e0'
-      },
-      '&:focus-within': {
-        borderColor: '#166534', // green-800
-        boxShadow: '0 0 0 2px rgba(22, 101, 52, 0.1)' // green-800 with opacity
-      }
-    }),
-    valueContainer: (provided) => ({
-      ...provided,
-      maxHeight: '70px', // Reduced from 84px for more compact height
-      overflow: 'auto',
-      padding: '4px 8px'
-    }),
-    placeholder: (provided) => ({
-      ...provided,
-      color: '#64748b'
-    }),
-    multiValue: (provided) => ({
-      ...provided,
-      backgroundColor: '#166534', // green-800
-      borderRadius: '4px',
-      margin: '2px 4px 2px 0',
-      maxWidth: 'calc(100% - 8px)'
-    }),
-    multiValueLabel: (provided) => ({
-      ...provided,
-      color: 'white',
-      fontSize: '12px'
-    }),
-    multiValueRemove: (provided) => ({
-      ...provided,
-      color: 'white',
-      '&:hover': {
-        backgroundColor: '#15803d', // green-700
-        color: 'white'
-      }
-    }),
-    option: (provided, state) => ({
-      ...provided,
-      color: state.isDisabled ? '#9ca3af' : provided.color,
-      backgroundColor: state.isDisabled 
-        ? '#f9fafb' 
-        : state.isSelected 
-          ? '#166534' // green-800
-          : state.isFocused 
-            ? '#f0fdf4' // green-50
-            : 'white',
-      cursor: state.isDisabled ? 'not-allowed' : 'pointer',
-      opacity: state.isDisabled ? 0.6 : 1,
-      '&:hover': {
-        backgroundColor: state.isDisabled 
-          ? '#f9fafb' 
-          : state.isSelected 
-            ? '#166534' // green-800
-            : '#f0fdf4' // green-50
-      }
-    })
-  };
-
-  const commonSelectProps = {
-    'aria-activedescendant': '',
-    inputProps: {
-      'aria-activedescendant': ''
-    }
-  };
 
   return (
     <section className="w-full lg:w-80 flex-shrink-0 bg-white shadow p-5 flex flex-col gap-3 lg:gap-4 lg:h-[calc(100vh-64px)] lg:min-h-[calc(100vh-64px)] lg:sticky lg:top-0 rounded-xl lg:rounded-none justify-between relative z-20 mt-4 lg:mt-0 lg:overflow-hidden">
@@ -554,37 +479,15 @@ export default function Sidebar({
             </div>
           </div>
           {showCitySelector && (
-            citiesLoading ? (
-              <Skeleton className="h-[42px] w-full rounded-lg" />
-            ) : (
-              <Select
-                isMulti
-                closeMenuOnSelect={false}
-                options={cityOptions}
-                value={cityOptions.filter(option => selectedCities.includes(option.value))}
-                onChange={handleCityChange}
-                placeholder="Filter by cities..."
-                isSearchable
-                noOptionsMessage={() => "No cities found"}
-                menuPlacement="top"
-                styles={selectStyles}
-                className="react-select-container"
-                classNamePrefix="react-select"
-                instanceId="cities-select"
-                blurInputOnSelect={false}
-                onMenuOpen={() => {
-                  // Prevent cursor from appearing on mobile
-                  if (window.innerWidth <= 768) {
-                    const input = document.querySelector('#cities-select input');
-                    if (input) {
-                      (input as HTMLInputElement).style.caretColor = 'transparent';
-                      (input as HTMLInputElement).style.userSelect = 'none';
-                    }
-                  }
-                }}
-                {...commonSelectProps}
-              />
-            )
+            <TeeClubSelect
+              options={cityOptions}
+              selectedValues={selectedCities}
+              onChange={handleCityChange}
+              placeholder="Filter by cities..."
+              instanceId="cities-select"
+              isLoading={citiesLoading}
+              menuPlacement="top"
+            />
           )}
         </div>
 
@@ -618,38 +521,15 @@ export default function Sidebar({
             </div>
           </div>
           {showCourseSelector && (
-            coursesLoading ? (
-              <Skeleton className="h-[42px] w-full rounded-lg" />
-            ) : (
-              <Select
-                isMulti
-                closeMenuOnSelect={false}
-                options={courseOptions}
-                value={courseOptions.filter(option => selectedCourses.includes(option.value))}
-                onChange={handleCourseChange}
-                placeholder="Filter by courses..."
-                isSearchable
-                noOptionsMessage={() => "No courses found"}
-                isOptionDisabled={(option) => option.isDisabled || false}
-                menuPlacement="top"
-                styles={selectStyles}
-                className="react-select-container"
-                classNamePrefix="react-select"
-                instanceId="courses-select"
-                blurInputOnSelect={false}
-                onMenuOpen={() => {
-                  // Prevent cursor from appearing on mobile
-                  if (window.innerWidth <= 768) {
-                    const input = document.querySelector('#courses-select input');
-                    if (input) {
-                      (input as HTMLInputElement).style.caretColor = 'transparent';
-                      (input as HTMLInputElement).style.userSelect = 'none';
-                    }
-                  }
-                }}
-                {...commonSelectProps}
-              />
-            )
+            <TeeClubSelect
+              options={courseOptions}
+              selectedValues={selectedCourses}
+              onChange={handleCourseChange}
+              placeholder="Filter by courses..."
+              instanceId="courses-select"
+              isLoading={coursesLoading}
+              menuPlacement="top"
+            />
           )}
         </div>
       </div>

@@ -1,9 +1,10 @@
 "use client";
 
 import posthog from 'posthog-js';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import BookModal from '@/components/BookButtonModal';
+import BookModalMobile from '@/components/BookButtonModalMobile';
 import { type TeeTime } from '@/services/teeTimeService';
 
 interface BookButtonProps {
@@ -13,6 +14,23 @@ interface BookButtonProps {
 
 export default function BookButton({ teeTime, numOfPlayersInFilter }: BookButtonProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect if device is mobile based on screen width
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 640); // Tailwind's sm breakpoint
+    };
+
+    // Check on mount
+    checkIsMobile();
+
+    // Add event listener for window resize
+    window.addEventListener('resize', checkIsMobile);
+
+    // Cleanup
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
 
   const handleClick = () => {
     // Track book modal button click
@@ -21,7 +39,8 @@ export default function BookButton({ teeTime, numOfPlayersInFilter }: BookButton
       tee_time_id: teeTime.id,
       price: teeTime.price,
       available_participants: teeTime.available_participants,
-      city: teeTime.city
+      city: teeTime.city,
+      device_type: isMobile ? 'mobile' : 'desktop'
     });
     
     setIsModalOpen(true);
@@ -36,12 +55,21 @@ export default function BookButton({ teeTime, numOfPlayersInFilter }: BookButton
         Book
       </Button>
       
-      <BookModal 
-        isOpen={isModalOpen}
-        onOpenChange={setIsModalOpen}
-        teeTime={teeTime}
-        numOfPlayersInFilter={numOfPlayersInFilter}
-      />
+      {isMobile ? (
+        <BookModalMobile 
+          isOpen={isModalOpen}
+          onOpenChange={setIsModalOpen}
+          teeTime={teeTime}
+          numOfPlayersInFilter={numOfPlayersInFilter}
+        />
+      ) : (
+        <BookModal 
+          isOpen={isModalOpen}
+          onOpenChange={setIsModalOpen}
+          teeTime={teeTime}
+          numOfPlayersInFilter={numOfPlayersInFilter}
+        />
+      )}
     </>
   );
 }

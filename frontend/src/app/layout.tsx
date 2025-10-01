@@ -6,6 +6,7 @@ import "./globals.css";
 import ClientLayout from "@/components/ClientLayout";
 import { GoogleTagManager } from '@next/third-parties/google';
 
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],

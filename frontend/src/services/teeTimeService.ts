@@ -13,6 +13,7 @@ export interface CourseInfo {
     longitude: number;
     address: string;
     phone_number: string;
+    slug: string;
 }
 
 export interface TeeTime {

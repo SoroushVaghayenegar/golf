@@ -19,8 +19,6 @@ export const handler = async () => {
         cities!inner(name)
       `)
       .eq('external_api', 'CHRONO_LIGHTSPEED')
-      .order('id')
-      .range(1, 29)
 
       if (error) {
         throw new Error(`Error fetching courses: ${error.message}`)
