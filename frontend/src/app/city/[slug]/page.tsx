@@ -101,8 +101,28 @@ export default async function CityPage({ params }: CityPageProps) {
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
       {/* Header Section */}
       {cityData.courses.length > 0 && (
-        <div className="bg-gradient-to-b from-slate-200 to-amber-100 py-16 px-6">
-          <div className="max-w-4xl mx-auto text-center">
+        <div className="relative py-16 px-6 overflow-hidden">
+          {/* Background Image with Blur (if available) */}
+          {cityInfo?.image_url && (
+            <>
+              <div 
+                className="absolute inset-0 bg-cover bg-center"
+                style={{
+                  backgroundImage: `url(${cityInfo.image_url})`,
+                  transform: 'scale(1.1)', // Prevent blur edges from showing
+                }}
+              />
+              <div className="absolute inset-0 bg-white/65" /> {/* White overlay for transparency */}
+            </>
+          )}
+          
+          {/* Fallback Gradient (if no image) */}
+          {!cityInfo?.image_url && (
+            <div className="absolute inset-0 bg-gradient-to-b from-slate-200 to-amber-100" />
+          )}
+          
+          {/* Content */}
+          <div className="max-w-4xl mx-auto text-center relative z-10">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
               Golf Courses in {capitalizeCityName(cityData.city.name)}
             </h1>
