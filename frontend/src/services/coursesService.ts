@@ -8,7 +8,7 @@ export interface Course {
     slug: string;
 }
   
-export interface CityData {
+export interface CityCoursesData {
     city: {
       name: string;
     };
@@ -31,7 +31,7 @@ export interface CourseDetail {
     image_url: string;
 }
 
-export const fetchCityCourses = async (citySlug: string): Promise<CityData> => {
+export const fetchCityCourses = async (citySlug: string): Promise<CityCoursesData> => {
     try {
         if (!citySlug) {
             return {
