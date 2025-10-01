@@ -93,6 +93,7 @@ export default function TeeTimesShareBar({ className, regionId }: TeeTimesShareB
         bg-white border-t border-gray-200 shadow-lg
         lg:bg-gray-50 lg:border lg:border-gray-200 lg:rounded-lg lg:shadow-md
         px-4 py-3 lg:px-6 lg:py-4
+        pb-[env(safe-area-inset-bottom,0px)]
         flex items-center justify-between
         ${className}
       `}>
@@ -125,6 +126,7 @@ export default function TeeTimesShareBar({ className, regionId }: TeeTimesShareB
       bg-white border-t border-gray-200 shadow-lg
       lg:bg-gray-50 lg:border lg:border-gray-200 lg:rounded-lg lg:shadow-md
       px-4 py-3 lg:px-6 lg:py-4
+      pb-[env(safe-area-inset-bottom,0px)]
       flex items-center justify-between
       ${className}
     `}>

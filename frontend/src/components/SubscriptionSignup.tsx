@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
 import { createSubscription, fetchCourseDisplayNamesAndTheirCities, fetchRegions } from "@/services/supabaseService"
 import { MapPin } from "lucide-react"
 

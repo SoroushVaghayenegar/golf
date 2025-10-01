@@ -23,7 +23,6 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 import { Rating } from '@/components/ui/rating';
-import { Skeleton } from '@/components/ui/skeleton';
 import { type TeeTime } from '@/services/teeTimeService';
 import { getTeeTime } from '@/utils/DateAndTime';
 import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps';
