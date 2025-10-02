@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { fetchRegions } from "@/services/supabaseService";
 import {
-  getVancouverToday,
+  getToday,
   formatDateForAPI
 } from "@/services/timezoneService";
 import TeeTimeCards, { TeeTimeCardsRef } from "@/components/TeeTimeCards";
@@ -109,7 +109,7 @@ export default function SearchPage() {
     setIsMobile(window.innerWidth < 1024);
     
     // Initialize dates after hydration
-    const today = getVancouverToday();
+    const today = getToday();
     setTodayDate(today);
     setSelectedDates([today]);
     setFetchedDates([today]);

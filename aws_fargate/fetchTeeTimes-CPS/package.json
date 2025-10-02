@@ -12,10 +12,12 @@
   },
   "dependencies": {
     "@sentry/node": "^10.1.0",
-    "@supabase/supabase-js": "^2.51.0"
+    "@supabase/supabase-js": "^2.51.0",
+    "progress": "^2.0.3"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "@types/progress": "^2.0.7",
     "dotenv": "^17.2.0",
     "ts-node": "^10.9.0",
     "typescript": "^5.0.0"

@@ -1,7 +1,7 @@
 export class TeeTime {
   start_datetime: Date;
   players_available: number;
-  available_participants: number[];
+  available_participants: number[];available_participants: number[];
   holes: number;
   price: number;
   booking_link: string;

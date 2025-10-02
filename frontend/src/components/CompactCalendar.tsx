@@ -3,11 +3,12 @@
 import posthog from 'posthog-js';
 import { useState, useEffect, useRef } from "react";
 import { Calendar } from "@/components/ui/calendar";
+import { Switch } from "@/components/ui/switch";
 import { CalendarIcon, X } from "lucide-react";
 import {
-  isPastDateInVancouver,
-  getMinSelectableDateInVancouver, 
-  isDateDisabledInVancouver
+  isPastDate,
+  getMinSelectableDate, 
+  isDateDisabled
 } from "../services/timezoneService";
 
 interface CompactCalendarProps {
@@ -18,7 +19,7 @@ interface CompactCalendarProps {
   className?: string;
   expandedContainerClassName?: string;
   closeOnSelect?: boolean;
-  selectionMode?: 'single' | 'multiple';
+  selectionMode?: 'single' | 'multiple' | 'both';
 }
 
 export default function CompactCalendar({
@@ -29,11 +30,17 @@ export default function CompactCalendar({
   className = "",
   expandedContainerClassName,
   closeOnSelect = false,
-  selectionMode = 'multiple'
+  selectionMode = 'both'
 }: CompactCalendarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isMultiDay, setIsMultiDay] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const calendarRef = useRef<HTMLDivElement>(null);
+  
+  // Determine effective selection mode based on prop and state
+  const effectiveSelectionMode = selectionMode === 'both' 
+    ? (isMultiDay ? 'multiple' : 'single')
+    : selectionMode;
 
   // Close calendar when clicking outside
   useEffect(() => {
@@ -114,7 +121,7 @@ export default function CompactCalendar({
       );
     }
 
-    if (selectionMode === 'single') {
+    if (effectiveSelectionMode === 'single') {
       return (
         <Calendar
           mode="single"
@@ -122,8 +129,8 @@ export default function CompactCalendar({
           onSelect={(date?: Date) => {
             handleDateSelect(date ? [date] : undefined);
           }}
-          fromDate={getMinSelectableDateInVancouver()}
-          disabled={isDateDisabledInVancouver}
+          fromDate={getMinSelectableDate()}
+          disabled={isDateDisabled}
           className="w-full [--cell-size:1.75rem] sm:[--cell-size:2rem]"
           classNames={{
             root: "!w-full",
@@ -132,7 +139,7 @@ export default function CompactCalendar({
             today: "bg-green-100 text-green-800 rounded-md [&_button]:bg-green-100 [&_button]:text-green-800 [&_button[data-selected-single=true]]:!bg-sidebar-primary [&_button[data-selected-single=true]]:!text-sidebar-primary-foreground"
           }}
           modifiers={{
-            past: (date: Date) => isPastDateInVancouver(date),
+            past: (date: Date) => isPastDate(date),
             today: (date: Date) => todayDate ? (date.toDateString() === todayDate.toDateString()) : false
           }}
           modifiersStyles={{
@@ -150,8 +157,8 @@ export default function CompactCalendar({
         onSelect={(dates?: Date[]) => {
           handleDateSelect(dates);
         }}
-        fromDate={getMinSelectableDateInVancouver()}
-        disabled={isDateDisabledInVancouver}
+        fromDate={getMinSelectableDate()}
+        disabled={isDateDisabled}
         className="w-full [--cell-size:1.75rem] sm:[--cell-size:2rem]"
         classNames={{
           root: "!w-full",
@@ -160,7 +167,7 @@ export default function CompactCalendar({
           today: "bg-green-100 text-green-800 rounded-md [&_button]:bg-green-100 [&_button]:text-green-800 [&_button[data-selected-single=true]]:!bg-sidebar-primary [&_button[data-selected-single=true]]:!text-sidebar-primary-foreground"
         }}
         modifiers={{
-          past: (date: Date) => isPastDateInVancouver(date),
+          past: (date: Date) => isPastDate(date),
           today: (date: Date) => todayDate ? (date.toDateString() === todayDate.toDateString()) : false
         }}
         modifiersStyles={{
@@ -198,7 +205,7 @@ export default function CompactCalendar({
             <span className="text-slate-500 text-sm">Select date...</span>
           ) : (
             <div className="flex flex-wrap gap-1.5 flex-1">
-              {selectionMode === 'multiple' ? (
+              {effectiveSelectionMode === 'multiple' ? (
                 <>
                   {/* Desktop: show all selected dates */}
                   <div className="hidden sm:flex flex-wrap gap-1.5">
@@ -303,6 +310,30 @@ export default function CompactCalendar({
                 Done
               </button>
             </div>
+            {selectionMode === 'both' && (
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-200">
+                <Switch
+                  checked={isMultiDay}
+                  onCheckedChange={(checked) => {
+                    setIsMultiDay(checked);
+                    // Clear selections when switching modes
+                    if (!checked && selectedDates && selectedDates.length > 1) {
+                      setSelectedDates([selectedDates[0]]);
+                    }
+                    posthog.capture('calendar_mode_switched', {
+                      mode: checked ? 'multi-day' : 'single'
+                    });
+                  }}
+                  id="mobile-selection-mode"
+                />
+                <label 
+                  htmlFor="mobile-selection-mode" 
+                  className="text-md font-small text-slate-700 cursor-pointer"
+                >
+                  {isMultiDay ? 'Multiple days' : 'Single day'}
+                </label>
+              </div>
+            )}
             <div className="flex-1 overflow-y-auto p-3">
               {renderCalendar()}
             </div>
@@ -314,7 +345,7 @@ export default function CompactCalendar({
               ref={calendarRef}
               className={`bg-white border border-slate-200 rounded-lg shadow-xl ${expandedContainerClassName ?? 'p-3 max-w-sm mx-auto'}`}
             >
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex justify-between items-center mb-3">
                 <h3 className="text-sm font-semibold text-slate-800">Select Dates</h3>
                 <button
                   onClick={() => setIsExpanded(false)}
@@ -324,7 +355,33 @@ export default function CompactCalendar({
                   <X className="w-4 h-4 text-slate-500" />
                 </button>
               </div>
-              {renderCalendar()}
+              {selectionMode === 'both' && (
+                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-200">
+                  <Switch
+                    checked={isMultiDay}
+                    onCheckedChange={(checked) => {
+                      setIsMultiDay(checked);
+                      // Clear selections when switching modes
+                      if (!checked && selectedDates && selectedDates.length > 1) {
+                        setSelectedDates([selectedDates[0]]);
+                      }
+                      posthog.capture('calendar_mode_switched', {
+                        mode: checked ? 'multi-day' : 'single'
+                      });
+                    }}
+                    id="desktop-selection-mode"
+                  />
+                  <label 
+                    htmlFor="desktop-selection-mode" 
+                    className="text-sm font-medium text-slate-700 cursor-pointer"
+                  >
+                    {isMultiDay ? 'Multiple days' : 'Single day'}
+                  </label>
+                </div>
+              )}
+              <div className={selectionMode !== 'both' ? 'mt-4' : ''}>
+                {renderCalendar()}
+              </div>
               {selectedDates && selectedDates.length > 0 && (
                 <div className="hidden lg:block mt-4 pt-4 border-t border-slate-200">
                   <div className="text-xs font-medium text-slate-600 mb-2">
