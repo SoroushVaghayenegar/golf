@@ -20,6 +20,7 @@ interface CompactCalendarProps {
   expandedContainerClassName?: string;
   closeOnSelect?: boolean;
   selectionMode?: 'single' | 'multiple' | 'both';
+  maxDays?: number;
 }
 
 export default function CompactCalendar({
@@ -30,7 +31,8 @@ export default function CompactCalendar({
   className = "",
   expandedContainerClassName,
   closeOnSelect = false,
-  selectionMode = 'both'
+  selectionMode = 'both',
+  maxDays = 3
 }: CompactCalendarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isMultiDay, setIsMultiDay] = useState(false);
@@ -86,11 +88,20 @@ export default function CompactCalendar({
   };
 
   const handleDateSelect = (dates: Date[] | undefined) => {
-    const next = dates && dates.length > 0 ? [...dates] : undefined;
+    let next = dates && dates.length > 0 ? [...dates] : undefined;
+    
+    // Limit to maximum days in multiday mode
+    if (next && effectiveSelectionMode === 'multiple' && next.length > maxDays) {
+      // Keep only the most recently selected dates up to maxDays
+      next = next.slice(-maxDays);
+    }
+    
     setSelectedDates(next);
     posthog.capture('calendar_date_selected', {
       selected_dates_count: next?.length || 0,
-      selected_dates: next?.map(d => d.toISOString().split('T')[0])
+      selected_dates: next?.map(d => d.toISOString().split('T')[0]),
+      max_limit_reached: dates && dates.length > maxDays,
+      max_days_limit: maxDays
     });
     if (closeOnSelect && next && next.length > 0) {
       setIsExpanded(false);
@@ -311,27 +322,32 @@ export default function CompactCalendar({
               </button>
             </div>
             {selectionMode === 'both' && (
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-200">
-                <Switch
-                  checked={isMultiDay}
-                  onCheckedChange={(checked) => {
-                    setIsMultiDay(checked);
-                    // Clear selections when switching modes
-                    if (!checked && selectedDates && selectedDates.length > 1) {
-                      setSelectedDates([selectedDates[0]]);
-                    }
-                    posthog.capture('calendar_mode_switched', {
-                      mode: checked ? 'multi-day' : 'single'
-                    });
-                  }}
-                  id="mobile-selection-mode"
-                />
-                <label 
-                  htmlFor="mobile-selection-mode" 
-                  className="text-md font-small text-slate-700 cursor-pointer"
-                >
-                  {isMultiDay ? 'Multiple days' : 'Single day'}
-                </label>
+              <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-slate-200">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={isMultiDay}
+                    onCheckedChange={(checked) => {
+                      setIsMultiDay(checked);
+                      // Clear selections when switching modes
+                      if (!checked && selectedDates && selectedDates.length > 1) {
+                        setSelectedDates([selectedDates[0]]);
+                      }
+                      posthog.capture('calendar_mode_switched', {
+                        mode: checked ? 'multi-day' : 'single'
+                      });
+                    }}
+                    id="mobile-selection-mode"
+                  />
+                  <label 
+                    htmlFor="mobile-selection-mode" 
+                    className="text-md font-small text-slate-700 cursor-pointer"
+                  >
+                    {isMultiDay ? 'Multiple days' : 'Single day'}
+                  </label>
+                </div>
+                {isMultiDay && selectedDates && selectedDates.length >= maxDays && (
+                  <span className="text-xs text-orange-600 font-medium">Max {maxDays} days</span>
+                )}
               </div>
             )}
             <div className="flex-1 overflow-y-auto p-3">
@@ -356,27 +372,32 @@ export default function CompactCalendar({
                 </button>
               </div>
               {selectionMode === 'both' && (
-                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-200">
-                  <Switch
-                    checked={isMultiDay}
-                    onCheckedChange={(checked) => {
-                      setIsMultiDay(checked);
-                      // Clear selections when switching modes
-                      if (!checked && selectedDates && selectedDates.length > 1) {
-                        setSelectedDates([selectedDates[0]]);
-                      }
-                      posthog.capture('calendar_mode_switched', {
-                        mode: checked ? 'multi-day' : 'single'
-                      });
-                    }}
-                    id="desktop-selection-mode"
-                  />
-                  <label 
-                    htmlFor="desktop-selection-mode" 
-                    className="text-sm font-medium text-slate-700 cursor-pointer"
-                  >
-                    {isMultiDay ? 'Multiple days' : 'Single day'}
-                  </label>
+                <div className="flex items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-200">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={isMultiDay}
+                      onCheckedChange={(checked) => {
+                        setIsMultiDay(checked);
+                        // Clear selections when switching modes
+                        if (!checked && selectedDates && selectedDates.length > 1) {
+                          setSelectedDates([selectedDates[0]]);
+                        }
+                        posthog.capture('calendar_mode_switched', {
+                          mode: checked ? 'multi-day' : 'single'
+                        });
+                      }}
+                      id="desktop-selection-mode"
+                    />
+                    <label 
+                      htmlFor="desktop-selection-mode" 
+                      className="text-sm font-medium text-slate-700 cursor-pointer"
+                    >
+                      {isMultiDay ? 'Multiple days' : 'Single day'}
+                    </label>
+                  </div>
+                  {isMultiDay && selectedDates && selectedDates.length >= maxDays && (
+                    <span className="text-xs text-orange-600 font-medium">Max {maxDays} days</span>
+                  )}
                 </div>
               )}
               <div className={selectionMode !== 'both' ? 'mt-4' : ''}>
