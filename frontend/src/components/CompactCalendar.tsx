@@ -37,8 +37,10 @@ export default function CompactCalendar({
   const containerRef = useRef<HTMLDivElement>(null);
   const calendarRef = useRef<HTMLDivElement>(null);
   
-  // Determine effective selection mode based on prop
-  const effectiveSelectionMode = selectionMode;
+  // Determine effective selection mode based on prop and state
+  const effectiveSelectionMode = selectionMode === 'both' 
+    ? (isMultiDay ? 'multiple' : 'single')
+    : selectionMode;
 
   // Close calendar when clicking outside
   useEffect(() => {

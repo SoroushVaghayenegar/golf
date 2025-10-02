@@ -1,6 +1,7 @@
 import { Course } from "./Course"
 import { fetchCourseTeeTimes, batchUpsertTeeTimes, timeStringToMinutes } from "./utils"
 import { createClient } from "@supabase/supabase-js"
+import ProgressBar from "progress"
 
 export const handler = async () => {
   // Start timer
@@ -43,8 +44,8 @@ export const handler = async () => {
         return `${hours}:${minutes}`
       }
 
-      // Process all courses and dates in parallel
-      const promises = courses.flatMap(course => {
+      // Build array of course/date combinations to process
+      const tasks = courses.flatMap(course => {
         const startDate = getDate(course.timezone)
         return Array.from({ length: course.booking_visibility_days + 1 }, (_, i) => {
           if (i === course.booking_visibility_days && course.booking_visibility_start_time) {
@@ -57,20 +58,54 @@ export const handler = async () => {
           }
           const searchDate = new Date(startDate)
           searchDate.setDate(searchDate.getDate() + i)
-          return fetchCourseTeeTimes(course, searchDate)
+          return { course, searchDate }
         })
-      }).filter(promise => promise !== null)
+      }).filter(task => task !== null)
       
-      console.log(`Fetching tee times for ${promises.length} dates`)
+      console.log(`Fetching tee times for ${tasks.length} dates`)
 
+      // Process each date sequentially with progress bar or simple logging
+      const results = []
+      const isTTY = process.stdout.isTTY
       
-      const trackedPromises = promises.map((promise, index) => 
-        promise.then(result => {
-          return result
-        })
-      )
-
-      const results = await Promise.all(trackedPromises)
+      let progressBar: ProgressBar | null = null
+      if (isTTY) {
+        progressBar = new ProgressBar(
+          'Progress [:bar] :percent | :current/:total | ETA: :etas | Rate: :rate/s | :course - :date',
+          {
+            complete: '█',
+            incomplete: '░',
+            width: 30,
+            total: tasks.length,
+          }
+        )
+      } else {
+        console.log('Processing tasks (no TTY detected, using simple logging)...')
+      }
+      
+      for (let i = 0; i < tasks.length; i++) {
+        const { course, searchDate } = tasks[i]
+        
+        const result = await fetchCourseTeeTimes(course, searchDate)
+        results.push(result)
+        
+        if (progressBar) {
+          progressBar.tick({
+            course: course.name.padEnd(15).substring(0, 15),
+            date: searchDate.toISOString().split('T')[0]
+          })
+        } else {
+          // Log progress every 10 tasks or on first/last
+          if (i === 0 || i === tasks.length - 1 || (i + 1) % 10 === 0) {
+            console.log(`Progress: ${i + 1}/${tasks.length} (${((i + 1) / tasks.length * 100).toFixed(1)}%) - ${course.name} - ${searchDate.toISOString().split('T')[0]}`)
+          }
+        }
+        
+        if (i < tasks.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 200))
+        }
+      }
+      
       const teeTimes = results.flat()
 
 

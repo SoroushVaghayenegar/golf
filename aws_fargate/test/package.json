@@ -1,7 +1,7 @@
 {
-  "name": "fetch-tee-times-cps",
+  "name": "fetch-tee-times-chrono",
   "version": "1.0.0",
-  "description": "Lambda function to fetch tee times from CPS golf courses",
+  "description": "Lambda function to fetch tee times from Chrono golf courses",
   "main": "index.ts",
   "scripts": {
     "build": "tsc --noEmit",

@@ -1,11 +1,6 @@
 # Use node base image
 FROM node:22-slim
 
-# Install required packages
-RUN apt-get update && apt-get install -y \
-  --no-install-recommends && \
-  apt-get clean && rm -rf /var/lib/apt/lists/*
-
 # Set default environment variables (can be overridden at runtime)
 ENV SUPABASE_URL="" \
     SUPABASE_SERVICE_ROLE_KEY=""
