@@ -68,6 +68,8 @@ export async function generateMetadata({ params }: CityPageProps): Promise<Metad
       courses: coursesForMeta,
       // Use city image if available, otherwise fall back to first course image
       cityImage: cityInfo.image_url || undefined,
+      // Pass FAQs for structured data
+      faqs: cityInfo.faqs || undefined,
     });
     console.log('Metadata generated successfully:', metadata.title); // Debug log
     return metadata;
