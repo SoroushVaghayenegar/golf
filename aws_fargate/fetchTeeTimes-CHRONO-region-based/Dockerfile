@@ -24,5 +24,5 @@ RUN npm run build
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD node -e "console.log('Health check passed')" || exit 1
 
-# Default command - run the TypeScript file directly
-CMD ["ts-node", "index.ts"]
+# Default command - run the TypeScript file directly with garbage collection exposed
+CMD ["node", "--expose-gc", "-r", "ts-node/register", "index.ts"]

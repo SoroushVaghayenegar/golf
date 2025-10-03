@@ -7,6 +7,11 @@ interface CourseMetadataParams {
   courseSlug: string;
 }
 
+interface FAQItem {
+  question: string;
+  answer: string;
+}
+
 interface CityMetadataParams {
   cityName: string;
   citySlug: string;
@@ -16,6 +21,7 @@ interface CityMetadataParams {
     slug: string;
   }>;
   cityImage?: string;
+  faqs?: FAQItem[];
 }
 
 export function CourseMetadataGenerator({
@@ -324,7 +330,8 @@ export function CityMetadataGenerator({
   cityName,
   citySlug,
   courses,
-  cityImage
+  cityImage,
+  faqs
 }: CityMetadataParams): Metadata {
   // Generate course names list for dynamic content
   const courseNames = courses.map(course => course.name); // Use all courses
@@ -535,6 +542,22 @@ export function CityMetadataGenerator({
           "category": "Golf Course Search"
         }))
       }),
+
+      // FAQ structured data (if FAQs exist)
+      ...(faqs && faqs.length > 0 ? {
+        'script:ld+json:faq': JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": faqs.map((faq) => ({
+            "@type": "Question",
+            "name": faq.question,
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": faq.answer
+            }
+          }))
+        })
+      } : {}),
 
       // Hreflang for international SEO
       'link:hreflang:en-ca': canonicalUrl,
