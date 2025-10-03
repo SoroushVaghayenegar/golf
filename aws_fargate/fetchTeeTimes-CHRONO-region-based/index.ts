@@ -12,14 +12,18 @@ export const handler = async () => {
       const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
       const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
+      const regionIds = process.env.REGION_ID!.split(',').map(Number)
+
       // Fetch courses from the database with city name
       const { data: coursesData, error } = await supabase
       .from('courses')
       .select(`
         *,
         cities!inner(name)
+        cities!inner(region_id)
       `)
-      .eq('external_api', 'CPS')
+      .in('cities.region_id', regionIds)
+      .eq('external_api', 'CHRONO_LIGHTSPEED')
 
       if (error) {
         throw new Error(`Error fetching courses: ${error.message}`)
@@ -49,12 +53,12 @@ export const handler = async () => {
         const startDate = getDate(course.timezone)
         return Array.from({ length: course.booking_visibility_days + 1 }, (_, i) => {
           if (i === course.booking_visibility_days && course.booking_visibility_start_time) {
-          const bookingVisibilityStartTime = timeStringToMinutes(course.booking_visibility_start_time)
-              const currentTime = timeStringToMinutes(get24HourFormat(course.timezone))
-              if (currentTime < bookingVisibilityStartTime) {
-                // Return null to be filtered out later, instead of invalid structure
-                return null
-              }
+            const bookingVisibilityStartTime = timeStringToMinutes(course.booking_visibility_start_time)
+            const currentTime = timeStringToMinutes(get24HourFormat(course.timezone))
+            if (currentTime < bookingVisibilityStartTime) {
+              // Return null to be filtered out later, instead of invalid structure
+              return null
+            }
           }
           const searchDate = new Date(startDate)
           searchDate.setDate(searchDate.getDate() + i)
@@ -64,7 +68,7 @@ export const handler = async () => {
       
       console.log(`Fetching tee times for ${tasks.length} dates`)
 
-      // Process each date sequentially with progress bar or simple logging
+      // Process with concurrency of 2 using a simple worker pool
       // Upsert to DB every UPSERT_BATCH_SIZE tasks to manage memory
       const UPSERT_BATCH_SIZE = 20
       const results = [] as any[]
@@ -191,7 +195,7 @@ export const handler = async () => {
       };
 
       // Send health check signal
-      await fetch('https://hc-ping.com/f1d5e07a-6beb-41ca-a0ad-0bcc6866a717');
+      await fetch(process.env.CRON_CHECK_URL!);
 
       return response;
 };
