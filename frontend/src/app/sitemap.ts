@@ -39,13 +39,34 @@ async function getAllCoursesSlugs(): Promise<string[]> {
   }
 }
 
+async function getAllRegionsSlugs(): Promise<string[]> {
+  try {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('regions')
+      .select('slug')
+
+    if (!data || error) {
+      console.error('Error fetching regions:', error)
+      return []
+    }
+    
+    return data.map(region => region.slug).filter(slug => slug)
+  } catch (error) {
+    console.error('Unexpected error fetching regions:', error)
+    return []
+  }
+}
+
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.SITE_URL || 'https://teeclub.golf'
   
   // Fetch cities and courses from database
-  const [citySlugs, courseSlugs] = await Promise.all([
+  const [citySlugs, courseSlugs, regionSlugs] = await Promise.all([
     getAllCitiesSlugs(),
-    getAllCoursesSlugs()
+    getAllCoursesSlugs(),
+    getAllRegionsSlugs()
   ])
 
   // Static routes
@@ -55,7 +76,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/contact',
     '/search',
     '/terms',
-    '/privacy'
+    '/privacy',
+    '/regions'
   ]
 
   // City routes
@@ -64,8 +86,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Course routes
   const courseRoutes = courseSlugs.map(slug => `/course/${slug}`)
 
+  // Region routes
+  const regionRoutes = regionSlugs.map(slug => `/regions/${slug}`)
+
   // Combine all routes
-  const allRoutes = [...staticRoutes, ...cityRoutes, ...courseRoutes]
+  const allRoutes = [...staticRoutes, ...cityRoutes, ...courseRoutes, ...regionRoutes]
 
   return allRoutes.map((route) => ({
     url: `${baseUrl}${route}`,
