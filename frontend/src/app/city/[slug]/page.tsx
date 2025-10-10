@@ -131,6 +131,26 @@ export default async function CityPage({ params }: CityPageProps) {
           {!cityInfo?.image_url && (
             <div className="absolute inset-0 bg-gradient-to-b from-slate-200 to-amber-100" />
           )}
+
+          {/* Breadcrumb Navigation - Overlaid on header */}
+          {cityInfo?.regions && (
+            <div className="absolute top-6 left-6 z-20">
+              <nav className="text-sm bg-white/80 backdrop-blur-sm px-4 py-2 rounded-lg shadow-sm">
+                <Link href="/regions" className="text-gray-700 hover:text-green-600 font-medium transition-colors">
+                  Regions
+                </Link>
+                <span className="mx-2 text-gray-400">/</span>
+                <Link 
+                  href={`/regions/${cityInfo.regions.slug}`} 
+                  className="text-gray-700 hover:text-green-600 font-medium transition-colors"
+                >
+                  {capitalizeCityName(cityInfo.regions.name)}
+                </Link>
+                <span className="mx-2 text-gray-400">/</span>
+                <span className="text-gray-900 font-semibold">{capitalizeCityName(cityData.city.name)}</span>
+              </nav>
+            </div>
+          )}
           
           {/* Content */}
           <div className="max-w-4xl mx-auto text-center relative z-10">

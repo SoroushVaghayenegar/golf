@@ -11,6 +11,19 @@ export interface City {
     image_url: string;
     slug: string;
     faqs: FAQItem[];
+    regions?: {
+        slug: string;
+        name: string;
+        image_url: string;
+    };
+}
+
+export interface RegionCities {
+    region: {
+        name: string;
+        image_url: string;
+    };
+    cities: City[];
 }
 
 /**
@@ -40,6 +53,34 @@ export async function fetchCityBySlug(slug: string): Promise<City> {
         throw new Error('City not found');
     } catch (error) {
         console.error('Error fetching city:', error);
+        throw error;
+    }
+}
+
+
+/**
+ * Fetches cities from the API using a region slug
+ * @param regionSlug - The slug of the region to fetch
+ * @returns Promise<City[]> - Array of cities matching the region slug
+ */
+export async function fetchRegionCities(regionSlug: string): Promise<RegionCities> {
+    try {
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+        const response = await fetch(`${baseUrl}/api/region-cities?region_slug=${regionSlug}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch region cities: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data as RegionCities;
+    } catch (error) {
+        console.error('Error fetching region cities:', error);
         throw error;
     }
 }

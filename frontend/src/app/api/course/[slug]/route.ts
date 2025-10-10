@@ -41,9 +41,11 @@ export async function GET(
             city_slug: courseData.city_slug,
             region_name: courseData.region_name,
             region_id: courseData.region_id,
+            region_slug: courseData.region_slug,
             timezone: courseData.timezone,
             rating: courseData.rating,
             image_url: courseData.image_url,
+            description: courseData.description,
         };
 
         return NextResponse.json(result)

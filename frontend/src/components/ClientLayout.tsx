@@ -11,7 +11,7 @@ import Toaster from '@/components/ui/sonner'
 export default function ClientLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const isAuthRoute = pathname?.startsWith('/auth')
-  const hasFooter = pathname === '/' ||pathname === '/about' || pathname === '/privacy' || pathname === '/terms' || pathname === '/contact' || pathname === '/faq' || pathname === '/cities' || pathname.startsWith('/city/') || pathname.startsWith('/course/')
+  const hasFooter = pathname === '/' ||pathname === '/about' || pathname === '/privacy' || pathname === '/terms' || pathname === '/contact' || pathname === '/faq' || pathname === '/regions' || pathname.startsWith('/city/') || pathname.startsWith('/course/')
   const isNotStickyRoute = pathname === '/search' || hasFooter
 
   // Generate client_id on first visit

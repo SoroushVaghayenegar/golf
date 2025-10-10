@@ -75,6 +75,9 @@ export default async function CoursePage({ params }: CoursePageProps) {
         {/* Header */}
         <div className="mb-4">
           <nav className="text-sm text-gray-600 mb-4">
+            <Link href="/regions" className="hover:text-blue-600">Regions</Link>
+            <span className="mx-2">/</span>
+            <Link href={"/regions/" + courseDetail.region_slug} className="hover:text-blue-600">{courseDetail.region_name}</Link>
             <span className="mx-2">/</span>
             <Link href={"/city/" + courseDetail.city_slug} className="hover:text-blue-600">{courseDetail.city_name}</Link>
             <span className="mx-2">/</span>
@@ -84,12 +87,12 @@ export default async function CoursePage({ params }: CoursePageProps) {
           <h1 className="text-3xl font-bold text-gray-900">{courseDetail.name}</h1>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-end">
           {/* Left Column - Course Image and Details */}
-          <div className="space-y-6">
+          <div className="flex flex-col gap-6">
             {/* Course Image */}
             {courseDetail.image_url && (
-              <div className="relative h-64 w-full rounded-lg overflow-hidden">
+              <div className="relative h-80 w-full rounded-lg overflow-hidden">
                 <Image
                   src={courseDetail.image_url}
                   alt={courseDetail.name}
@@ -97,6 +100,14 @@ export default async function CoursePage({ params }: CoursePageProps) {
                   className="object-cover object-bottom"
                   priority
                 />
+              </div>
+            )}
+
+            {/* Course Description */}
+            {courseDetail.description && (
+              <div className="bg-white rounded-lg p-6 shadow-sm">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">About This Course</h2>
+                <p className="text-gray-600 leading-relaxed">{courseDetail.description}</p>
               </div>
             )}
 
@@ -143,7 +154,7 @@ export default async function CoursePage({ params }: CoursePageProps) {
           </div>
 
           {/* Right Column - Map */}
-          <div className="space-y-6">
+          <div className="flex flex-col gap-6">
             <div className="bg-white rounded-lg p-6 shadow-sm">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Location</h2>
               <CourseMapWrapper 

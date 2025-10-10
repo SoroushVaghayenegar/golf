@@ -18,6 +18,7 @@ export interface CityCoursesData {
 export interface CourseDetail {
     id: number;
     name: string;
+    description: string;
     address: string;
     latitude: number;
     longitude: number;
@@ -26,6 +27,7 @@ export interface CourseDetail {
     city_slug: string;
     region_name: string;
     region_id: number;
+    region_slug: string;
     timezone: string;
     rating: number;
     image_url: string;

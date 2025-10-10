@@ -95,6 +95,14 @@ export default function SearchPage() {
   const initialAutoSearchTriggeredRef = useRef(false);
   const lastQueryKeyRef = useRef<string | null>(null);
 
+  // Helper to format a Date as YYYY-MM-DD without timezone shifts
+  const formatDateLocal = (date: Date) => {
+    const y = date.getFullYear();
+    const m = (date.getMonth() + 1).toString().padStart(2, '0');
+    const d = date.getDate().toString().padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
   // Check localStorage and set mobile state on component mount
   useEffect(() => {
     // Mark as client-side rendered
@@ -156,6 +164,13 @@ export default function SearchPage() {
       const search = window.location.search || '';
       const params = new URLSearchParams(search);
 
+      // Region is mandatory - if missing, redirect to home
+      const regionParam = params.get('region') || params.get('region_id') || params.get('regionId');
+      if (!regionParam) {
+        router.replace('/');
+        return;
+      }
+
       // Dates: comma-separated YYYY-MM-DD (parse safely to avoid timezone shift)
       const datesParam = params.get('dates');
       if (datesParam) {
@@ -175,22 +190,32 @@ export default function SearchPage() {
           setHadDatesInURL(true);
         }
       }
-      // If dates is missing entirely, redirect back to home
+      
+      // If dates is missing, set default (today or tomorrow if past 9pm)
       if (!datesParam) {
-        router.replace('/');
-        return;
+        const now = new Date();
+        const currentHour = now.getHours();
+        const defaultDate = currentHour >= 21 ? new Date(now.getTime() + 24 * 60 * 60 * 1000) : now;
+        setSelectedDates([defaultDate]);
+        setHadDatesInURL(true); // Treat defaults as if they came from URL
       }
 
       // Players
       const playersParam = params.get('players') || params.get('numOfPlayers');
       if (playersParam && ["1","2","3","4","any"].includes(playersParam)) {
         setNumOfPlayers(playersParam);
+      } else if (!playersParam) {
+        // Set default
+        setNumOfPlayers('any');
       }
 
       // Holes
       const holesParam = params.get('holes');
       if (holesParam && ["9","18","any"].includes(holesParam)) {
         setHoles(holesParam);
+      } else if (!holesParam) {
+        // Set default
+        setHoles('any');
       }
 
       // Time range: support start/end or timeRange=5-22 or 5,22
@@ -216,6 +241,9 @@ export default function SearchPage() {
         if (clampedStart <= clampedEnd) {
           setTimeRange([clampedStart, clampedEnd]);
         }
+      } else {
+        // Set default time range
+        setTimeRange([5, 22]);
       }
 
       // Sort
@@ -236,14 +264,14 @@ export default function SearchPage() {
         } else {
           setSortBy(sortParam as typeof sortBy);
         }
+      } else if (!sortParam) {
+        // Set default sort
+        setSortBy('startTime');
       }
 
-      // Region
-      const regionParam = params.get('region') || params.get('region_id') || params.get('regionId');
-      if (regionParam) {
-        setSelectedRegionId(regionParam);
-        setHadRegionInURL(true);
-      }
+      // Region (already checked above, but set state here)
+      setSelectedRegionId(regionParam);
+      setHadRegionInURL(true);
 
       // Cities and courses - apply after courseCityMapping loads
       const citiesParam = params.get('cities');
@@ -337,14 +365,6 @@ export default function SearchPage() {
       return () => clearTimeout(id);
     }
   }, [hadDatesInURL, hadRegionInURL, selectedRegionId, selectedDates, urlFiltersApplied, pendingCitiesFromURL, pendingCoursesFromURL, pendingCourseIdsFromURL]);
-
-  // Helper to format a Date as YYYY-MM-DD without timezone shifts
-  const formatDateLocal = (date: Date) => {
-    const y = date.getFullYear();
-    const m = (date.getMonth() + 1).toString().padStart(2, '0');
-    const d = date.getDate().toString().padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  };
 
   // Stable key representing the effective search filters
   const getQueryKey = () => {
