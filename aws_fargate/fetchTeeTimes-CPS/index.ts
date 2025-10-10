@@ -66,7 +66,7 @@ export const handler = async () => {
 
       // Process each date sequentially with progress bar or simple logging
       // Upsert to DB every UPSERT_BATCH_SIZE tasks to manage memory
-      const UPSERT_BATCH_SIZE = 20
+      const UPSERT_BATCH_SIZE = 50
       const results = [] as any[]
       const allErrors: Array<{batch: number, error: string}> = []
       let totalTeeTimes = 0
@@ -137,7 +137,7 @@ export const handler = async () => {
               date: searchDate.toISOString().split('T')[0]
             })
           } else {
-            if (completed === 1 || completed === tasks.length || completed % 10 === 0) {
+            if (completed === 1 || completed === tasks.length || completed % 50 === 0) {
               console.log(`Progress: ${completed}/${tasks.length} (${((completed) / tasks.length * 100).toFixed(1)}%) - ${course.name} - ${searchDate.toISOString().split('T')[0]}`)
             }
           }
@@ -149,7 +149,7 @@ export const handler = async () => {
         }
       }
 
-      const concurrency = 2
+      const concurrency = 5
       const workers = Array.from({ length: concurrency }, () => runWorker())
       await Promise.all(workers)
       

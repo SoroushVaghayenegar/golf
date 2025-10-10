@@ -70,7 +70,7 @@ export const handler = async () => {
 
       // Process with concurrency of 2 using a simple worker pool
       // Upsert to DB every UPSERT_BATCH_SIZE tasks to manage memory
-      const UPSERT_BATCH_SIZE = 20
+      const UPSERT_BATCH_SIZE = 100
       const results = [] as any[]
       const allErrors: Array<{batch: number, error: string}> = []
       let totalTeeTimes = 0
@@ -153,7 +153,7 @@ export const handler = async () => {
         }
       }
 
-      const concurrency = 2
+      const concurrency = 10
       const workers = Array.from({ length: concurrency }, () => runWorker())
       await Promise.all(workers)
       

@@ -47,6 +47,15 @@ export default function Footer() {
               <ul className="space-y-3">
                 <li>
                   <Link 
+                    href="/regions" 
+                    className="text-gray-600 hover:text-gray-900 text-sm transition-colors duration-200"
+                    onClick={() => handleLinkClick('Regions', '/regions')}
+                  >
+                    Regions
+                  </Link>
+                </li>
+                <li>
+                  <Link 
                     href="/about" 
                     className="text-gray-600 hover:text-gray-900 text-sm transition-colors duration-200"
                     onClick={() => handleLinkClick('About', '/about')}

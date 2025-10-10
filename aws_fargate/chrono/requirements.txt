@@ -1,0 +1,17 @@
+# Core dependencies
+cloudscraper==1.2.71
+supabase==2.10.0
+pytz==2024.2
+
+# Sentry for error tracking
+sentry-sdk==2.20.0
+
+# Additional dependencies required by cloudscraper
+requests==2.32.3
+requests-toolbelt==1.0.0
+
+# python-dotenv for loading .env files
+python-dotenv==1.0.0
+
+# httpx will be installed by supabase with the correct version
+

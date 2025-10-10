@@ -24,6 +24,13 @@ interface CityMetadataParams {
   faqs?: FAQItem[];
 }
 
+interface RegionMetadataParams {
+  regionName: string;
+  regionImage: string;
+  regionDescription: string;
+  regionSlug?: string;
+}
+
 export function CourseMetadataGenerator({
   courseName,
   courseImage,
@@ -601,6 +608,244 @@ export function CityMetadataGenerator({
     appleWebApp: {
       capable: true,
       title: `${cityName} Golf - TeeClub`,
+      statusBarStyle: 'default',
+    },
+
+    // Category for app stores
+    category: 'Golf Course Search',
+  };
+}
+
+export function RegionMetadataGenerator({
+  regionName,
+  regionImage,
+  regionDescription,
+  regionSlug
+}: RegionMetadataParams): Metadata {
+  // Generate optimized title and description
+  const title = `${regionName} Golf Courses & Tee Times | TeeClub`;
+  const description = regionDescription || `Discover golf courses and find tee times in ${regionName}. Search multiple courses at once and book faster with TeeClub - Canada's #1 tee time search platform.`;
+  
+  // Generate keywords for SEO
+  const keywords = [
+    `${regionName} golf`,
+    `golf courses ${regionName}`,
+    `${regionName} golf courses`,
+    `tee times ${regionName}`,
+    `golf ${regionName}`,
+    `${regionName} golf tee times`,
+    `book golf ${regionName}`,
+    `${regionName} golf booking`,
+    `golf search ${regionName}`,
+    `${regionName} golf club`,
+    'Canada golf search',
+    'Canadian golf courses',
+    'golf course booking',
+    'tee time search',
+    'golf course finder'
+  ].join(', ');
+
+  // Create the site URL
+  const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.teeclub.golf';
+  const canonicalUrl = regionSlug 
+    ? `${siteUrl}/regions/${regionSlug}` 
+    : `${siteUrl}/regions`;
+
+  // Generate comprehensive metadata
+  return {
+    // Basic SEO
+    title,
+    description,
+    keywords,
+    
+    // Additional meta tags for better SEO
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
+    },
+
+    // Open Graph for Facebook and other social platforms
+    openGraph: {
+      type: 'website',
+      locale: 'en_CA',
+      url: canonicalUrl,
+      title,
+      description,
+      siteName: 'TeeClub - Canada\'s #1 Tee Time Search Platform',
+      images: [
+        {
+          url: regionImage,
+          width: 1200,
+          height: 630,
+          alt: `${regionName} Golf Courses - TeeClub`,
+          type: 'image/jpeg',
+        },
+        {
+          url: regionImage,
+          width: 800,
+          height: 600,
+          alt: `Golf courses in ${regionName}`,
+          type: 'image/jpeg',
+        },
+        {
+          url: regionImage,
+          width: 400,
+          height: 300,
+          alt: `${regionName} golf region`,
+          type: 'image/jpeg',
+        }
+      ],
+    },
+
+    // Twitter Card for Twitter sharing
+    twitter: {
+      card: 'summary_large_image',
+      site: '@TeeClub',
+      creator: '@TeeClub',
+      title,
+      description,
+      images: [regionImage],
+    },
+
+    // Additional meta tags
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    
+    // Verification and other meta tags
+    other: {
+      // Geo-location tags for local SEO
+      'geo.region': 'CA',
+      'geo.placename': regionName,
+      'ICBM': '49.2827, -123.1207', // Default BC coordinates - should be updated with actual region coordinates
+      
+      // Additional SEO tags
+      'author': 'TeeClub',
+      'publisher': 'TeeClub',
+      'content-language': 'en-CA',
+      'distribution': 'global',
+      'rating': 'general',
+      'revisit-after': '3 days',
+      
+      // Schema.org structured data for region page
+      'script:ld+json': JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": `${regionName} Golf Courses`,
+        "description": description,
+        "url": canonicalUrl,
+        "breadcrumb": {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": siteUrl
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Regions",
+              "item": `${siteUrl}/regions`
+            },
+            ...(regionSlug ? [{
+              "@type": "ListItem",
+              "position": 3,
+              "name": regionName,
+              "item": canonicalUrl
+            }] : [])
+          ]
+        },
+        "about": {
+          "@type": "Place",
+          "name": regionName,
+          "description": description,
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": "49.2827", // Default - should be updated with actual coordinates
+            "longitude": "-123.1207"
+          }
+        },
+        "provider": {
+          "@type": "Organization",
+          "name": "TeeClub",
+          "url": siteUrl,
+          "logo": `${siteUrl}/logo.png`
+        }
+      }),
+
+      // Local business schema for region
+      'script:ld+json:business': JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        "@id": canonicalUrl,
+        "name": `${regionName} Golf Course Directory - TeeClub`,
+        "description": description,
+        "image": regionImage,
+        "url": canonicalUrl,
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": regionName,
+          "addressRegion": "Canada",
+          "addressCountry": "Canada"
+        },
+        "areaServed": {
+          "@type": "Place",
+          "name": regionName
+        },
+        "hasMap": canonicalUrl + "#map"
+      }),
+
+      // Hreflang for international SEO
+      'link:hreflang:en-ca': canonicalUrl,
+      'link:hreflang:en': canonicalUrl,
+      'link:hreflang:x-default': canonicalUrl,
+
+      // Mobile optimization
+      'format-detection': 'telephone=no',
+      'mobile-web-app-capable': 'yes',
+      'apple-mobile-web-app-capable': 'yes',
+      'apple-mobile-web-app-status-bar-style': 'default',
+      'apple-mobile-web-app-title': `${regionName} Golf - TeeClub`,
+
+      // Performance and caching hints
+      'dns-prefetch': 'https://fonts.googleapis.com',
+      'preconnect': 'https://fonts.gstatic.com',
+      
+      // Social media optimization
+      'fb:app_id': process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || '',
+      'article:author': 'TeeClub',
+      'article:publisher': 'TeeClub',
+    },
+
+    // Icons and manifest
+    icons: {
+      icon: '/favicon.ico',
+      apple: '/apple-touch-icon.png',
+    },
+    
+    manifest: '/manifest.json',
+
+    // Viewport for mobile optimization
+    viewport: {
+      width: 'device-width',
+      initialScale: 1,
+      maximumScale: 5,
+      userScalable: true,
+    },
+
+    // Additional app-specific metadata
+    appleWebApp: {
+      capable: true,
+      title: `${regionName} Golf - TeeClub`,
       statusBarStyle: 'default',
     },
 

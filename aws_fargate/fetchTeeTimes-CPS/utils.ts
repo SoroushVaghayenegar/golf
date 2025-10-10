@@ -150,10 +150,11 @@ async function fetchWithRetry(courseName: string, url: string, headers: Record<s
       try {
           const response = await fetch(url, { headers: headers });
           if (!response.ok) {
-            // Read the response body to get the actual error message
+            // Read and truncate response body to prevent memory issues
             let errorBody = '';
             try {
-              errorBody = await response.text();
+              const fullBody = await response.text();
+              errorBody = fullBody.length > 200 ? fullBody.substring(0, 200) + '...' : fullBody;
             } catch (e) {
               errorBody = 'Unable to read response body';
             }
@@ -161,7 +162,7 @@ async function fetchWithRetry(courseName: string, url: string, headers: Record<s
             if (![429, 500, 503, 502].includes(response.status)) {
               console.error(`Error fetching ${courseName}: ${response.status} ${response.statusText} - ${errorBody}`);
             }
-            throw new Error(`Error fetching ${courseName}: ${response.status} ${response.statusText} - ${errorBody}`);
+            throw new Error(`Error fetching ${courseName}: ${response.status} ${response.statusText}`);
           }
           return response;
       } catch (error) {
@@ -171,7 +172,7 @@ async function fetchWithRetry(courseName: string, url: string, headers: Record<s
           }
           else{
             Sentry.captureException(error)
-            throw new Error(`[${courseName}] Failed to fetch after ${maxRetries} attempts - ${error}`);
+            throw new Error(`[${courseName}] Failed to fetch after ${maxRetries} attempts`);
           }
       }
   }
@@ -218,8 +219,6 @@ export async function batchUpsertTeeTimes(
     const batch = upsertData.slice(startIndex, endIndex)
     
     try {
-      console.log(`Processing batch ${i + 1}/${totalBatches} (${batch.length} records)`)
-      
       const { error: upsertError } = await supabase
         .from('tee_times')
         .upsert(batch, { 
@@ -231,8 +230,6 @@ export async function batchUpsertTeeTimes(
         const errorMsg = `Batch ${i + 1} failed: ${upsertError.message}`
         console.error(errorMsg)
         errors.push({ batch: i + 1, error: upsertError.message })
-      } else {
-        console.log(`Batch ${i + 1}/${totalBatches} completed successfully`)
       }
     } catch (error) {
       const errorMsg = `Batch ${i + 1} failed with exception: ${error instanceof Error ? error.message : String(error)}`

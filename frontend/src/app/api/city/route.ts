@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
         
         const { data: cityData, error } = await (await createClient())
         .from('cities')
-        .select('*')
+        .select('*, regions(slug, name, image_url)')
         .ilike('slug', citySlugParam);
 
         if (error) {
