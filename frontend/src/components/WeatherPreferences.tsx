@@ -1,5 +1,5 @@
 "use client";
-import { CloudRain, Droplets, Sparkles, Wind } from "lucide-react";
+import { CloudRain, Droplets, Sparkles, Wind, Calendar } from "lucide-react";
 import { Listbox } from "@headlessui/react";
 import { ChevronDown } from "lucide-react";
 
@@ -8,6 +8,7 @@ export interface WeatherPreferenceSettings {
   precipitationChance: string; // Human-readable: 'any', 'mostly-dry', 'dry', 'very-dry'
   precipitationAmount: string; // Human-readable: 'any', 'light-ok', 'minimal', 'none'
   windSpeed: string; // Human-readable: 'any', 'moderate', 'light', 'calm'
+  forecastDays: string; // Human-readable: 'day-of', '1-day', '2-days', '3-days', '5-days', '7-days'
 }
 
 interface WeatherPreferencesProps {
@@ -97,10 +98,44 @@ const WIND_SPEED_OPTIONS = [
   },
 ];
 
+const FORECAST_DAYS_OPTIONS = [
+  { 
+    value: '1-day', 
+    label: 'Day before', 
+    description: 'Check weather 1 day in advance',
+    icon: '🗓️'
+  },
+  { 
+    value: '2-days', 
+    label: '2 days before', 
+    description: 'Check weather 2 days in advance',
+    icon: '📆'
+  },
+  { 
+    value: '3-days', 
+    label: '3 days before', 
+    description: 'Check weather 3 days in advance',
+    icon: '🗓️'
+  },
+  { 
+    value: '5-days', 
+    label: '5 days before', 
+    description: 'Check weather 5 days in advance',
+    icon: '📅'
+  },
+  { 
+    value: '7-days', 
+    label: 'Week before', 
+    description: 'Check weather 7 days in advance',
+    icon: '📆'
+  },
+];
+
 export default function WeatherPreferences({ settings, onChange, disabled = false }: WeatherPreferencesProps) {
   const selectedChanceOption = PRECIPITATION_CHANCE_OPTIONS.find(opt => opt.value === settings.precipitationChance) || PRECIPITATION_CHANCE_OPTIONS[0];
   const selectedAmountOption = PRECIPITATION_AMOUNT_OPTIONS.find(opt => opt.value === settings.precipitationAmount) || PRECIPITATION_AMOUNT_OPTIONS[0];
   const selectedWindOption = WIND_SPEED_OPTIONS.find(opt => opt.value === settings.windSpeed) || WIND_SPEED_OPTIONS[0];
+  const selectedForecastOption = FORECAST_DAYS_OPTIONS.find(opt => opt.value === settings.forecastDays) || FORECAST_DAYS_OPTIONS[0];
 
   return (
     <div className={`space-y-6 transition-opacity duration-200 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
@@ -287,12 +322,70 @@ export default function WeatherPreferences({ settings, onChange, disabled = fals
         </Listbox>
       </div>
 
+      {/* Forecast Timing */}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-5 h-5 text-slate-600" />
+          <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase">
+            Forecast Timing
+          </span>
+        </div>
+        
+        <Listbox 
+          value={settings.forecastDays} 
+          onChange={(value) => onChange({ ...settings, forecastDays: value })}
+          disabled={disabled}
+        >
+          <div className="relative">
+            <Listbox.Button className="w-full px-4 py-3 text-left bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 hover:border-purple-500 transition-colors group">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{selectedForecastOption.icon}</span>
+                <div className="flex-1">
+                  <div className="font-medium text-slate-900">{selectedForecastOption.label}</div>
+                  <div className="text-xs text-slate-500">{selectedForecastOption.description}</div>
+                </div>
+              </div>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-hover:text-purple-500 transition-colors" />
+            </Listbox.Button>
+            
+            <Listbox.Options className="absolute z-[60] w-full bottom-full mb-2 bg-white border border-slate-200 rounded-lg shadow-xl focus:outline-none overflow-hidden max-h-80 overflow-y-auto">
+              {FORECAST_DAYS_OPTIONS.map((option) => (
+                <Listbox.Option
+                  key={option.value}
+                  value={option.value}
+                  className={({ active }) =>
+                    `px-4 py-3 cursor-pointer transition-colors ${
+                      active ? 'bg-purple-50' : 'bg-white'
+                    } ${settings.forecastDays === option.value ? 'bg-purple-100' : ''}`
+                  }
+                >
+                  {({ selected }) => (
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{option.icon}</span>
+                      <div className="flex-1">
+                        <div className={`font-medium ${selected ? 'text-purple-900' : 'text-slate-900'}`}>
+                          {option.label}
+                        </div>
+                        <div className="text-xs text-slate-500">{option.description}</div>
+                      </div>
+                      {selected && (
+                        <div className="w-2 h-2 rounded-full bg-purple-600"></div>
+                      )}
+                    </div>
+                  )}
+                </Listbox.Option>
+              ))}
+            </Listbox.Options>
+          </div>
+        </Listbox>
+      </div>
+
       {/* Helper Text */}
       <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
         <div className="text-blue-600 mt-0.5">ℹ️</div>
         <p className="text-xs text-blue-900 leading-relaxed">
           Weather-smart watchlists will only notify you when tee times match both your time preferences and weather conditions. 
-          Perfect for golfers who prefer ideal playing conditions.
+          The forecast timing determines how far in advance we check the weather before your tee time.
         </p>
       </div>
     </div>
@@ -304,12 +397,14 @@ export function getWeatherFilterValues(settings: WeatherPreferenceSettings): {
   maxPrecipitationChance: number | null;
   maxPrecipitationAmount: number | null;
   maxWindSpeed: number | null;
+  forecastDaysInAdvance: number;
 } {
   if (!settings.enabled) {
     return { 
       maxPrecipitationChance: null, 
       maxPrecipitationAmount: null,
-      maxWindSpeed: null
+      maxWindSpeed: null,
+      forecastDaysInAdvance: 7
     };
   }
 
@@ -337,10 +432,20 @@ export function getWeatherFilterValues(settings: WeatherPreferenceSettings): {
     'calm': 10,
   };
 
+  // Map forecast timing to days
+  const forecastDaysMap: Record<string, number> = {
+    '1-day': 1,
+    '2-days': 2,
+    '3-days': 3,
+    '5-days': 5,
+    '7-days': 7,
+  };
+
   return {
     maxPrecipitationChance: chanceMap[settings.precipitationChance] ?? null,
     maxPrecipitationAmount: amountMap[settings.precipitationAmount] ?? null,
     maxWindSpeed: windMap[settings.windSpeed] ?? null,
+    forecastDaysInAdvance: forecastDaysMap[settings.forecastDays] ?? 7,
   };
 }
 

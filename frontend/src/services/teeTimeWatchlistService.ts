@@ -17,6 +17,7 @@ export interface TeeTimeWatchlistFilters {
         precipitation_chance: string;
         precipitation_amount: string;
         wind_speed: string;
+        forecast_days: string;
     };
 }
 
@@ -39,6 +40,7 @@ interface TeeTimeWatchlistRow {
         precipitation_chance: string;
         precipitation_amount: string;
         wind_speed: string;
+        forecast_days: string;
     };
 }
 

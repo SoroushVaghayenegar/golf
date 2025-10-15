@@ -40,6 +40,7 @@ export default function CreateTeeTimeWatchlistPage() {
     precipitationChance: 'any',
     precipitationAmount: 'any',
     windSpeed: 'any',
+    forecastDays: '7-days',
   });
 
   // Dialog state for when tee times are available
@@ -89,6 +90,7 @@ export default function CreateTeeTimeWatchlistPage() {
       precipitationChance: 'any',
       precipitationAmount: 'any',
       windSpeed: 'any',
+      forecastDays: '7-days',
     });
   };
 
@@ -148,6 +150,7 @@ export default function CreateTeeTimeWatchlistPage() {
           precipitation_chance: weatherPreferences.precipitationChance,
           precipitation_amount: weatherPreferences.precipitationAmount,
           wind_speed: weatherPreferences.windSpeed,
+          forecast_days: weatherPreferences.forecastDays,
         };
       }
 
