@@ -14,8 +14,8 @@ export interface TeeTimeWatchlistFilters {
     courses: Course[];
     weather_preferences?: {
         enabled: boolean;
-        precipitation_chance: string;
-        precipitation_amount: string;
+        temperature_preference: string;
+        rain_preference: string;
         wind_speed: string;
         forecast_days: string;
     };
@@ -37,8 +37,8 @@ interface TeeTimeWatchlistRow {
     processed_tee_times_count?: number;
     weather_preferences?: {
         enabled: boolean;
-        precipitation_chance: string;
-        precipitation_amount: string;
+        temperature_preference: string;
+        rain_preference: string;
         wind_speed: string;
         forecast_days: string;
     };

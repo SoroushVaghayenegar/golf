@@ -35,10 +35,11 @@ export default function CreateTeeTimeWatchlistPage() {
   const [courseCityMapping, setCourseCityMapping] = useState<Record<string, string>>({});
   const [courseIdMapping, setCourseIdMapping] = useState<Record<string, number>>({});
   const [createAnother, setCreateAnother] = useState(false);
+  const [saveWeatherAsDefault, setSaveWeatherAsDefault] = useState(false);
   const [weatherPreferences, setWeatherPreferences] = useState<WeatherPreferenceSettings>({
     enabled: false,
-    precipitationChance: 'any',
-    precipitationAmount: 'any',
+    temperaturePreference: 'any',
+    rainPreference: 'any',
     windSpeed: 'any',
     forecastDays: '7-days',
   });
@@ -87,8 +88,8 @@ export default function CreateTeeTimeWatchlistPage() {
     setSelectedCourses([]);
     setWeatherPreferences({
       enabled: false,
-      precipitationChance: 'any',
-      precipitationAmount: 'any',
+      temperaturePreference: 'any',
+      rainPreference: 'any',
       windSpeed: 'any',
       forecastDays: '7-days',
     });
@@ -147,8 +148,8 @@ export default function CreateTeeTimeWatchlistPage() {
       if (weatherPreferences.enabled) {
         filters.weather_preferences = {
           enabled: weatherPreferences.enabled,
-          precipitation_chance: weatherPreferences.precipitationChance,
-          precipitation_amount: weatherPreferences.precipitationAmount,
+          temperature_preference: weatherPreferences.temperaturePreference,
+          rain_preference: weatherPreferences.rainPreference,
           wind_speed: weatherPreferences.windSpeed,
           forecast_days: weatherPreferences.forecastDays,
         };
@@ -312,6 +313,8 @@ export default function CreateTeeTimeWatchlistPage() {
           setCreateAnother={setCreateAnother}
           weatherPreferences={weatherPreferences}
           setWeatherPreferences={setWeatherPreferences}
+          saveWeatherAsDefault={saveWeatherAsDefault}
+          setSaveWeatherAsDefault={setSaveWeatherAsDefault}
         />
 
         {/* Availability Dialog */}

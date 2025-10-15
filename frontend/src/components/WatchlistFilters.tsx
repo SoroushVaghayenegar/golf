@@ -43,6 +43,8 @@ interface WatchlistFiltersProps {
   setCreateAnother?: (checked: boolean) => void;
   weatherPreferences?: WeatherPreferenceSettings;
   setWeatherPreferences?: (settings: WeatherPreferenceSettings) => void;
+  saveWeatherAsDefault?: boolean;
+  setSaveWeatherAsDefault?: (value: boolean) => void;
 }
 
 export default function WatchlistFilters({
@@ -70,7 +72,9 @@ export default function WatchlistFilters({
   createAnother,
   setCreateAnother,
   weatherPreferences,
-  setWeatherPreferences
+  setWeatherPreferences,
+  saveWeatherAsDefault,
+  setSaveWeatherAsDefault
 }: WatchlistFiltersProps) {
   const [cities, setCities] = useState<string[]>([]);
   const [citiesLoading, setCitiesLoading] = useState(false);
@@ -558,6 +562,8 @@ export default function WatchlistFilters({
                 <WeatherPreferences 
                   settings={weatherPreferences} 
                   onChange={setWeatherPreferences}
+                  saveAsDefault={saveWeatherAsDefault}
+                  onSaveAsDefaultChange={setSaveWeatherAsDefault}
                 />
               </div>
             )}
