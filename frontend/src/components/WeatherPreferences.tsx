@@ -1,5 +1,5 @@
 "use client";
-import { CloudRain, Droplets, Sparkles, Wind, Calendar, Save, Thermometer } from "lucide-react";
+import { CloudRain, Sparkles, Wind, Calendar, Save, Thermometer } from "lucide-react";
 import { Listbox } from "@headlessui/react";
 import { ChevronDown } from "lucide-react";
 
