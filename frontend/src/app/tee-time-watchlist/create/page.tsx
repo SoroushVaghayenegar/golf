@@ -10,6 +10,7 @@ import { fetchCourseDisplayNamesAndTheirCities } from "@/services/supabaseServic
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { SquareArrowOutUpRight } from "lucide-react";
+import { type WeatherPreferenceSettings } from "@/components/WeatherPreferences";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -34,6 +35,12 @@ export default function CreateTeeTimeWatchlistPage() {
   const [courseCityMapping, setCourseCityMapping] = useState<Record<string, string>>({});
   const [courseIdMapping, setCourseIdMapping] = useState<Record<string, number>>({});
   const [createAnother, setCreateAnother] = useState(false);
+  const [weatherPreferences, setWeatherPreferences] = useState<WeatherPreferenceSettings>({
+    enabled: false,
+    precipitationChance: 'any',
+    precipitationAmount: 'any',
+    windSpeed: 'any',
+  });
 
   // Dialog state for when tee times are available
   const [showResultsDialog, setShowResultsDialog] = useState(false);
@@ -77,6 +84,12 @@ export default function CreateTeeTimeWatchlistPage() {
     setTimeRange([7, 17]);
     setSelectedCities([]);
     setSelectedCourses([]);
+    setWeatherPreferences({
+      enabled: false,
+      precipitationChance: 'any',
+      precipitationAmount: 'any',
+      windSpeed: 'any',
+    });
   };
 
   const createWatchlistNow = async () => {
@@ -127,6 +140,17 @@ export default function CreateTeeTimeWatchlistPage() {
         regionId: selectedRegionId,
         courses: resolvedCourses,
       };
+
+      // Add weather preferences if enabled
+      if (weatherPreferences.enabled) {
+        filters.weather_preferences = {
+          enabled: weatherPreferences.enabled,
+          precipitation_chance: weatherPreferences.precipitationChance,
+          precipitation_amount: weatherPreferences.precipitationAmount,
+          wind_speed: weatherPreferences.windSpeed,
+        };
+      }
+
       console.log(filters);
       const created = await createTeeTimeWatchlist(filters);
       toast.success("Watchlist created", {
@@ -283,6 +307,8 @@ export default function CreateTeeTimeWatchlistPage() {
           calendarExpandedClassName="p-2 max-w-[18rem] mx-auto"
           createAnother={createAnother}
           setCreateAnother={setCreateAnother}
+          weatherPreferences={weatherPreferences}
+          setWeatherPreferences={setWeatherPreferences}
         />
 
         {/* Availability Dialog */}

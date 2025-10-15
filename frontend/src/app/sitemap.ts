@@ -60,7 +60,7 @@ async function getAllRegionsSlugs(): Promise<string[]> {
 
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.SITE_URL || 'https://teeclub.golf'
+  const baseUrl = 'https://www.teeclub.golf'
   
   // Fetch cities and courses from database
   const [citySlugs, courseSlugs, regionSlugs] = await Promise.all([

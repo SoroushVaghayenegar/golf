@@ -1,13 +1,14 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Listbox } from "@headlessui/react";
-import { ChevronDown, Users, Clock, School, LandPlot, MapPin, Info } from "lucide-react";
+import { ChevronDown, Users, Clock, School, LandPlot, MapPin, Info, CloudRain } from "lucide-react";
 import { Range } from "react-range";
 import { MultiValue } from 'react-select';
 import TeeClubSelect from "./TeeClubSelect";
 import { Checkbox } from "@/components/ui/checkbox";
 import { fetchCourseDisplayNamesAndTheirCities, fetchRegions } from "../services/supabaseService";
 import CompactCalendar from "./CompactCalendar";
+import WeatherPreferences, { type WeatherPreferenceSettings } from "./WeatherPreferences";
 
 interface SelectOption {
   value: string;
@@ -40,6 +41,8 @@ interface WatchlistFiltersProps {
   calendarExpandedClassName?: string;
   createAnother?: boolean;
   setCreateAnother?: (checked: boolean) => void;
+  weatherPreferences?: WeatherPreferenceSettings;
+  setWeatherPreferences?: (settings: WeatherPreferenceSettings) => void;
 }
 
 export default function WatchlistFilters({
@@ -65,7 +68,9 @@ export default function WatchlistFilters({
   setSelectedRegionId,
   calendarExpandedClassName,
   createAnother,
-  setCreateAnother
+  setCreateAnother,
+  weatherPreferences,
+  setWeatherPreferences
 }: WatchlistFiltersProps) {
   const [cities, setCities] = useState<string[]>([]);
   const [citiesLoading, setCitiesLoading] = useState(false);
@@ -76,6 +81,7 @@ export default function WatchlistFilters({
   const [showCourseSelector, setShowCourseSelector] = useState(false);
   const [regions, setRegions] = useState<{ value: string; label: string }[]>([]);
   const [showHolesTooltip, setShowHolesTooltip] = useState(false);
+  const [showWeatherPreferences, setShowWeatherPreferences] = useState(false);
 
   // Fetch cities and courses on component mount and when region changes
   useEffect(() => {
@@ -245,8 +251,8 @@ export default function WatchlistFilters({
 
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-8">
-      <div className="bg-white rounded-lg shadow-lg p-6">
+    <div className="w-full max-w-4xl mx-auto space-y-8 mb-8">
+      <div className="bg-white rounded-lg shadow-lg p-6 pb-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">Create Your Watchlist</h2>
         <p className="text-gray-600 mb-8">
           Set your preferences below to create a watchlist that will monitor tee times matching your criteria.
@@ -505,6 +511,58 @@ export default function WatchlistFilters({
             </div>
           </div>
         </div>
+
+        {/* Weather Preferences Section */}
+        {weatherPreferences !== undefined && setWeatherPreferences && (
+          <div className="mt-8 pt-8 border-t border-gray-200">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <CloudRain className="w-5 h-5 text-purple-600" />
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Weather Preferences</h3>
+                  <p className="text-sm text-gray-600">Only notify me when weather conditions are ideal</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {!showWeatherPreferences && <span className="text-xs font-medium text-slate-600">Off</span>}
+                <button
+                  onClick={() => {
+                    const newValue = !showWeatherPreferences;
+                    setShowWeatherPreferences(newValue);
+                    if (setWeatherPreferences) {
+                      setWeatherPreferences({ 
+                        ...weatherPreferences, 
+                        enabled: newValue 
+                      });
+                    }
+                  }}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
+                    showWeatherPreferences
+                      ? 'bg-purple-600 hover:bg-purple-700'
+                      : 'bg-slate-300 hover:bg-slate-400'
+                  }`}
+                  role="switch"
+                  aria-checked={showWeatherPreferences}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-transform duration-200 ease-in-out ${
+                      showWeatherPreferences ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                  <span className="sr-only">{showWeatherPreferences ? 'On' : 'Off'}</span>
+                </button>
+              </div>
+            </div>
+            {showWeatherPreferences && (
+              <div className="animate-in slide-in-from-top duration-300">
+                <WeatherPreferences 
+                  settings={weatherPreferences} 
+                  onChange={setWeatherPreferences}
+                />
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="mt-8 pt-6 border-t border-gray-200">
           {/* Create Another Checkbox */}

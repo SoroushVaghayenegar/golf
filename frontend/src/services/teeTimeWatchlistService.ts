@@ -12,6 +12,12 @@ export interface TeeTimeWatchlistFilters {
     holes: string;
     regionId: string;
     courses: Course[];
+    weather_preferences?: {
+        enabled: boolean;
+        precipitation_chance: string;
+        precipitation_amount: string;
+        wind_speed: string;
+    };
 }
 
 interface TeeTimeWatchlistRow {
@@ -28,6 +34,12 @@ interface TeeTimeWatchlistRow {
     regions?: { name: string } | null;
     processed_tee_times?: string[];
     processed_tee_times_count?: number;
+    weather_preferences?: {
+        enabled: boolean;
+        precipitation_chance: string;
+        precipitation_amount: string;
+        wind_speed: string;
+    };
 }
 
 export type TeeTimeWatchlist = Omit<TeeTimeWatchlistRow, "regions"> & {
@@ -36,17 +48,24 @@ export type TeeTimeWatchlist = Omit<TeeTimeWatchlistRow, "regions"> & {
 
 export const createTeeTimeWatchlist = async (filters: TeeTimeWatchlistFilters) => {
     const client = createClient()
+    const insertData: Record<string, unknown> = {
+        date: filters.date,
+        start_hour: filters.start_hour,
+        end_hour: filters.end_hour,
+        num_of_players: filters.num_of_players,
+        holes: filters.holes,
+        region_id: filters.regionId,
+        courses: filters.courses,
+    };
+
+    // Add weather preferences if provided
+    if (filters.weather_preferences) {
+        insertData.weather_preferences = filters.weather_preferences;
+    }
+
     const { data, error } = await client
         .from('tee_time_watchlists')
-        .insert({
-            date: filters.date,
-            start_hour: filters.start_hour,
-            end_hour: filters.end_hour,
-            num_of_players: filters.num_of_players,
-            holes: filters.holes,
-            region_id: filters.regionId,
-            courses: filters.courses,
-        })
+        .insert(insertData)
         .select('*, regions(name)')
         .single()
 
