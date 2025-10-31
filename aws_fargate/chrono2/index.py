@@ -1,36 +1,34 @@
-"""Main handler for fetching ChronoGolf tee times - Region-based version"""
+"""Main handler for fetching ChronoGolf tee times - Simplified version without cloudscraper"""
 import os
 import sys
 import time
 import asyncio
 import gc
-import random
 from datetime import datetime, timedelta
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import pytz
-import cloudscraper
 from supabase import create_client, Client
 import sentry_sdk
 import httpx
+from tqdm import tqdm
 
 from course import Course
 from utils import (
     fetch_course_tee_times,
     batch_upsert_tee_times,
-    time_string_to_minutes,
-    get_random_browser_config
+    time_string_to_minutes
 )
 
 
 async def handler():
     """Main handler function for fetching tee times by region"""
-    # Add random startup delay to avoid predictable execution patterns
-    startup_delay = random.uniform(0, 120)  # 0-2 minutes
-    print(f"Starting with {startup_delay:.1f}s initial delay to randomize execution time")
-    await asyncio.sleep(startup_delay)
-    
     # Start timer
     start_time = time.time()
+    
+    # Check if DEBUG mode is enabled
+    debug_mode = os.environ.get('DEBUG', '').lower() in ('true', '1', 'yes')
+    if debug_mode:
+        print("DEBUG MODE ENABLED - Detailed progress tracking with ETA")
     
     # Initialize Sentry if DSN is provided
     sentry_dsn = os.environ.get('SENTRY_DSN')
@@ -106,9 +104,7 @@ async def handler():
                     'search_date': datetime.combine(search_date, datetime.min.time())
                 })
         
-        # Randomize task order to avoid predictable patterns
-        random.shuffle(tasks)
-        print(f"Fetching tee times for {len(tasks)} course/date combinations (randomized order)")
+        print(f"Fetching tee times for {len(tasks)} course/date combinations")
         
         # Process with concurrency and batch upserts
         UPSERT_BATCH_SIZE = 30
@@ -118,8 +114,13 @@ async def handler():
         total_tee_times = 0
         total_upsert_batches = 0
         
-        # Track last logged percentage
+        # Track last logged percentage (for non-debug mode)
         last_logged_percentage = -1
+        
+        # Initialize tqdm progress bar if debug mode is enabled
+        progress_bar: Optional[tqdm] = None
+        if debug_mode:
+            progress_bar = tqdm(total=len(tasks), desc="Fetching tee times", unit="task")
         
         # Helper function to upsert current results and clear memory
         async def upsert_and_clear_results():
@@ -146,11 +147,6 @@ async def handler():
             # Force garbage collection
             gc.collect()
         
-        # Create a single cloudscraper instance with random browser config
-        browser_config = get_random_browser_config()
-        print(f"Using browser config: {browser_config['browser']} on {browser_config['platform']}")
-        scraper = cloudscraper.create_scraper(browser=browser_config)
-        
         # Worker function to process tasks
         async def worker(task_queue: asyncio.Queue, completed_count: List[int]):
             nonlocal last_logged_percentage
@@ -164,7 +160,7 @@ async def handler():
                     course = task['course']
                     search_date = task['search_date']
                     
-                    result = await fetch_course_tee_times(course, search_date, scraper)
+                    result = await fetch_course_tee_times(course, search_date)
                     
                     # Only add successful results to be saved
                     if result.get('success', False):
@@ -180,17 +176,33 @@ async def handler():
                     
                     completed_count[0] += 1
                     
-                    # Log progress at specific percentages: 0, 25, 50, 75, 99%
-                    completed = completed_count[0]
-                    percentage = int((completed / len(tasks)) * 100)
-                    
-                    # Check if we hit a milestone percentage
-                    if percentage in [0, 25, 50, 75, 99] and percentage != last_logged_percentage:
-                        last_logged_percentage = percentage
-                        progress_msg = f"Progress: {percentage}% ({completed}/{len(tasks)})"
-                        if len(fetch_errors) > 0:
-                            progress_msg += f" | Fetch errors: {len(fetch_errors)}"
-                        print(progress_msg)
+                    # Update progress based on mode
+                    if debug_mode and progress_bar:
+                        # Update tqdm progress bar with detailed info
+                        tee_time_count = len(result.get('tee_times', []))
+                        status = "✓" if result.get('success', False) else "✗"
+                        completed = completed_count[0]
+                        success_count = completed - len(fetch_errors)
+                        
+                        progress_bar.set_postfix({
+                            'course': course.name[:20],
+                            'date': search_date.strftime('%m/%d'),
+                            'success': success_count,
+                            'failed': len(fetch_errors)
+                        }, refresh=True)
+                        progress_bar.update(1)
+                    else:
+                        # Log progress at specific percentages: 0, 25, 50, 75, 99%
+                        completed = completed_count[0]
+                        percentage = int((completed / len(tasks)) * 100)
+                        
+                        # Check if we hit a milestone percentage
+                        if percentage in [0, 25, 50, 75, 99] and percentage != last_logged_percentage:
+                            last_logged_percentage = percentage
+                            progress_msg = f"Progress: {percentage}% ({completed}/{len(tasks)})"
+                            if len(fetch_errors) > 0:
+                                progress_msg += f" | Fetch errors: {len(fetch_errors)}"
+                            print(progress_msg)
                     
                     # Upsert to DB every UPSERT_BATCH_SIZE tasks to manage memory
                     if len(results) >= UPSERT_BATCH_SIZE:
@@ -208,8 +220,7 @@ async def handler():
             await task_queue.put(task)
         
         # Add poison pills for workers
-        # Reduced concurrency from 5 to 2 to avoid detection patterns
-        concurrency = 5
+        concurrency = 1
         for _ in range(concurrency):
             await task_queue.put(None)
         
@@ -222,6 +233,21 @@ async def handler():
         
         # Wait for all workers to complete
         await asyncio.gather(*workers)
+        
+        # Close progress bar if in debug mode
+        if debug_mode and progress_bar:
+            progress_bar.close()
+            
+            # Print detailed error summary if there were fetch errors
+            if fetch_errors:
+                print(f"\n⚠️  FETCH ERRORS SUMMARY ({len(fetch_errors)} errors):")
+                print("=" * 80)
+                for idx, error in enumerate(fetch_errors[:10], 1):  # Show first 10 errors
+                    print(f"{idx}. Course ID: {error['course_id']} | Date: {error['date']}")
+                    print(f"   Error: {error['error'][:100]}")  # Truncate long errors
+                if len(fetch_errors) > 10:
+                    print(f"... and {len(fetch_errors) - 10} more errors")
+                print("=" * 80)
         
         # Upsert any remaining results
         await upsert_and_clear_results()

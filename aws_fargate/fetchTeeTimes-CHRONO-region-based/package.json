@@ -13,7 +13,9 @@
   "dependencies": {
     "@sentry/node": "^10.1.0",
     "@supabase/supabase-js": "^2.51.0",
-    "progress": "^2.0.3"
+    "https-proxy-agent": "^7.0.5",
+    "progress": "^2.0.3",
+    "undici": "^6.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

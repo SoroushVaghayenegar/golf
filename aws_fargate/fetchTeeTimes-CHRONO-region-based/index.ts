@@ -70,11 +70,14 @@ export const handler = async () => {
 
       // Process with concurrency of 2 using a simple worker pool
       // Upsert to DB every UPSERT_BATCH_SIZE tasks to manage memory
-      const UPSERT_BATCH_SIZE = 100
+      const UPSERT_BATCH_SIZE = 20
       const results = [] as any[]
       const allErrors: Array<{batch: number, error: string}> = []
+      const fetchErrors: Array<{course: string, date: string, error: string, statusCode?: number}> = []
       let totalTeeTimes = 0
       let totalUpsertBatches = 0
+      let successfulFetches = 0
+      let failedFetches = 0
       
       const isTTY = process.stdout.isTTY
       
@@ -131,18 +134,70 @@ export const handler = async () => {
           nextIndex++
 
           const { course, searchDate } = tasks[currentIndex] as any
-          const result = await fetchCourseTeeTimes(course, searchDate)
-          results.push(result)
+          const dateString = searchDate.toISOString().split('T')[0]
+          
+          try {
+            const result = await fetchCourseTeeTimes(course, searchDate)
+            
+            // Check if the result contains an error
+            if (result.error) {
+              fetchErrors.push({
+                course: course.name,
+                date: dateString,
+                error: result.error.message,
+                statusCode: result.error.statusCode
+              })
+              
+              failedFetches++
+              
+              // Only log non-403 errors to console
+              if (result.error.statusCode !== 403) {
+                console.error(`\n[ERROR] Failed to fetch ${course.name} on ${dateString}: ${result.error.message}`)
+              }
+            } else {
+              // Only save successful results
+              results.push(result)
+              successfulFetches++
+            }
+          } catch (error) {
+            // Track unexpected errors that weren't caught in fetchCourseTeeTimes
+            const errorMessage = error instanceof Error ? error.message : String(error)
+            const statusCode = (error as any).statusCode
+            
+            fetchErrors.push({
+              course: course.name,
+              date: dateString,
+              error: errorMessage,
+              statusCode: statusCode
+            })
+            
+            failedFetches++
+            
+            // Only log non-403 errors to console
+            if (statusCode !== 403) {
+              console.error(`\n[ERROR] Failed to fetch ${course.name} on ${dateString}: ${errorMessage}`)
+            }
+          }
 
           completed++
           if (progressBar) {
             progressBar.tick({
               course: course.name.padEnd(15).substring(0, 15),
-              date: searchDate.toISOString().split('T')[0]
+              date: dateString
             })
           } else {
-            if (completed === 1 || completed === tasks.length || completed % 10 === 0) {
-              console.log(`Progress: ${completed}/${tasks.length} (${((completed) / tasks.length * 100).toFixed(1)}%) - ${course.name} - ${searchDate.toISOString().split('T')[0]}`)
+            // Log only at 1%, 25%, 50%, 75%, and 100%
+            const progress = (completed / tasks.length) * 100
+            const thresholds = [1, 25, 50, 75, 100]
+            const lastProgress = ((completed - 1) / tasks.length) * 100
+            
+            // Check if we just crossed a threshold
+            const crossedThreshold = thresholds.find(threshold => 
+              lastProgress < threshold && progress >= threshold
+            )
+            
+            if (crossedThreshold !== undefined) {
+              console.log(`Progress: ${completed}/${tasks.length} (${progress.toFixed(1)}%)`)
             }
           }
           
@@ -160,14 +215,9 @@ export const handler = async () => {
       // Upsert any remaining results
       await upsertAndClearResults()
 
-      //If no tee times were found at all, then there is an error
-      if (totalTeeTimes === 0) {
-        console.error(`No tee times found for any course/date combinations`)
-        throw new Error(`No tee times found for any course/date combinations`)
-      }
       
-      // Check if there were any errors during batch upsert
-      const hasErrors = allErrors.length > 0
+      // Check if there were any errors during batch upsert or fetching
+      const hasErrors = allErrors.length > 0 || fetchErrors.length > 0
 
       // End timer and calculate execution time
       const endTime = performance.now()
@@ -178,9 +228,24 @@ export const handler = async () => {
       console.log(`Execution time: ${executionTime.toFixed(2)}s`)
       console.log(`Total courses processed: ${courses.length}`)
       console.log(`Total course/date combinations: ${tasks.length}`)
+      console.log(`Successful fetches: ${successfulFetches}`)
+      console.log(`Failed fetches: ${failedFetches}`)
+      console.log(`Success rate: ${((successfulFetches / tasks.length) * 100).toFixed(1)}%`)
       console.log(`Total tee times found: ${totalTeeTimes}`)
       console.log(`Database batches processed: ${totalUpsertBatches}`)
       console.log(`Database errors: ${allErrors.length}`)
+      console.log(`Fetch errors: ${fetchErrors.length}`)
+      
+      // Log error breakdown by status code
+      if (fetchErrors.length > 0) {
+        const errorsByStatus = fetchErrors.reduce((acc, err) => {
+          const status = err.statusCode || 'unknown'
+          acc[status] = (acc[status] || 0) + 1
+          return acc
+        }, {} as Record<string | number, number>)
+        console.log(`Error breakdown by status: ${JSON.stringify(errorsByStatus)}`)
+      }
+      
       console.log(`Status: ${hasErrors ? 'COMPLETED WITH ERRORS' : 'SUCCESS'}`)
       console.log(`========================`)
 
@@ -189,10 +254,24 @@ export const handler = async () => {
         body: JSON.stringify({
           success: !hasErrors,
           message: hasErrors 
-            ? `Completed with ${allErrors.length} batch errors`
-            : "Success"
+            ? `Completed with ${fetchErrors.length} fetch errors and ${allErrors.length} batch errors`
+            : "Success",
+          stats: {
+            totalTasks: tasks.length,
+            successfulFetches: successfulFetches,
+            failedFetches: failedFetches,
+            successRate: `${((successfulFetches / tasks.length) * 100).toFixed(1)}%`,
+            totalTeeTimes: totalTeeTimes,
+            fetchErrors: fetchErrors.length,
+            databaseErrors: allErrors.length
+          }
         }),
       };
+
+      if (totalTeeTimes === 0 && successfulFetches === 0) {
+        console.error(`No tee times found for any course/date combinations and no successful fetches`)
+        throw new Error(`No tee times found for any course/date combinations`)
+      }
 
       // Send health check signal
       await fetch(process.env.CRON_CHECK_URL!);

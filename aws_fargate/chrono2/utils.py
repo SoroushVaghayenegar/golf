@@ -1,28 +1,16 @@
-"""Utility functions for fetching tee times from ChronoGolf using cloudscraper"""
+"""Utility functions for fetching tee times from ChronoGolf using requests with proxies"""
 import asyncio
 import random
 from datetime import datetime
 from typing import Dict, List, Any, Tuple
-import cloudscraper
+import requests
 import sentry_sdk
 import urllib3
-import ssl
-from requests.adapters import HTTPAdapter
 from course import Course
 from tee_time import TeeTime
 
 # Disable SSL warnings when using proxies (proxies handle SSL verification)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-
-class SSLAdapter(HTTPAdapter):
-    """Custom HTTP adapter that disables SSL verification for proxy usage"""
-    def init_poolmanager(self, *args, **kwargs):
-        context = ssl.create_default_context()
-        context.check_hostname = False
-        context.verify_mode = ssl.CERT_NONE
-        kwargs['ssl_context'] = context
-        return super().init_poolmanager(*args, **kwargs)
 
 
 CHRONO_LIGHTSPEED = "CHRONO_LIGHTSPEED"
@@ -51,49 +39,22 @@ USER_AGENTS = [
 ]
 
 # Oxylabs proxy configuration
-PROXY_USERNAME = 'user-ttimesgolf_Bw3Ck'
-PROXY_PASSWORD = 'mjuw_Y5+Zmq4Gt='
-PROXY_HOST = 'dc.oxylabs.io'
-PROXY_PORTS = [8001, 8002, 8003, 8004, 8005]
-
+PROXY_URL = 'https://user-teeclub_x5lyp-country-CA:TeeClubNumber+1@dc.oxylabs.io:8000'
 
 def get_random_user_agent() -> str:
     """Get a random user agent from the pool"""
     return random.choice(USER_AGENTS)
 
 
-def get_random_proxy() -> Dict[str, str] | None:
-    """Get a random proxy configuration from Oxylabs, or None to use no proxy
+def get_proxy() -> Dict[str, str]:
+    """Get proxy configuration from Bright Data
     
-    Returns None (no proxy) or a proxy configuration dict.
-    This gives us 6 different IPs to work with: 5 proxies + 1 direct connection
+    Returns a proxy configuration dict.
     """
-    # Add None to the choices to represent no proxy (direct connection)
-    proxy_choices = PROXY_PORTS + [None]
-    choice = random.choice(proxy_choices)
-    
-    # If None was selected, return None (no proxy)
-    if choice is None:
-        return None
-    
-    # Otherwise, use the selected port
-    port = choice
-    proxy_url = f'https://{PROXY_USERNAME}:{PROXY_PASSWORD}@{PROXY_HOST}:{port}'
     return {
-        'http': proxy_url,
-        'https': proxy_url
+        'http': PROXY_URL,
+        'https': PROXY_URL
     }
-
-
-def get_random_browser_config() -> Dict[str, Any]:
-    """Get a random browser configuration for cloudscraper"""
-    browsers = [
-        {'browser': 'chrome', 'platform': 'darwin', 'desktop': True},
-        {'browser': 'chrome', 'platform': 'windows', 'desktop': True},
-        {'browser': 'firefox', 'platform': 'darwin', 'desktop': True},
-        {'browser': 'firefox', 'platform': 'windows', 'desktop': True},
-    ]
-    return random.choice(browsers)
 
 
 def get_random_headers(club_id: int, user_agent: str) -> Dict[str, str]:
@@ -115,7 +76,7 @@ def get_random_headers(club_id: int, user_agent: str) -> Dict[str, str]:
         "Connection": "keep-alive",
         "Sec-Fetch-Dest": "empty",
         "Sec-Fetch-Mode": "cors",
-        "Referer": f"https://www.chronogolf.com/en/club/{club_id}/widget?medium=widget&source=club"
+        "Referer": f"https://www.chronogolf.ca/en/club/{club_id}/widget?medium=widget&source=club"
     }
     
     # Randomly add some optional headers
@@ -133,15 +94,13 @@ def get_random_headers(club_id: int, user_agent: str) -> Dict[str, str]:
 
 async def fetch_course_tee_times(
     course: Course, 
-    search_date: datetime,
-    scraper: cloudscraper.CloudScraper
+    search_date: datetime
 ) -> Dict[str, Any]:
     """Fetch tee times for a specific course and date
     
     Args:
         course: Course object with external API details
         search_date: Date to search for tee times
-        scraper: CloudScraper instance for making requests
         
     Returns:
         Dictionary with course_id, date, list of tee times, and success status
@@ -172,8 +131,7 @@ async def fetch_course_tee_times(
                 affiliation_type_id=affiliation_type_id,
                 course_holes=holes,
                 search_date=search_date,
-                club_link_name=club_link_name,
-                scraper=scraper
+                club_link_name=club_link_name
             )
             tasks.append(task)
         
@@ -209,8 +167,7 @@ async def fetch_tee_times_from_chrono_lightspeed(
     affiliation_type_id: int,
     course_holes: int,
     search_date: datetime,
-    club_link_name: str,
-    scraper: cloudscraper.CloudScraper
+    club_link_name: str
 ) -> List[TeeTime]:
     """Fetch tee times from ChronoGolf/Lightspeed API for a specific configuration
     
@@ -223,14 +180,13 @@ async def fetch_tee_times_from_chrono_lightspeed(
         course_holes: Number of holes (9, 18, etc.)
         search_date: Date to search for tee times
         club_link_name: Club link name for booking URLs
-        scraper: CloudScraper instance for making requests
         
     Returns:
         List of TeeTime objects
     """
     date_string = search_date.strftime('%Y-%m-%d')
     base_url = (
-        f"https://www.chronogolf.ca/marketplace/clubs/{club_id}/teetimes?"
+        f"https://www.chronogolf.com/marketplace/clubs/{club_id}/teetimes?"
         f"date={date_string}&course_id={course_id}&nb_holes={course_holes}"
     )
     
@@ -251,10 +207,7 @@ async def fetch_tee_times_from_chrono_lightspeed(
             course_name=course_name,
             club_id=club_id,
             url=full_url,
-            scraper=scraper,
-            max_retries=2,
-            max_delay=3000,
-            min_delay=500
+            max_retries=2
         )
         tasks.append((players, task))
     
@@ -408,21 +361,15 @@ async def fetch_with_retry_async(
     course_name: str,
     club_id: int,
     url: str,
-    scraper: cloudscraper.CloudScraper,
-    max_retries: int = 5,
-    max_delay: int = 19000,
-    min_delay: int = 2000
+    max_retries: int = 2
 ) -> List[Dict[str, Any]]:
-    """Fetch URL with retry logic using cloudscraper (async wrapper)
+    """Fetch URL with retry logic using requests library (async wrapper)
     
     Args:
         course_name: Name of the course (for logging)
         club_id: Club ID (for referer header)
         url: URL to fetch
-        scraper: CloudScraper instance
         max_retries: Maximum number of retry attempts
-        max_delay: Maximum delay between retries (ms)
-        min_delay: Minimum delay between retries (ms)
         
     Returns:
         JSON response data
@@ -437,30 +384,25 @@ async def fetch_with_retry_async(
             user_agent = get_random_user_agent()
             headers = get_random_headers(club_id, user_agent)
             
-            # Get random proxy for this request (may be None for direct connection)
-            proxies = get_random_proxy()
+            # Get random proxy for this request
+            proxies = get_proxy()
             
-            # Run the synchronous cloudscraper request in executor
-            # Configure session based on whether we're using a proxy
-            if proxies:
-                # For proxy requests: disable SSL verification and hostname checking
-                # This is required for residential proxies like Oxylabs
-                scraper.mount('https://', SSLAdapter())
-                loop = asyncio.get_event_loop()
-                response = await loop.run_in_executor(
-                    None,
-                    lambda: scraper.get(url, headers=headers, proxies=proxies, timeout=30, verify=False)
-                )
-            else:
-                # For direct connection: use normal SSL verification
-                loop = asyncio.get_event_loop()
-                response = await loop.run_in_executor(
-                    None,
-                    lambda: scraper.get(url, headers=headers, timeout=30)
-                )
+            # Run the synchronous requests call in executor
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: requests.get(url, headers=headers, proxies=proxies, timeout=30, verify=False)
+            )
             
             if not response.ok:
                 error_body = response.text[:500] if response.text else 'Unable to read response body'
+                
+                # Check if this is an "out of booking range" error - treat as no tee times available
+                if ("out of your booking range" in error_body.lower() or 
+                    "booking range" in error_body.lower()):
+                    # Return empty list instead of raising exception
+                    return []
+                
                 raise Exception(
                     f"[{course_name}] HTTP Error: {response.status_code} "
                     f"{response.reason} - {error_body} | URL: {url}"
@@ -472,9 +414,8 @@ async def fetch_with_retry_async(
             error_details = str(error)
             
             if attempt < max_retries:
-                # Additional backoff delay for retries (on top of pre_request_delay)
-                backoff_delay = random.uniform(min_delay, max_delay)
-                await asyncio.sleep(backoff_delay / 1000)
+                # Simple retry without delay
+                pass
             else:
                 # Report to Sentry on final failure
                 sentry_sdk.capture_exception(error)

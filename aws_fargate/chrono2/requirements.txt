@@ -1,0 +1,16 @@
+# Core dependencies
+requests==2.32.3
+supabase==2.10.0
+pytz==2024.2
+
+# Sentry for error tracking
+sentry-sdk==2.20.0
+
+# python-dotenv for loading .env files
+python-dotenv==1.0.0
+
+# Progress bar for debug mode
+tqdm==4.66.1
+
+# httpx will be installed by supabase with the correct version
+
