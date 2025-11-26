@@ -43,6 +43,31 @@ export interface ChronoAttributes {
   course_holes: number[];
 }
 
+// Raw API response types for Chrono
+export interface ChronoApiTeeTime {
+  id: number;
+  date: string;
+  start_time: string;
+  out_of_capacity: boolean;
+  restrictions?: unknown[];
+  green_fees: Array<{ green_fee?: number }>;
+}
+
+// Raw API response types for CPS
+export interface CPSShItemPrice {
+  shItemCode: string;
+  currentPrice: number;
+}
+
+export interface CPSApiTeeTime {
+  startTime: string;
+  minPlayer: number;
+  maxPlayer: number;
+  availableParticipantNo: number[];
+  shItemPrices?: CPSShItemPrice[];
+  startingTee?: number;
+}
+
 // Raw tee time before transformation to final TeeTime format
 export interface RawTeeTime {
   tee_time_id: string;

@@ -1,4 +1,4 @@
-import { Course, CPSAttributes, RawTeeTime, FetchResult } from "./types";
+import { Course, CPSAttributes, RawTeeTime, FetchResult, CPSApiTeeTime, CPSShItemPrice } from "./types";
 import { randomUUID } from "crypto";
 
 const BROWSER_HEADERS = {
@@ -146,7 +146,7 @@ export async function fetchCPSTeeTimes(
     const numOfPlayersInt = parseInt(numOfPlayers);
     const holesInt = parseInt(holes);
 
-    for (const teeTimeObject of teeTimesList as any[]) {
+    for (const teeTimeObject of teeTimesList as CPSApiTeeTime[]) {
       // Get available participants
       const availableParticipants = Array.from(
         { length: teeTimeObject["maxPlayer"] - teeTimeObject["minPlayer"] + 1 },
@@ -160,9 +160,9 @@ export async function fetchCPSTeeTimes(
 
       // Get price
       const price = 
-        teeTimeObject["shItemPrices"]?.find((p: any) => p.shItemCode === `GreenFee${holes}`)?.currentPrice ||
-        teeTimeObject["shItemPrices"]?.find((p: any) => p.shItemCode === `Package${holes}`)?.currentPrice ||
-        teeTimeObject["shItemPrices"]?.find((p: any) => p.shItemCode === `GreenFee${holes}Online`)?.currentPrice ||
+        teeTimeObject["shItemPrices"]?.find((p: CPSShItemPrice) => p.shItemCode === `GreenFee${holes}`)?.currentPrice ||
+        teeTimeObject["shItemPrices"]?.find((p: CPSShItemPrice) => p.shItemCode === `Package${holes}`)?.currentPrice ||
+        teeTimeObject["shItemPrices"]?.find((p: CPSShItemPrice) => p.shItemCode === `GreenFee${holes}Online`)?.currentPrice ||
         0;
 
       // CPS returns local time (e.g., "2025-11-27T10:30:00") - don't treat it as UTC
