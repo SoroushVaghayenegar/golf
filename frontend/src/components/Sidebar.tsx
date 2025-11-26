@@ -576,9 +576,9 @@ export default function Sidebar({
                 </div>
                 <p className="text-xs text-slate-600">
                   {progress.completed} of {progress.total} courses
-                  {progress.currentCourse && (
+                  {progress.currentCourses && progress.currentCourses.length > 0 && (
                     <span className="block text-slate-500 truncate">
-                      {progress.currentCourse}
+                      {progress.currentCourses.join(', ')}
                     </span>
                   )}
                 </p>
