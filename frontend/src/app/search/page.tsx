@@ -63,8 +63,6 @@ export default function SearchPage() {
   const loading = useAppStore((s) => s.teeTimesLoading)
   const storeError = useAppStore((s) => s.teeTimesError)
   const fetchTeeTimesAction = useAppStore((s) => s.fetchTeeTimesAction)
-  const abortFetchTeeTimes = useAppStore((s) => s.abortFetchTeeTimes)
-  const progress = useAppStore((s) => s.teeTimesProgress)
   const [hasEverSearched, setHasEverSearched] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [courseCityMapping, setCourseCityMapping] = useState<Record<string, string>>({});
@@ -625,52 +623,6 @@ export default function SearchPage() {
             {/* Share Bar - Desktop positioning */}
             {!isMobile && <TeeTimesShareBar className="mb-4" regionId={parseInt(selectedRegionId)} />}
             
-            {/* Progress Bar - Shows when loading */}
-            {loading && progress && progress.total > 0 && (
-              <div className="mb-4 bg-white rounded-lg p-4 shadow-sm">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-slate-700">
-                    Fetching tee times...
-                  </span>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-slate-500">
-                      {progress.completed} / {progress.total} courses
-                    </span>
-                    <button
-                      onClick={abortFetchTeeTimes}
-                      className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-white bg-destructive hover:bg-destructive/90 rounded-md transition-colors shadow-sm"
-                      title="Stop search"
-                    >
-                      <span className="w-2.5 h-2.5 bg-white rounded-[2px]" />
-                      Stop
-                    </button>
-                  </div>
-                </div>
-                <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
-                  <div 
-                    className="bg-sidebar-primary h-2.5 rounded-full transition-all duration-300 ease-out"
-                    style={{ width: `${Math.round((progress.completed / progress.total) * 100)}%` }}
-                  />
-                </div>
-                {progress.currentCourses && progress.currentCourses.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {progress.currentCourses.map((course, idx) => (
-                      <span 
-                        key={idx}
-                        className="inline-block text-xs text-slate-600 bg-slate-100 px-2 py-1 rounded-full relative overflow-hidden"
-                      >
-                        <span className="relative z-10">{course}</span>
-                        <span 
-                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"
-                          style={{ backgroundSize: '200% 100%' }}
-                        />
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-            
             <div className="flex-1 overflow-hidden">
               {(() => {
                 const ResultsComponent = isMobile ? MobileTeeTimeCards : TeeTimeCards;
@@ -694,7 +646,6 @@ export default function SearchPage() {
                     onTeeTimeVisibilityChange={setVisibleTeeTimeCount}
                     selectedRegionId={selectedRegionId}
                     regionTimeZone={regionTimeZone}
-                    useSkeletonWhileLoading={hasEverSearched}
                     disableInitialEmptyState
                     shareUrl={currentUrl}
                     numOfPlayersInFilter={parseInt(numOfPlayers)}
