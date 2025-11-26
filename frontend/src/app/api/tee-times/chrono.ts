@@ -100,7 +100,7 @@ export async function fetchChronoTeeTimes(
 
     // Process response
     for (const teeTime of teeTimesData as ChronoApiTeeTime[]) {
-      if (teeTime["out_of_capacity"] || teeTime["restrictions"]?.length > 0) {
+      if (teeTime["out_of_capacity"] || (teeTime["restrictions"]?.length ?? 0) > 0) {
         continue;
       }
 
