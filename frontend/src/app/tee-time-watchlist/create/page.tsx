@@ -225,7 +225,7 @@ export default function CreateTeeTimeWatchlistPage() {
       }
       if (idsSet.size > 0) courseIds = Array.from(idsSet);
 
-      const data = await fetchTeeTimes({
+      const { promise } = fetchTeeTimes({
         dates: [dateStr],
         numOfPlayers,
         holes,
@@ -234,6 +234,7 @@ export default function CreateTeeTimeWatchlistPage() {
         endTime,
         courseIds,
       });
+      const data = await promise;
 
       if (data && data.length > 0) {
         setAvailableCount(data.length);

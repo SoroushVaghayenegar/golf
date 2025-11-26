@@ -47,11 +47,11 @@ export default function SearchPage() {
   const pathname = usePathname();
   const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
   
-  // State for filters
+  // State for filters - default to "2" players and "18" holes (no "any")
   const [selectedDates, setSelectedDates] = useState<Date[] | undefined>(undefined);
   const [fetchedDates, setFetchedDates] = useState<Date[] | undefined>(undefined);
-  const [numOfPlayers, setNumOfPlayers] = useState<string>("any");
-  const [holes, setHoles] = useState<string>("any");
+  const [numOfPlayers, setNumOfPlayers] = useState<string>("2");
+  const [holes, setHoles] = useState<string>("18");
   const [timeRange, setTimeRange] = useState<number[]>([5, 22]); // 5am to 10pm
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
@@ -63,6 +63,8 @@ export default function SearchPage() {
   const loading = useAppStore((s) => s.teeTimesLoading)
   const storeError = useAppStore((s) => s.teeTimesError)
   const fetchTeeTimesAction = useAppStore((s) => s.fetchTeeTimesAction)
+  const abortFetchTeeTimes = useAppStore((s) => s.abortFetchTeeTimes)
+  const progress = useAppStore((s) => s.teeTimesProgress)
   const [hasEverSearched, setHasEverSearched] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [courseCityMapping, setCourseCityMapping] = useState<Record<string, string>>({});
@@ -93,7 +95,6 @@ export default function SearchPage() {
   const [visibleTeeTimeCount, setVisibleTeeTimeCount] = useState(0);
   const resultsSectionRef = useRef<TeeTimeCardsRef>(null);
   const initialAutoSearchTriggeredRef = useRef(false);
-  const lastQueryKeyRef = useRef<string | null>(null);
 
   // Helper to format a Date as YYYY-MM-DD without timezone shifts
   const formatDateLocal = (date: Date) => {
@@ -200,22 +201,22 @@ export default function SearchPage() {
         setHadDatesInURL(true); // Treat defaults as if they came from URL
       }
 
-      // Players
+      // Players - only accept 1, 2, 3, 4 (no "any")
       const playersParam = params.get('players') || params.get('numOfPlayers');
-      if (playersParam && ["1","2","3","4","any"].includes(playersParam)) {
+      if (playersParam && ["1","2","3","4"].includes(playersParam)) {
         setNumOfPlayers(playersParam);
       } else if (!playersParam) {
         // Set default
-        setNumOfPlayers('any');
+        setNumOfPlayers('2');
       }
 
-      // Holes
+      // Holes - only accept 9 or 18 (no "any")
       const holesParam = params.get('holes');
-      if (holesParam && ["9","18","any"].includes(holesParam)) {
+      if (holesParam && ["9","18"].includes(holesParam)) {
         setHoles(holesParam);
       } else if (!holesParam) {
         // Set default
-        setHoles('any');
+        setHoles('18');
       }
 
       // Time range: support start/end or timeRange=5-22 or 5,22
@@ -366,16 +367,6 @@ export default function SearchPage() {
     }
   }, [hadDatesInURL, hadRegionInURL, selectedRegionId, selectedDates, urlFiltersApplied, pendingCitiesFromURL, pendingCoursesFromURL, pendingCourseIdsFromURL]);
 
-  // Stable key representing the effective search filters
-  const getQueryKey = () => {
-    const dates = (selectedDates || []).map(formatDateLocal).join(',');
-    const cities = [...selectedCities].sort().join(',');
-    const courses = [...selectedCourses].sort().join(',');
-    const range = timeRange && timeRange.length === 2 ? `${timeRange[0]}-${timeRange[1]}` : '';
-    // Do NOT include sortBy in the key so sorting doesn't trigger a refetch
-    return [dates, numOfPlayers, holes, range, selectedRegionId || '', cities, courses].join('|');
-  };
-
   // Keep URL in sync with current filters
   useEffect(() => {
     if (!pathname || !hasParsedURL) return;
@@ -384,8 +375,8 @@ export default function SearchPage() {
     if (selectedDates && selectedDates.length > 0) {
       params.set('dates', selectedDates.map(formatDateLocal).join(','));
     }
-    if (numOfPlayers) params.set('players', numOfPlayers);
-    if (holes) params.set('holes', holes);
+    if (numOfPlayers && numOfPlayers !== "any") params.set('players', numOfPlayers);
+    if (holes && holes !== "any") params.set('holes', holes);
     if (timeRange && timeRange.length === 2) {
       params.set('timeRange', `${timeRange[0]}-${timeRange[1]}`);
     }
@@ -498,8 +489,6 @@ export default function SearchPage() {
     
     const isFirstRun = !hasEverSearched;
     const startTime = Date.now();
-    // Record the key for the request we're about to make
-    lastQueryKeyRef.current = getQueryKey();
     setError(null);
     // Note: Don't clear removedCourseIds here as they should persist from URL params
     try {
@@ -559,29 +548,12 @@ export default function SearchPage() {
           await new Promise(resolve => setTimeout(resolve, remainingTime));
         }
       }
-      // After finishing, keep the latest effective key in sync
-      lastQueryKeyRef.current = getQueryKey();
       // Mark first search as completed AFTER loading is cleared to avoid skeletons during first load
       if (isFirstRun) {
         setHasEverSearched(true);
       }
     }
   };
-
-  // Automatically run search when any filter changes after the first search
-  useEffect(() => {
-    if (!hasEverSearched) return;
-    const nextKey = getQueryKey();
-    if (lastQueryKeyRef.current === nextKey) {
-      return;
-    }
-    // Debounce to avoid rapid successive calls while sliding time range etc.
-    const id = setTimeout(() => {
-      lastQueryKeyRef.current = nextKey;
-      handleGetTeeTimes();
-    }, 350);
-    return () => clearTimeout(id);
-  }, [selectedDates, numOfPlayers, holes, timeRange, selectedCities, selectedCourses, selectedRegionId]);
 
   return (
     <div className="min-h-screen lg:min-h-[calc(100vh-64px)] bg-gradient-to-br from-blue-50 to-slate-100 p-4 py-0 sm:p-10 lg:p-0 font-[family-name:var(--font-geist-sans)] w-full max-w-full overflow-x-hidden lg:overflow-y-hidden">
@@ -653,6 +625,52 @@ export default function SearchPage() {
             {/* Share Bar - Desktop positioning */}
             {!isMobile && <TeeTimesShareBar className="mb-4" regionId={parseInt(selectedRegionId)} />}
             
+            {/* Progress Bar - Shows when loading */}
+            {loading && progress && progress.total > 0 && (
+              <div className="mb-4 bg-white rounded-lg p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Fetching tee times...
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-slate-500">
+                      {progress.completed} / {progress.total} courses
+                    </span>
+                    <button
+                      onClick={abortFetchTeeTimes}
+                      className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-white bg-destructive hover:bg-destructive/90 rounded-md transition-colors shadow-sm"
+                      title="Stop search"
+                    >
+                      <span className="w-2.5 h-2.5 bg-white rounded-[2px]" />
+                      Stop
+                    </button>
+                  </div>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                  <div 
+                    className="bg-sidebar-primary h-2.5 rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${Math.round((progress.completed / progress.total) * 100)}%` }}
+                  />
+                </div>
+                {progress.currentCourses && progress.currentCourses.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {progress.currentCourses.map((course, idx) => (
+                      <span 
+                        key={idx}
+                        className="inline-block text-xs text-slate-600 bg-slate-100 px-2 py-1 rounded-full relative overflow-hidden"
+                      >
+                        <span className="relative z-10">{course}</span>
+                        <span 
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"
+                          style={{ backgroundSize: '200% 100%' }}
+                        />
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            
             <div className="flex-1 overflow-hidden">
               {(() => {
                 const ResultsComponent = isMobile ? MobileTeeTimeCards : TeeTimeCards;
@@ -679,7 +697,7 @@ export default function SearchPage() {
                     useSkeletonWhileLoading={hasEverSearched}
                     disableInitialEmptyState
                     shareUrl={currentUrl}
-                    numOfPlayersInFilter={numOfPlayers !== "any" ? parseInt(numOfPlayers) : undefined}
+                    numOfPlayersInFilter={parseInt(numOfPlayers)}
                   />
                 );
               })()}

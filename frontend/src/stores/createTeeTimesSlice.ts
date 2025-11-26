@@ -1,16 +1,21 @@
 'use client'
 
-import { fetchTeeTimes, type TeeTime } from '@/services/teeTimeService'
+import { fetchTeeTimes, type TeeTime, type TeeTimeFilters, type FetchProgress } from '@/services/teeTimeService'
 
-export type TeeTimeFilters = Parameters<typeof fetchTeeTimes>[0]
+export type { TeeTimeFilters }
+
+// Store the current abort function globally within this module
+let currentAbortFn: (() => void) | null = null;
 
 export type TeeTimesSlice = {
   teeTimes: TeeTime[]
   teeTimesLoading: boolean
   teeTimesError: string | null
   teeTimesLastFilters?: TeeTimeFilters
+  teeTimesProgress: FetchProgress | null
 
   fetchTeeTimesAction: (filters: TeeTimeFilters) => Promise<void>
+  abortFetchTeeTimes: () => void
   resetTeeTimes: () => void
 }
 
@@ -19,25 +24,71 @@ export const createTeeTimesSlice = (set: (partial: Partial<TeeTimesSlice>) => vo
   teeTimesLoading: false,
   teeTimesError: null,
   teeTimesLastFilters: undefined,
+  teeTimesProgress: null,
 
   fetchTeeTimesAction: async (filters) => {
-    set({ teeTimesLoading: true, teeTimesError: null, teeTimesLastFilters: filters })
+    // Abort any existing fetch before starting a new one
+    if (currentAbortFn) {
+      currentAbortFn();
+      currentAbortFn = null;
+    }
+    
+    set({ 
+      teeTimesLoading: true, 
+      teeTimesError: null, 
+      teeTimesLastFilters: filters,
+      teeTimesProgress: { completed: 0, total: 0 }
+    })
+    
     try {
-      const data = await fetchTeeTimes(filters)
+      const { promise, abort } = fetchTeeTimes(filters, {
+        onProgress: (progress) => {
+          set({ teeTimesProgress: progress })
+        },
+        onComplete: (teeTimes) => {
+          set({ teeTimes, teeTimesProgress: null })
+        },
+        onError: (error) => {
+          set({ teeTimesError: error, teeTimesProgress: null })
+        },
+        onAbort: () => {
+          // When aborted, keep the current tee times but stop loading
+          set({ teeTimesLoading: false, teeTimesProgress: null })
+        }
+      })
+      
+      // Store the abort function
+      currentAbortFn = abort;
+      
+      const data = await promise
+      currentAbortFn = null;
       set({ teeTimes: data })
     } catch {
-      set({ teeTimesError: 'Failed to fetch tee times' })
+      currentAbortFn = null;
+      set({ teeTimesError: 'Failed to fetch tee times', teeTimesProgress: null })
     } finally {
       set({ teeTimesLoading: false })
     }
   },
 
-  resetTeeTimes: () => set({
-    teeTimes: [],
-    teeTimesLoading: false,
-    teeTimesError: null,
-    teeTimesLastFilters: undefined,
-  }),
+  abortFetchTeeTimes: () => {
+    if (currentAbortFn) {
+      currentAbortFn();
+      currentAbortFn = null;
+    }
+  },
+
+  resetTeeTimes: () => {
+    if (currentAbortFn) {
+      currentAbortFn();
+      currentAbortFn = null;
+    }
+    set({
+      teeTimes: [],
+      teeTimesLoading: false,
+      teeTimesError: null,
+      teeTimesLastFilters: undefined,
+      teeTimesProgress: null,
+    })
+  },
 })
-
-

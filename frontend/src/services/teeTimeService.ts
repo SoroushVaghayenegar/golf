@@ -1,8 +1,3 @@
-
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-
 export interface CourseInfo {
     name: string;
     display_name: string;
@@ -43,7 +38,7 @@ export interface TeeTime {
     course: CourseInfo;
 }
 
-interface TeeTimeFilters {
+export interface TeeTimeFilters {
     dates: string[];  // Format: YYYY-MM-DD
     numOfPlayers: string;
     holes: string;
@@ -54,37 +49,106 @@ interface TeeTimeFilters {
     endTime: number;
 }
 
-// Cities are now fetched dynamically from the database via supabaseService
+export interface FetchProgress {
+    completed: number;
+    total: number;
+    currentCourses?: string[];
+}
 
-export const fetchTeeTimes = async (filters: TeeTimeFilters): Promise<TeeTime[]> => {
-    try {
-        // Construct URL with query parameters
-        const params = new URLSearchParams();
-        params.append('dates', filters.dates.join(','));
-        params.append('numOfPlayers', filters.numOfPlayers);
-        params.append('holes', filters.holes);
-        params.append('region_id', filters.regionId);
-        params.append('startTime', filters.startTime.toString());
-        params.append('endTime', filters.endTime.toString());
-        if (filters.courseIds && filters.courseIds.length > 0) {
-            params.append('courseIds', filters.courseIds.join(','));
-        }
+export interface SSEMessage {
+    type: "progress" | "complete" | "error";
+    progress?: FetchProgress;
+    teeTimes?: TeeTime[];
+    error?: string;
+}
 
-        const response = await fetch(`${supabaseUrl}/functions/v1/tee-times?${params.toString()}`, {
-            headers: {
-                'Authorization': `Bearer ${supabaseAnonKey}`,
-                'Content-Type': 'application/json',
-            }
-        })
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data: TeeTime[] = await response.json();
-        return data;
-    } catch (error) {
-        console.error('Error fetching tee times:', error);
-        throw error;
+export interface FetchTeeTimesCallbacks {
+    onProgress?: (progress: FetchProgress) => void;
+    onComplete?: (teeTimes: TeeTime[]) => void;
+    onError?: (error: string) => void;
+    onAbort?: () => void;
+}
+
+export interface FetchTeeTimesResult {
+    promise: Promise<TeeTime[]>;
+    abort: () => void;
+}
+
+export const fetchTeeTimes = (
+    filters: TeeTimeFilters,
+    callbacks?: FetchTeeTimesCallbacks
+): FetchTeeTimesResult => {
+    // Construct URL with query parameters
+    const params = new URLSearchParams();
+    params.append('dates', filters.dates.join(','));
+    params.append('numOfPlayers', filters.numOfPlayers);
+    params.append('holes', filters.holes);
+    params.append('region_id', filters.regionId);
+    params.append('startTime', filters.startTime.toString());
+    params.append('endTime', filters.endTime.toString());
+    if (filters.courseIds && filters.courseIds.length > 0) {
+        params.append('courseIds', filters.courseIds.join(','));
     }
+
+    const url = `/api/tee-times?${params.toString()}`;
+
+    // Use EventSource for SSE
+    const eventSource = new EventSource(url);
+    let teeTimes: TeeTime[] = [];
+    let isAborted = false;
+
+    const abort = () => {
+        isAborted = true;
+        eventSource.close();
+        callbacks?.onAbort?.();
+    };
+
+    const promise = new Promise<TeeTime[]>((resolve, reject) => {
+        eventSource.onmessage = (event) => {
+            if (isAborted) return;
+            
+            try {
+                const message: SSEMessage = JSON.parse(event.data);
+
+                if (message.type === "progress" && message.progress) {
+                    callbacks?.onProgress?.(message.progress);
+                } else if (message.type === "complete") {
+                    teeTimes = message.teeTimes || [];
+                    callbacks?.onComplete?.(teeTimes);
+                    eventSource.close();
+                    resolve(teeTimes);
+                } else if (message.type === "error") {
+                    const errorMsg = message.error || "Unknown error";
+                    callbacks?.onError?.(errorMsg);
+                    eventSource.close();
+                    reject(new Error(errorMsg));
+                }
+            } catch (parseError) {
+                console.error('Error parsing SSE message:', parseError);
+            }
+        };
+
+        eventSource.onerror = (error) => {
+            if (isAborted) {
+                // Aborted by user - resolve with whatever we have so far
+                resolve(teeTimes);
+                return;
+            }
+            
+            console.error('SSE connection error:', error);
+            eventSource.close();
+            
+            // Try to determine if it's a real error or just the stream ending
+            if (teeTimes.length > 0) {
+                // Stream may have ended naturally after sending complete
+                resolve(teeTimes);
+            } else {
+                const errorMsg = 'Failed to fetch tee times';
+                callbacks?.onError?.(errorMsg);
+                reject(new Error(errorMsg));
+            }
+        };
+    });
+
+    return { promise, abort };
 };

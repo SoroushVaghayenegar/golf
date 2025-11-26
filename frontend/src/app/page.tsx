@@ -1,7 +1,8 @@
 "use client";
 import posthog from 'posthog-js';
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { ChevronDown } from "lucide-react";
 import { 
   getToday, 
   isEvening,
@@ -37,10 +38,11 @@ const useRegionIdWithStorage = (defaultRegionId: string = '1') => {
 
 export default function Home() {
   const router = useRouter();
+  const sidebarRef = useRef<HTMLDivElement>(null);
   // State for filters
   const [selectedDates, setSelectedDates] = useState<Date[] | undefined>(undefined);
-  const [numOfPlayers, setNumOfPlayers] = useState<string>("any");
-  const [holes, setHoles] = useState<string>("any");
+  const [numOfPlayers, setNumOfPlayers] = useState<string>("4");
+  const [holes, setHoles] = useState<string>("18");
   const [timeRange, setTimeRange] = useState<number[]>([5, 22]); // 5am to 10pm
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
@@ -50,6 +52,10 @@ export default function Home() {
   const [isClient, setIsClient] = useState(false);
   const [todayDate, setTodayDate] = useState<Date | null>(null);
   const [, setCourseCityMapping] = useState<Record<string, string>>({});
+
+  const scrollToSidebar = () => {
+    sidebarRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   useEffect(() => {
     // Mark as client-side rendered
@@ -85,8 +91,8 @@ export default function Home() {
     if (selectedDates && selectedDates.length > 0) {
       params.set('dates', selectedDates.map(formatDateLocal).join(','));
     }
-    if (numOfPlayers) params.set('players', numOfPlayers);
-    if (holes) params.set('holes', holes);
+    if (numOfPlayers && numOfPlayers !== "any") params.set('players', numOfPlayers);
+    if (holes && holes !== "any") params.set('holes', holes);
     if (timeRange && timeRange.length === 2) {
       params.set('timeRange', `${timeRange[0]}-${timeRange[1]}`);
     }
@@ -100,34 +106,66 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen lg:min-h-[calc(100vh-64px)] bg-gradient-to-br from-blue-50 to-slate-100 p-4 py-0 sm:p-10 lg:p-0 font-[family-name:var(--font-geist-sans)] w-full max-w-full overflow-x-hidden lg:overflow-y-hidden">
-      <main className="w-full max-w-full flex flex-col lg:flex-row lg:h-[calc(100vh-64px)] lg:min-h-[calc(100vh-64px)] gap-8 lg:gap-0 overflow-x-hidden">
-        {isInitialized && (
-          <Sidebar
-            selectedDates={selectedDates}
-            setSelectedDates={setSelectedDates}
-            numOfPlayers={numOfPlayers}
-            setNumOfPlayers={setNumOfPlayers}
-            holes={holes}
-            setHoles={setHoles}
-            timeRange={timeRange}
-            setTimeRange={setTimeRange}
-            selectedCities={selectedCities}
-            setSelectedCities={setSelectedCities}
-            selectedCourses={selectedCourses}
-            setSelectedCourses={setSelectedCourses}
-            removedCourseIds={removedCourseIds}
-            loading={loading}
-            onGetTeeTimes={handleNavigateToSearch}
-            isClient={isClient}
-            todayDate={todayDate}
-            setCourseCityMapping={setCourseCityMapping}
-            selectedRegionId={selectedRegionId}
-            setSelectedRegionId={setSelectedRegionId}
-            hideSubmitButton={false}
-          />
-        )}
-        <div className="relative flex-1 lg:h-[calc(100vh-64px)] h-[50vh] overflow-hidden hidden lg:block">
+    <div className="min-h-screen lg:min-h-[calc(100vh-64px)] bg-gradient-to-br from-blue-50 to-slate-100 lg:p-0 font-[family-name:var(--font-geist-sans)] w-full max-w-full overflow-x-hidden lg:overflow-y-hidden">
+      <main className="w-full max-w-full flex flex-col lg:flex-row lg:h-[calc(100vh-64px)] lg:min-h-[calc(100vh-64px)] lg:gap-0 overflow-x-hidden">
+        {/* Mobile Hero Section - Only visible on mobile */}
+        <div className="relative w-full lg:hidden flex-shrink-0 px-[10px]" style={{ height: 'calc(100svh - 64px)' }}>
+          <div className="relative w-full h-full rounded-lg overflow-hidden">
+            <img src="/bg1.png" alt="Background" className="absolute inset-0 w-full h-full object-cover opacity-90" style={{ objectPosition: 'center 30%' }} />
+            <div className="absolute inset-0 bg-black/40" />
+            <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-6 text-center">
+              <div className="max-w-3xl">
+                <h1 className="text-white text-2xl sm:text-3xl font-semibold drop-shadow-md">
+                  Find Your Perfect Tee Time
+                </h1>
+                <p className="mt-3 text-white/90 text-lg sm:text-xl drop-shadow">
+                  Select your preferences and discover available tee times
+                </p>
+              </div>
+            </div>
+            {/* Flashing Double Arrow - Fixed at bottom of viewport */}
+            <button
+              onClick={scrollToSidebar}
+              className="absolute left-1/2 -translate-x-1/2 bottom-6 flex flex-col items-center gap-0 cursor-pointer animate-pulse-slow z-20"
+              aria-label="Scroll to filters"
+            >
+              <ChevronDown className="w-10 h-10 text-white drop-shadow-lg -mb-4" strokeWidth={2.5} />
+              <ChevronDown className="w-10 h-10 text-white drop-shadow-lg" strokeWidth={2.5} />
+            </button>
+          </div>
+        </div>
+
+        {/* Sidebar / Filters Section */}
+        <div ref={sidebarRef} className="w-full lg:w-auto p-4 sm:p-10 lg:p-0">
+          {isInitialized && (
+            <Sidebar
+              selectedDates={selectedDates}
+              setSelectedDates={setSelectedDates}
+              numOfPlayers={numOfPlayers}
+              setNumOfPlayers={setNumOfPlayers}
+              holes={holes}
+              setHoles={setHoles}
+              timeRange={timeRange}
+              setTimeRange={setTimeRange}
+              selectedCities={selectedCities}
+              setSelectedCities={setSelectedCities}
+              selectedCourses={selectedCourses}
+              setSelectedCourses={setSelectedCourses}
+              removedCourseIds={removedCourseIds}
+              loading={loading}
+              onGetTeeTimes={handleNavigateToSearch}
+              isClient={isClient}
+              todayDate={todayDate}
+              setCourseCityMapping={setCourseCityMapping}
+              selectedRegionId={selectedRegionId}
+              setSelectedRegionId={setSelectedRegionId}
+              hideSubmitButton={false}
+            />
+          )}
+        </div>
+
+        {/* Desktop Hero Section - Only visible on desktop */}
+        <div className="relative flex-1 lg:h-[calc(100vh-64px)] overflow-hidden hidden lg:block">
           <img src="/bg1.png" alt="Background" className="absolute inset-0 w-full h-full object-cover opacity-90" />
           <div className="absolute inset-0 bg-black/40" />
           <div className="relative z-10 w-full h-full flex items-center justify-center p-6 text-center">

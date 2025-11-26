@@ -2,11 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Listbox } from "@headlessui/react";
-import { ChevronDown, Users, Clock, School, LandPlot, MapPin, Info, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, Users, Clock, School, LandPlot, MapPin, Info, SlidersHorizontal, RefreshCw, X } from "lucide-react";
 import { Range } from "react-range";
 import { MultiValue } from "react-select";
 import TeeClubSelect from "./TeeClubSelect";
-import { Badge } from "@/components/ui/badge";
 import { fetchCourseDisplayNamesAndTheirCities, fetchRegions } from "../services/supabaseService";
 import CompactCalendar from "./CompactCalendar";
 import { useAppStore } from "@/stores/appStore";
@@ -86,6 +85,7 @@ export default function MobileSidebar({
   const [pendingTimeRange, setPendingTimeRange] = useState<number[] | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const teeTimesCount = useAppStore((s) => s.teeTimes.length);
+  const progress = useAppStore((s) => s.teeTimesProgress);
 
   useEffect(() => {
     if (onOpenChange) onOpenChange(isOpen);
@@ -286,8 +286,8 @@ export default function MobileSidebar({
     } else if (selectedDates && selectedDates.length > 1) {
       datePart = `${selectedDates.length} days`;
     }
-    const playersPart = numOfPlayers === "any" ? "Any players" : `${numOfPlayers} players`;
-    const holesPart = holes === "any" ? "Any holes" : `${holes} holes`;
+    const playersPart = `${numOfPlayers === "any" ? "4" : numOfPlayers} player${numOfPlayers === "1" ? "" : "s"}`;
+    const holesPart = `${holes === "any" ? "18" : holes} holes`;
     const timePart = `${formatHour(timeRange[0])} - ${formatHour(timeRange[1])}`;
     const cityPart = selectedCities.length > 0 ? `${selectedCities.length} cit${selectedCities.length > 1 ? "ies" : "y"}` : "All cities";
     const coursePart = selectedCourses.length > 0 ? `${selectedCourses.length} course${selectedCourses.length > 1 ? "s" : ""}` : "All courses";
@@ -334,9 +334,10 @@ export default function MobileSidebar({
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sidebar-primary text-white text-sm font-medium hover:bg-sidebar-primary-hover focus:outline-none focus:ring-2 focus:ring-sidebar-primary whitespace-nowrap"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-400 whitespace-nowrap"
               >
-                Done
+                <X className="w-4 h-4" />
+                Close
               </button>
             </div>
 
@@ -356,8 +357,8 @@ export default function MobileSidebar({
                       <Users className="w-5 h-5 text-slate-600" />
                       <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase">Players</span>
                     </div>
-                    <div className="grid grid-cols-5 gap-2">
-                      {["1", "2", "3", "4", "any"].map((option) => (
+                    <div className="grid grid-cols-4 gap-2">
+                      {["1", "2", "3", "4"].map((option) => (
                         <button
                           key={option}
                           onClick={() => setNumOfPlayers(option)}
@@ -367,7 +368,7 @@ export default function MobileSidebar({
                               : "bg-white hover:bg-green-200 border-slate-200 text-slate-700 hover:border-sidebar-primary"
                           }`}
                         >
-                          {option === "any" ? "Any" : option}
+                          {option}
                         </button>
                       ))}
                     </div>
@@ -384,20 +385,19 @@ export default function MobileSidebar({
                       </button>
                       {showHolesTooltip && (
                         <div className="absolute top-6 right-0 z-50 w-56 p-3 bg-slate-800 text-white text-xs rounded-lg shadow-lg">
-                          Some courses offer options beyond 9 or 18 holes. Select &quot;Any&quot; to view all available formats.
+                          Some courses offer options beyond 9 or 18 holes. Contact the course directly for more information.
                           <div className="absolute -top-1 right-4 w-2 h-2 bg-slate-800 rotate-45"></div>
                         </div>
                       )}
                     </div>
-                    <Listbox value={holes} onChange={setHoles}>
+                    <Listbox value={holes === "any" ? "18" : holes} onChange={setHoles}>
                       <div className="relative">
                         <Listbox.Button className="w-full px-4 py-2 text-left bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sidebar-primary hover:border-sidebar-primary transition-colors font-medium text-slate-700">
-                          <span>{holes === "any" ? "Any" : holes}</span>
+                          <span>{holes === "any" ? "18" : holes}</span>
                           <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                         </Listbox.Button>
                         <Listbox.Options className="absolute z-40 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg focus:outline-none">
                           {[
-                            { value: "any", label: "Any" },
                             { value: "18", label: "18" },
                             { value: "9", label: "9" },
                           ].map((option) => (
@@ -595,10 +595,14 @@ export default function MobileSidebar({
               </section>
             </div>
 
-            {!hideSubmitButton && (
-              <div className="sticky bottom-0 px-4 py-3 border-t border-slate-200 bg-white">
+            {/* Bottom Action Area */}
+            <div className="sticky bottom-0 px-4 py-4 pb-[calc(env(safe-area-inset-bottom)+16px)] border-t border-slate-200 bg-white">
+              {!hideSubmitButton ? (
                 <button
-                  onClick={onGetTeeTimes}
+                  onClick={() => {
+                    onGetTeeTimes();
+                    setIsOpen(false);
+                  }}
                   disabled={loading || !selectedDates || selectedDates.length === 0}
                   className={`w-full px-6 py-3 rounded-lg font-semibold text-white transition-all duration-200 ${
                     loading || !selectedDates || selectedDates.length === 0
@@ -608,30 +612,65 @@ export default function MobileSidebar({
                 >
                   {loading ? "Searching..." : "Get Tee Times"}
                 </button>
-              </div>
-            )}
-            {hideSubmitButton && (
-              <div className="sticky px-4 py-4 border-t border-slate-200 bg-white">
-                <div className="w-full flex justify-center">
-                  <Badge className="px-3 py-1 text-xs" aria-live="polite" aria-busy={loading}>
-                    {loading ? (
-                      <span className="inline-flex items-center justify-center">
-                        <span className="h-3 w-3 rounded-full border-2 border-current/60 border-t-current animate-spin" />
-                      </span>
-                    ) : (
-                      <>
-                        {teeTimesCount} tee time{teeTimesCount === 1 ? "" : "s"}
-                      </>
-                    )}
-                  </Badge>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {/* Search Button */}
+                  <button
+                    onClick={() => {
+                      onGetTeeTimes();
+                      setIsOpen(false);
+                    }}
+                    disabled={loading || !selectedDates || selectedDates.length === 0}
+                    className={`w-full px-4 py-3 rounded-lg font-semibold text-white transition-all duration-200 flex items-center justify-center gap-2 ${
+                      loading || !selectedDates || selectedDates.length === 0
+                        ? "bg-slate-300 cursor-not-allowed"
+                        : "bg-sidebar-primary hover:bg-sidebar-primary-hover shadow-md hover:shadow-lg"
+                    }`}
+                  >
+                    <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+                    {loading ? "Searching..." : "Search Tee Times"}
+                  </button>
+                  
+                  {/* Progress or Results */}
+                  {loading && progress && progress.total > 0 ? (
+                    <div className="space-y-2">
+                      <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                        <div 
+                          className="bg-sidebar-primary h-2.5 rounded-full transition-all duration-300 ease-out"
+                          style={{ width: `${Math.round((progress.completed / progress.total) * 100)}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-slate-600 text-center">
+                        {progress.completed} of {progress.total} courses
+                      </p>
+                      {progress.currentCourses && progress.currentCourses.length > 0 && (
+                        <div className="flex flex-wrap gap-1 justify-center">
+                          {progress.currentCourses.map((course, idx) => (
+                            <span 
+                              key={idx}
+                              className="inline-block text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full relative overflow-hidden"
+                            >
+                              <span className="relative z-10">{course}</span>
+                              <span 
+                                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"
+                                style={{ backgroundSize: '200% 100%' }}
+                              />
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-green-700 font-medium text-center">
+                      {teeTimesCount} tee time{teeTimesCount === 1 ? "" : "s"}
+                    </p>
+                  )}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}
     </div>
   );
 }
-
-
