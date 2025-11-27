@@ -245,6 +245,20 @@ export default function Sidebar({
     }
   }, [holes, courseNameToHolesMapping, selectedCourses, setSelectedCourses]);
 
+  // When holes changes, clear any selected courses that no longer support the new holes value
+  useEffect(() => {
+    const holesValue = holes === "any" ? 18 : parseInt(holes);
+    if (selectedCourses.length > 0 && Object.keys(courseNameToHolesMapping).length > 0) {
+      const validCourses = selectedCourses.filter(courseName => {
+        const courseHoles = courseNameToHolesMapping[courseName];
+        return !courseHoles || courseHoles.includes(holesValue);
+      });
+      if (validCourses.length !== selectedCourses.length) {
+        setSelectedCourses(validCourses);
+      }
+    }
+  }, [holes, courseNameToHolesMapping, selectedCourses, setSelectedCourses]);
+
   const formatHour = (hour: number) => {
     if (hour === 0) return '12 AM';
     if (hour < 12) return `${hour} AM`;
