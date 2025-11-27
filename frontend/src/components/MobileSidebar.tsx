@@ -85,8 +85,15 @@ export default function MobileSidebar({
   const [showHolesTooltip, setShowHolesTooltip] = useState(false);
   const [pendingTimeRange, setPendingTimeRange] = useState<number[] | null>(null);
   const [isOpen, setIsOpen] = useState(false);
-  const teeTimesCount = useAppStore((s) => s.teeTimes.length);
+  const teeTimes = useAppStore((s) => s.teeTimes);
+  const teeTimesCount = teeTimes.length;
   const progress = useAppStore((s) => s.teeTimesProgress);
+  
+  // Count unique courses that have tee times
+  const coursesWithTeeTimes = useMemo(() => {
+    const uniqueCourseIds = new Set(teeTimes.map(t => t.course_id));
+    return uniqueCourseIds.size;
+  }, [teeTimes]);
 
   useEffect(() => {
     if (onOpenChange) onOpenChange(isOpen);
@@ -343,7 +350,12 @@ export default function MobileSidebar({
             <SlidersHorizontal className="w-5 h-5 text-sidebar-primary" />
           </div>
         </div>
-        <span className="absolute bottom-3 right-4 text-sm text-green-700">{teeTimesCount} tee time{teeTimesCount === 1 ? "" : "s"}</span>
+        <span className="absolute bottom-3 right-4 text-sm text-green-700">
+          {teeTimesCount} tee time{teeTimesCount === 1 ? "" : "s"}
+          {coursesWithTeeTimes > 0 && (
+            <span className="text-slate-500"> · {coursesWithTeeTimes} course{coursesWithTeeTimes === 1 ? "" : "s"} with tee times</span>
+          )}
+        </span>
       </button>
 
       {/* Full-screen filter panel */}
@@ -691,6 +703,9 @@ export default function MobileSidebar({
                   ) : (
                     <p className="text-sm text-green-700 font-medium text-center">
                       {teeTimesCount} tee time{teeTimesCount === 1 ? "" : "s"}
+                      {coursesWithTeeTimes > 0 && (
+                        <span className="text-slate-500 font-normal"> · {coursesWithTeeTimes} course{coursesWithTeeTimes === 1 ? "" : "s"} with tee times</span>
+                      )}
                     </p>
                   )}
                 </div>

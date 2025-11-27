@@ -23,6 +23,59 @@
   border-radius: 4px;
 }
 
+/* Course availability tooltip scrollbars */
+.scrollbar-courses-green {
+  scrollbar-width: thin;
+  scrollbar-color: #22c55e #e2e8f0;
+  overflow-y: scroll !important;
+}
+
+.scrollbar-courses-green::-webkit-scrollbar {
+  width: 8px;
+  display: block;
+}
+
+.scrollbar-courses-green::-webkit-scrollbar-track {
+  background-color: #e2e8f0;
+  border-radius: 4px;
+}
+
+.scrollbar-courses-green::-webkit-scrollbar-thumb {
+  background-color: #22c55e;
+  border-radius: 4px;
+  min-height: 30px;
+}
+
+.scrollbar-courses-green::-webkit-scrollbar-thumb:hover {
+  background-color: #16a34a;
+}
+
+.scrollbar-courses-gray {
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #e2e8f0;
+  overflow-y: scroll !important;
+}
+
+.scrollbar-courses-gray::-webkit-scrollbar {
+  width: 8px;
+  display: block;
+}
+
+.scrollbar-courses-gray::-webkit-scrollbar-track {
+  background-color: #e2e8f0;
+  border-radius: 4px;
+}
+
+.scrollbar-courses-gray::-webkit-scrollbar-thumb {
+  background-color: #94a3b8;
+  border-radius: 4px;
+  min-height: 30px;
+}
+
+.scrollbar-courses-gray::-webkit-scrollbar-thumb:hover {
+  background-color: #64748b;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

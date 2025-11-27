@@ -75,59 +75,115 @@ export async function GET(request: NextRequest) {
             .filter(date => date) // Filter out null/undefined dates
         )]
 
+        // Extract unique course IDs to filter the request
+        const uniqueCourseIds = [...new Set(
+          teeTimesData
+            .map(teeTime => teeTime.tee_time_object?.course_id)
+            .filter(id => id != null)
+        )]
+
+        // Extract unique holes values (9 or 18)
+        const uniqueHoles = [...new Set(
+          teeTimesData
+            .map(teeTime => teeTime.tee_time_object?.holes)
+            .filter(holes => holes === 9 || holes === 18)
+        )] as number[]
+
+        // Default to 18 if no valid holes found
+        const holesValues = uniqueHoles.length > 0 ? uniqueHoles : [18]
+
         if (uniqueDates.length > 0) {
-          // Make API call to check current availability
-          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-          const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+          // Use the same /api/tee-times route as the search page
+          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
+            (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
           
-          const params = new URLSearchParams()
-          params.append('dates', uniqueDates.join(','))
-          params.append('region_id', shareData.region_id.toString())
-
-          const response = await fetch(`${supabaseUrl}/functions/v1/tee-times?${params.toString()}`, {
-            headers: {
-              'Authorization': `Bearer ${supabaseAnonKey}`,
-              'Content-Type': 'application/json',
+          // Helper function to fetch tee times from SSE stream
+          const fetchTeeTimesFromSSE = async (holes: number): Promise<Record<string, unknown>[]> => {
+            const params = new URLSearchParams()
+            params.append('dates', uniqueDates.join(','))
+            params.append('region_id', shareData.region_id.toString())
+            params.append('numOfPlayers', '4') // Use max players to get all available tee times
+            params.append('holes', holes.toString())
+            params.append('startTime', '5') // Wide time range
+            params.append('endTime', '22')
+            if (uniqueCourseIds.length > 0) {
+              params.append('courseIds', uniqueCourseIds.join(','))
             }
-          })
 
-          if (response.ok) {
-            const currentTeeTimesData = await response.json()
-            
-            // Update each share tee time with availability info
-            updatedTeeTimesData = teeTimesData.map(shareTeeTime => {
-              // Find matching current tee time by comparing key properties
-              const matchingCurrentTeeTime = currentTeeTimesData.find((currentTeeTime: Record<string, unknown>) => 
-                currentTeeTime.id === shareTeeTime.tee_time_object?.id ||
-                (
-                  currentTeeTime.start_datetime === shareTeeTime.tee_time_object?.start_datetime &&
-                  currentTeeTime.course_id === shareTeeTime.tee_time_object?.course_id
-                )
-              )
-
-              if (matchingCurrentTeeTime) {
-                // Use current tee time data and mark as available
-                return {
-                  ...shareTeeTime,
-                  tee_time_object: matchingCurrentTeeTime,
-                  available: true
-                }
-              } else {
-                // Use original share tee time data but mark as unavailable
-                return {
-                  ...shareTeeTime,
-                  available: false
-                }
+            const response = await fetch(`${baseUrl}/api/tee-times?${params.toString()}`, {
+              headers: {
+                'Accept': 'text/event-stream',
               }
             })
-          } else {
-            console.warn('Failed to fetch current tee time availability, using original data')
-            // If API call fails, mark all as available (fallback behavior)
-            updatedTeeTimesData = teeTimesData.map(teeTime => ({
-              ...teeTime,
-              available: true
-            }))
+
+            if (!response.ok || !response.body) {
+              return []
+            }
+
+            // Parse the SSE stream to get the final tee times
+            const reader = response.body.getReader()
+            const decoder = new TextDecoder()
+            let teeTimes: Record<string, unknown>[] = []
+
+            try {
+              while (true) {
+                const { done, value } = await reader.read()
+                if (done) break
+
+                const chunk = decoder.decode(value, { stream: true })
+                const lines = chunk.split('\n')
+
+                for (const line of lines) {
+                  if (line.startsWith('data: ')) {
+                    try {
+                      const data = JSON.parse(line.slice(6))
+                      if (data.type === 'complete' && data.teeTimes) {
+                        teeTimes = data.teeTimes
+                      }
+                    } catch {
+                      // Skip malformed JSON lines
+                    }
+                  }
+                }
+              }
+            } finally {
+              reader.releaseLock()
+            }
+
+            return teeTimes
           }
+
+          // Fetch tee times for each unique holes value and combine results
+          const allCurrentTeeTimesPromises = holesValues.map(holes => fetchTeeTimesFromSSE(holes))
+          const allCurrentTeeTimesResults = await Promise.all(allCurrentTeeTimesPromises)
+          const currentTeeTimesData = allCurrentTeeTimesResults.flat()
+            
+          // Update each share tee time with availability info
+          updatedTeeTimesData = teeTimesData.map(shareTeeTime => {
+            // Find matching current tee time by comparing key properties
+            const matchingCurrentTeeTime = currentTeeTimesData.find((currentTeeTime: Record<string, unknown>) => 
+              currentTeeTime.id === shareTeeTime.tee_time_object?.id ||
+              (
+                currentTeeTime.start_datetime === shareTeeTime.tee_time_object?.start_datetime &&
+                currentTeeTime.course_id === shareTeeTime.tee_time_object?.course_id
+              )
+            )
+
+            if (matchingCurrentTeeTime) {
+              // Use current tee time data and mark as available
+              return {
+                ...shareTeeTime,
+                tee_time_object: matchingCurrentTeeTime,
+                available: true
+              }
+            } else {
+              // Use original share tee time data but mark as unavailable
+              return {
+                ...shareTeeTime,
+                available: false
+              }
+            }
+          })
         } else {
           // No valid dates found, use original data
           updatedTeeTimesData = teeTimesData.map(teeTime => ({
