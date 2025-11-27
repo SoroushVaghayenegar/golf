@@ -112,14 +112,21 @@ export default function Home() {
         <div className="relative w-full lg:hidden flex-shrink-0 px-[10px]" style={{ height: 'calc(100svh - 64px)' }}>
           <div className="relative w-full h-full rounded-lg overflow-hidden">
             <img src="/bg1.png" alt="Background" className="absolute inset-0 w-full h-full object-cover opacity-90" style={{ objectPosition: 'center 30%' }} />
-            <div className="absolute inset-0 bg-black/40" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/20" />
             <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-6 text-center">
-              <div className="max-w-3xl">
-                <h1 className="text-white text-2xl sm:text-3xl font-semibold drop-shadow-md">
-                  Find Your Perfect Tee Time
+              <div className="max-w-md space-y-4 -mt-16">
+                <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  </span>
+                  <span className="text-white/90 text-sm font-medium tracking-wide">Live Tee Times</span>
+                </div>
+                <h1 className="text-white text-3xl sm:text-4xl font-bold tracking-tight drop-shadow-lg leading-tight">
+                  One Search.<br />Every Course.
                 </h1>
-                <p className="mt-3 text-white/90 text-lg sm:text-xl drop-shadow">
-                  Select your preferences and discover available tee times
+                <p className="text-white/85 text-base sm:text-lg drop-shadow leading-relaxed">
+                  Compare real-time tee times across all local golf courses in seconds — no more checking each site individually.
                 </p>
               </div>
             </div>
@@ -167,15 +174,42 @@ export default function Home() {
         {/* Desktop Hero Section - Only visible on desktop */}
         <div className="relative flex-1 lg:h-[calc(100vh-64px)] overflow-hidden hidden lg:block">
           <img src="/bg1.png" alt="Background" className="absolute inset-0 w-full h-full object-cover opacity-90" />
-          <div className="absolute inset-0 bg-black/40" />
-          <div className="relative z-10 w-full h-full flex items-center justify-center p-6 text-center">
-            <div className="max-w-3xl">
-              <h1 className="text-white text-xl sm:text-2xl md:text-3xl font-semibold drop-shadow-md">
-                Click &quot;Get Tee Times&quot; to find your ideal tee time
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-black/30" />
+          <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-8 text-center">
+            <div className="max-w-2xl space-y-6">
+              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-5 py-2.5 rounded-full border border-white/20 shadow-lg">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                </span>
+                <span className="text-white/90 text-sm font-medium tracking-wide uppercase">Live Tee Times</span>
+              </div>
+              <h1 className="text-white text-4xl md:text-5xl xl:text-6xl font-bold tracking-tight drop-shadow-lg leading-tight">
+                One Search.<br />Every Course.
               </h1>
-              <p className="mt-3 text-white/90 text-base sm:text-lg md:text-xl drop-shadow">
-                Select your preferences and discover available tee times
+              <p className="text-white/85 text-lg md:text-xl xl:text-2xl drop-shadow leading-relaxed max-w-xl mx-auto">
+                Compare real-time tee times across all local golf courses in seconds — no more checking each site individually.
               </p>
+              <div className="flex items-center justify-center gap-6 pt-2 text-white/70 text-sm">
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Always Free</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Real-Time Data</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Multiple Courses</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

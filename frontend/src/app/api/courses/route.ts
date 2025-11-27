@@ -23,14 +23,17 @@ export async function GET(request: NextRequest) {
 
         // Sort courses by display_name and merge results into a hashmap
         const sortedCourses = coursesData.sort((a, b) => a.display_name.localeCompare(b.display_name));
-        const result: Record<string, { courseId: number; city: string; region: string; latitude: number; longitude: number }> = {};
-        sortedCourses.forEach(({ id, display_name, city_name, region_name, latitude, longitude }: { id: number, display_name: string, city_name: string, region_name: string, latitude: number, longitude: number })=>{
+        const result: Record<string, { courseId: number; city: string; region: string; latitude: number; longitude: number; holes: number[] }> = {};
+        sortedCourses.forEach(({ id, display_name, city_name, region_name, latitude, longitude, external_api_attributes }: { id: number, display_name: string, city_name: string, region_name: string, latitude: number, longitude: number, external_api_attributes?: { course_holes?: number[] } })=>{
+            // Get holes array from external_api_attributes.course_holes
+            const holes = external_api_attributes?.course_holes ?? [];
             result[display_name] = {
                 courseId: id, 
                 city: city_name,
                 region: region_name,
                 latitude: latitude,
-                longitude: longitude
+                longitude: longitude,
+                holes: holes
             };
         });
 

@@ -188,7 +188,21 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const courses = coursesData as unknown as Course[];
+    const allCourses = coursesData as unknown as Course[];
+
+    // Filter courses by holes - only include courses that support the requested hole configuration
+    const holesInt = parseInt(holes);
+    const courses = allCourses.filter(course => {
+      const attrs = course.external_api_attributes;
+      const courseHoles = (attrs as { course_holes?: number[] }).course_holes;
+      
+      // If no course_holes array is defined, assume the course supports all hole configurations
+      if (!courseHoles || !Array.isArray(courseHoles)) {
+        return true;
+      }
+      
+      return courseHoles.includes(holesInt);
+    });
 
     // Build list of all course/date tasks
     const tasks: { course: Course; date: string }[] = [];

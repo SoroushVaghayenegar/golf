@@ -78,6 +78,7 @@ export default function MobileSidebar({
   const [coursesLoading, setCoursesLoading] = useState(false);
   const [localCourseCityMapping, setLocalCourseCityMapping] = useState<Record<string, string>>({});
   const [courseNameToIdMapping, setCourseNameToIdMapping] = useState<Record<string, number>>({});
+  const [courseNameToHolesMapping, setCourseNameToHolesMapping] = useState<Record<string, number[]>>({});
   const [showCitySelector, setShowCitySelector] = useState(false);
   const [showCourseSelector, setShowCourseSelector] = useState(false);
   const [regions, setRegions] = useState<{ value: string; label: string }[]>([]);
@@ -144,16 +145,20 @@ export default function MobileSidebar({
         const simpleCityMapping: Record<string, string> = {};
         const idToNameMapping: Record<string, string> = {};
         const nameToIdMapping: Record<string, number> = {};
+        const nameToHolesMapping: Record<string, number[]> = {};
         Object.entries(courseCityData).forEach(([courseName, courseData]) => {
-          const courseId = (courseData as { courseId: number; city: string }).courseId;
-          simpleCityMapping[courseName] = (courseData as { courseId: number; city: string }).city;
+          const data = courseData as { courseId: number; city: string; holes?: number[] };
+          const courseId = data.courseId;
+          simpleCityMapping[courseName] = data.city;
           idToNameMapping[courseId.toString()] = courseName;
           nameToIdMapping[courseName] = courseId;
+          nameToHolesMapping[courseName] = data.holes ?? [9, 18];
         });
 
         setLocalCourseCityMapping(simpleCityMapping);
         setCourseCityMapping(simpleCityMapping);
         setCourseNameToIdMapping(nameToIdMapping);
+        setCourseNameToHolesMapping(nameToHolesMapping);
         if (setCourseIdToName) {
           setCourseIdToName(idToNameMapping);
         }
@@ -189,6 +194,20 @@ export default function MobileSidebar({
     };
   }, [showHolesTooltip]);
 
+  // When holes changes, clear any selected courses that no longer support the new holes value
+  useEffect(() => {
+    const holesValue = holes === "any" ? 18 : parseInt(holes);
+    if (selectedCourses.length > 0 && Object.keys(courseNameToHolesMapping).length > 0) {
+      const validCourses = selectedCourses.filter(courseName => {
+        const courseHoles = courseNameToHolesMapping[courseName];
+        return !courseHoles || courseHoles.includes(holesValue);
+      });
+      if (validCourses.length !== selectedCourses.length) {
+        setSelectedCourses(validCourses);
+      }
+    }
+  }, [holes, courseNameToHolesMapping, selectedCourses, setSelectedCourses]);
+
   const formatHour = (hour: number) => {
     if (hour === 0) return "12 AM";
     if (hour < 12) return `${hour} AM`;
@@ -198,10 +217,19 @@ export default function MobileSidebar({
 
   const cityOptions = cities.map((city) => ({ value: city, label: city }));
 
+  // Parse holes value for filtering (default to 18 if "any")
+  const selectedHolesValue = holes === "any" ? 18 : parseInt(holes);
+
   const courseOptions = courses
     .filter((course) => {
       const courseId = courseNameToIdMapping[course];
-      return courseId ? !removedCourseIds.includes(courseId) : true;
+      if (courseId && removedCourseIds.includes(courseId)) return false;
+      
+      // Filter by holes - only show courses that support the selected holes value
+      const courseHoles = courseNameToHolesMapping[course];
+      if (courseHoles && !courseHoles.includes(selectedHolesValue)) return false;
+      
+      return true;
     })
     .map((course) => {
       const courseCity = localCourseCityMapping[course];
