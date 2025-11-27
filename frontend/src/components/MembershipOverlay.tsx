@@ -42,7 +42,7 @@ export default function MembershipOverlay() {
   };
 
   return (
-    <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-lg">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="relative mx-4 w-full max-w-lg overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-900 via-green-900 to-teal-900 p-8 shadow-2xl">
         {/* Decorative elements */}
         <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-emerald-500/20 blur-3xl" />
