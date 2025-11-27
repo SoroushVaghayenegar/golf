@@ -1,11 +1,13 @@
 import { Course } from "./Course";
 import { TeeTime } from "./TeeTime";
 import * as Sentry from "@sentry/node";
+import { ProxyAgent } from "undici";
 
 
 const CHRONO_LIGHTSPEED = "CHRONO_LIGHTSPEED"
+const PROXY_URL = "http://user-teeclub_x5lyp:TeeClubNumber+1@dc.oxylabs.io:8000"
 
-export async function fetchCourseTeeTimes(course: Course, searchDate: Date): Promise<{courseId: number, date: string, teeTimes: TeeTime[]}> {
+export async function fetchCourseTeeTimes(course: Course, searchDate: Date): Promise<{courseId: number, date: string, teeTimes: TeeTime[], error?: {message: string, statusCode?: number}}> {
     if (course.external_api !== CHRONO_LIGHTSPEED) {
       throw new Error(`Unsupported external API: ${course.external_api}`)
     }
@@ -17,7 +19,7 @@ export async function fetchCourseTeeTimes(course: Course, searchDate: Date): Pro
     const affiliationTypeId = course.external_api_attributes.affiliation_type_id;
     const clubLinkName = course.external_api_attributes.club_link_name;
 
-    // Parallelize fetching for each course holes value
+    // Parallelize fetching for each course holes value with error handling
     const teeTimesPromises = courseHolesArray.map(holes => 
         fetchTeeTimesFromChronoLightspeed(
             course.id,
@@ -28,10 +30,32 @@ export async function fetchCourseTeeTimes(course: Course, searchDate: Date): Pro
             holes,
             searchDate,
             clubLinkName
-        )
+        ).catch(error => {
+            // Return error info instead of throwing
+            return {
+                error: true,
+                statusCode: (error as any).statusCode,
+                message: error instanceof Error ? error.message : String(error)
+            } as any;
+        })
     );
     
     const teeTimesResults = await Promise.all(teeTimesPromises);
+    
+    // Check if any result contains an error
+    const errorResult = teeTimesResults.find((result: any) => result?.error);
+    if (errorResult) {
+        return {
+            courseId: course.id,
+            date: searchDate.toISOString().split('T')[0],
+            teeTimes: [],
+            error: {
+                message: (errorResult as any).message,
+                statusCode: (errorResult as any).statusCode
+            }
+        };
+    }
+    
     const allTeeTimes = teeTimesResults.flat();
     
     return {
@@ -49,7 +73,7 @@ export async function fetchTeeTimesFromChronoLightspeed(dbCourseId: number, cour
     
    const teeTimesMap: Map<string, Map<string, any>> = new Map();
 
-   // Parallelize fetching for different player counts
+   // Parallelize fetching for different player counts with error handling
    const playerCounts = [4, 3, 2, 1];
    const fetchPromises = playerCounts.map(async (players) => {
        let fullUrl = baseUrl;
@@ -57,18 +81,15 @@ export async function fetchTeeTimesFromChronoLightspeed(dbCourseId: number, cour
            fullUrl += `&affiliation_type_ids%5B%5D=${affiliation_type_id}`;
        }
        
-      try {
+       try {
            const response = await fetchWithRetry(courseName, club_id, fullUrl, {}, 5, 5000, 1000);
            // Extract the data from the response
            const teeTimes = await response.json();
-           return { players, teeTimes };
+           return { players, teeTimes, error: false };
        } catch (error) {
-           console.error(error);
-           return { players, teeTimes: [] };
+           // If any player count fetch fails, propagate the error
+           throw error;
        }
-       
-       // This should never be reached, but TypeScript needs it
-       return { players, teeTimes: [] };
    });
 
    const results = await Promise.all(fetchPromises);
@@ -159,9 +180,15 @@ async function fetchWithRetry(courseName: string, clubId: number, url: string, h
   headers["Sec-Fetch-Mode"] = "cors";
   headers["Referer"] = `https://www.chronogolf.com/en/club/${clubId}/widget?medium=widget&source=club`;
   
+  // Create proxy agent using undici
+  const proxyAgent = new ProxyAgent(PROXY_URL);
+  
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-          const response = await fetch(url, { headers: headers });
+          const response = await fetch(url, { 
+            headers: headers,
+            dispatcher: proxyAgent
+          });
           if (!response.ok) {
             // Read the response body to get the actual error message
             let errorBody = '';
@@ -171,13 +198,16 @@ async function fetchWithRetry(courseName: string, clubId: number, url: string, h
               errorBody = 'Unable to read response body';
             }
             
-            // if (![429, 500, 503, 502].includes(response.status)) {
-              // console.error(`[${courseName}] HTTP Error: ${response.status} ${response.statusText} - ${errorBody} | URL: ${url}`);
-            // }
-            throw new Error(`[${courseName}] HTTP Error: ${response.status} ${response.statusText} - ${errorBody} | URL: ${url}`);
+            const error = new Error(`[${courseName}] HTTP Error: ${response.status} ${response.statusText} - ${errorBody} | URL: ${url}`);
+            // Add status code to error object for filtering
+            (error as any).statusCode = response.status;
+            throw error;
           }
           return response;
       } catch (error) {
+          // Extract status code if available
+          const statusCode = (error as any).statusCode;
+          
           // Extract detailed error information
           let errorDetails = '';
           if (error instanceof TypeError) {
@@ -194,15 +224,20 @@ async function fetchWithRetry(courseName: string, clubId: number, url: string, h
             errorDetails = String(error);
           }
           
-          // console.error(`[${courseName}] Attempt ${attempt}/${maxRetries} failed: ${errorDetails} | URL: ${url}`);
-          
           if (attempt < maxRetries) {
               const delay = Math.floor(Math.random() * maxDelay) + minDelay; // Random delay between 1000-15000ms
-              // console.log(`[${courseName}] Retrying in ${delay}ms...`);
               await new Promise(resolve => setTimeout(resolve, delay));
           }
           else{
-            Sentry.captureException(error)
+            // Only capture to Sentry if not a client error (4xx)
+            if (!statusCode || statusCode >= 500) {
+              Sentry.captureException(error)
+            }
+            
+            // Re-throw the original error to preserve status code
+            if (error instanceof Error) {
+              throw error;
+            }
             throw new Error(`[${courseName}] Failed to fetch after ${maxRetries} attempts - Final error: ${errorDetails} | URL: ${url}`);
           }
       }

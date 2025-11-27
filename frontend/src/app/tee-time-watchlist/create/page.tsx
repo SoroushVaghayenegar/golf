@@ -10,6 +10,7 @@ import { fetchCourseDisplayNamesAndTheirCities } from "@/services/supabaseServic
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { SquareArrowOutUpRight } from "lucide-react";
+import { type WeatherPreferenceSettings } from "@/components/WeatherPreferences";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -34,6 +35,14 @@ export default function CreateTeeTimeWatchlistPage() {
   const [courseCityMapping, setCourseCityMapping] = useState<Record<string, string>>({});
   const [courseIdMapping, setCourseIdMapping] = useState<Record<string, number>>({});
   const [createAnother, setCreateAnother] = useState(false);
+  const [saveWeatherAsDefault, setSaveWeatherAsDefault] = useState(false);
+  const [weatherPreferences, setWeatherPreferences] = useState<WeatherPreferenceSettings>({
+    enabled: false,
+    temperaturePreference: 'any',
+    rainPreference: 'any',
+    windSpeed: 'any',
+    forecastDays: '7-days',
+  });
 
   // Dialog state for when tee times are available
   const [showResultsDialog, setShowResultsDialog] = useState(false);
@@ -77,6 +86,13 @@ export default function CreateTeeTimeWatchlistPage() {
     setTimeRange([7, 17]);
     setSelectedCities([]);
     setSelectedCourses([]);
+    setWeatherPreferences({
+      enabled: false,
+      temperaturePreference: 'any',
+      rainPreference: 'any',
+      windSpeed: 'any',
+      forecastDays: '7-days',
+    });
   };
 
   const createWatchlistNow = async () => {
@@ -127,6 +143,18 @@ export default function CreateTeeTimeWatchlistPage() {
         regionId: selectedRegionId,
         courses: resolvedCourses,
       };
+
+      // Add weather preferences if enabled
+      if (weatherPreferences.enabled) {
+        filters.weather_preferences = {
+          enabled: weatherPreferences.enabled,
+          temperature_preference: weatherPreferences.temperaturePreference,
+          rain_preference: weatherPreferences.rainPreference,
+          wind_speed: weatherPreferences.windSpeed,
+          forecast_days: weatherPreferences.forecastDays,
+        };
+      }
+
       console.log(filters);
       const created = await createTeeTimeWatchlist(filters);
       toast.success("Watchlist created", {
@@ -197,7 +225,7 @@ export default function CreateTeeTimeWatchlistPage() {
       }
       if (idsSet.size > 0) courseIds = Array.from(idsSet);
 
-      const data = await fetchTeeTimes({
+      const { promise } = fetchTeeTimes({
         dates: [dateStr],
         numOfPlayers,
         holes,
@@ -206,6 +234,7 @@ export default function CreateTeeTimeWatchlistPage() {
         endTime,
         courseIds,
       });
+      const data = await promise;
 
       if (data && data.length > 0) {
         setAvailableCount(data.length);
@@ -283,6 +312,10 @@ export default function CreateTeeTimeWatchlistPage() {
           calendarExpandedClassName="p-2 max-w-[18rem] mx-auto"
           createAnother={createAnother}
           setCreateAnother={setCreateAnother}
+          weatherPreferences={weatherPreferences}
+          setWeatherPreferences={setWeatherPreferences}
+          saveWeatherAsDefault={saveWeatherAsDefault}
+          setSaveWeatherAsDefault={setSaveWeatherAsDefault}
         />
 
         {/* Availability Dialog */}

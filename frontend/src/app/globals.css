@@ -144,6 +144,34 @@
   }
 }
 
+/* Shimmer animation for loading states (ChatGPT-like effect) */
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite linear;
+}
+
+/* Slow pulse animation for scroll indicator arrow */
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
 /* Prevent zoom on input focus for mobile devices */
 @media screen and (max-width: 768px) {
   input[type="text"],

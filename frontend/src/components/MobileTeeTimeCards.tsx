@@ -2,17 +2,78 @@
 
 import { forwardRef, useRef, useImperativeHandle, useState, useEffect, useMemo, useCallback } from "react";
 import { Virtuoso } from 'react-virtuoso';
-import { HeartCrack } from "lucide-react";
+import { HeartCrack, Square } from "lucide-react";
 import { type TeeTime } from "../services/teeTimeService";
 import { SubscriptionSignup } from "@/components/SubscriptionSignup";
 import LottiePlayer from "@/components/LottiePlayer";
 import TeeTimeCard from "@/components/TeeTimeCard";
-import TeeTimeCardSkeleton from "@/components/TeeTimeCardSkeleton";
 import MarketingTeeCard from "@/components/MarketingTeeCard";
 import SortBySelector, { type SortOption } from "@/components/SortBySelector";
 import DonationButton from "@/components/DonationButton";
 import { haversine, getCurrentPosition } from "@/utils/Geo";
 import type { TeeTimeCardsRef } from "@/components/TeeTimeCards";
+import { useAppStore } from "@/stores/appStore";
+
+// Loading overlay component with animation and progress bar
+function MobileLoadingOverlay({ isMobile }: { isMobile: boolean }) {
+  const progress = useAppStore((s) => s.teeTimesProgress);
+  const abortFetchTeeTimes = useAppStore((s) => s.abortFetchTeeTimes);
+
+  return (
+    <div className={isMobile 
+      ? 'fixed inset-0 bg-white z-50 flex flex-col px-6' 
+      : 'flex-1 flex flex-col'
+    }>
+      {/* Progress Bar - At the top */}
+      {progress && progress.total > 0 && (
+        <div className="w-full pt-6 pb-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-slate-500">
+              {progress.completed} / {progress.total} courses
+            </span>
+            <button
+              onClick={abortFetchTeeTimes}
+              className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-white bg-red-500 hover:bg-red-600 rounded-md transition-colors shadow-sm"
+              title="Stop search"
+            >
+              <Square className="w-2.5 h-2.5 fill-white" />
+              Stop
+            </button>
+          </div>
+          <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+            <div 
+              className="bg-sidebar-primary h-2.5 rounded-full transition-all duration-300 ease-out"
+              style={{ width: `${Math.round((progress.completed / progress.total) * 100)}%` }}
+            />
+          </div>
+          {progress.currentCourses && progress.currentCourses.length > 0 && (
+            <div className="flex flex-wrap gap-2 justify-center mt-3">
+              {progress.currentCourses.map((course, idx) => (
+                <span 
+                  key={idx}
+                  className="inline-block text-xs text-slate-600 bg-slate-100 px-2 py-1 rounded-full relative overflow-hidden"
+                >
+                  <span className="relative z-10">{course}</span>
+                  <span 
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"
+                    style={{ backgroundSize: '200% 100%' }}
+                  />
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Animation - Centered in remaining space */}
+      <div className="flex-1 flex items-center justify-center overflow-hidden">
+        <div className="flex items-center justify-center">
+          <LottiePlayer animationPath="/animations/loading-animation.json" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface MobileTeeTimeCardsProps {
   teeTimes: TeeTime[];
@@ -32,7 +93,6 @@ interface MobileTeeTimeCardsProps {
   onTeeTimeVisibilityChange?: (visibleCount: number) => void;
   selectedRegionId: string;
   regionTimeZone?: string;
-  useSkeletonWhileLoading?: boolean;
   disableInitialEmptyState?: boolean;
   shareUrl?: string;
   numOfPlayersInFilter?: number;
@@ -59,7 +119,6 @@ const MobileTeeTimeCards = forwardRef<TeeTimeCardsRef, MobileTeeTimeCardsProps>(
   onTeeTimeVisibilityChange,
   selectedRegionId,
   regionTimeZone,
-  useSkeletonWhileLoading,
   disableInitialEmptyState,
   numOfPlayersInFilter
 }, ref) => {
@@ -267,21 +326,7 @@ const MobileTeeTimeCards = forwardRef<TeeTimeCardsRef, MobileTeeTimeCardsProps>(
       )}
 
       <div className="w-full max-w-full">
-        {loading && !useSkeletonWhileLoading && (
-          <div className={isMobile ? 'fixed inset-0 bg-white z-50 flex flex-col items-center justify-center' : 'flex-1 flex flex-col items-center justify-center'}>
-            <LottiePlayer animationPath="/animations/loading-animation.json" />
-            <p className="text-slate-600 mt-4">Loading tee times...</p>
-          </div>
-        )}
-        {loading && useSkeletonWhileLoading && (
-          <div className="grid grid-cols-1 gap-4 p-2">
-            {Array.from({ length: 8 }).map((_, idx) => (
-              <div key={idx} className="p-2">
-                <TeeTimeCardSkeleton />
-              </div>
-            ))}
-          </div>
-        )}
+        {loading && <MobileLoadingOverlay isMobile={isMobile} />}
         {error && (
           <div className="text-center py-8 text-red-500">{error}</div>
         )}

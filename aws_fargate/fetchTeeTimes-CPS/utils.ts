@@ -4,15 +4,17 @@ import * as Sentry from "@sentry/node";
 
 const CPS = "CPS"
 
-export async function fetchCourseTeeTimes(course: Course, searchDate: Date): Promise<{courseId: number, date: string, teeTimes: TeeTime[]}> {
+export async function fetchCourseTeeTimes(course: Course, searchDate: Date): Promise<{courseId: number, date: string, teeTimes: TeeTime[], error?: {code: number, message: string}}> {
     if (course.external_api === CPS) {
         const subdomain = course.external_api_attributes.subdomain
         const params = course.external_api_attributes.params
         const headers = course.external_api_attributes.headers
+        const result = await fetchTeeTimesFromCPS(course.id, course.name, subdomain, params, headers, searchDate, course.requires_login)
         return {
             courseId: course.id,
             date: searchDate.toISOString().split('T')[0],
-            teeTimes: await fetchTeeTimesFromCPS(course.id, course.name, subdomain, params, headers, searchDate, course.requires_login)
+            teeTimes: result.teeTimes,
+            error: result.error
         }
     } else{
         throw new Error(`Unsupported external API: ${course.external_api}`)
@@ -27,7 +29,7 @@ export async function fetchTeeTimesFromCPS(
   headers: Record<string, string>,
   searchDate: Date,
   requiresLogin: boolean
-): Promise<TeeTime[]> {
+): Promise<{teeTimes: TeeTime[], error?: {code: number, message: string}}> {
   // Add the encoded date to params
   const requestParams = {
     ...params,
@@ -61,7 +63,18 @@ export async function fetchTeeTimesFromCPS(
   
   try {
     const response = await fetchWithRetry(courseName, url.toString(), headers, 5, 10000, 1000);
-    const teeTimesList = await response.json();
+    let teeTimesList = await response.json();
+    
+    // If the response is wrapped in an object with isSuccess and content, unwrap it
+    if (
+      typeof teeTimesList === "object" &&
+      !Array.isArray(teeTimesList) &&
+      teeTimesList !== null &&
+      "isSuccess" in teeTimesList &&
+      "content" in teeTimesList
+    ) {
+      teeTimesList = teeTimesList.content;
+    }
     
     // If the response is an object with messageKey "NO_TEETIMES", return an empty array
     if (
@@ -70,7 +83,7 @@ export async function fetchTeeTimesFromCPS(
       teeTimesList !== null &&
       teeTimesList["messageKey"] === "NO_TEETIMES"
     ) {
-      return [];
+      return { teeTimes: [] };
     }
 
     const teeTimes: TeeTime[] = [];
@@ -100,11 +113,31 @@ export async function fetchTeeTimesFromCPS(
         teeTimes.push(new TeeTime(startDateTime, playersAvailable, availableParticipants, holes, price, booking_link, tee_time_id, starting_tee));
       }
     }
-    return teeTimes;
+    return { teeTimes };
   } catch (error) {
     console.error(error);
     console.error(`[${courseName}] Failed to fetch tee times from CPS after retries`);
-    return [];
+    
+    // Extract error code if available
+    let errorCode = 0;
+    let errorMessage = '';
+    
+    if (error instanceof Error) {
+      errorMessage = error.message;
+      // Try to extract status code from error message (format: "Error fetching CourseName: 422 ...")
+      const statusMatch = errorMessage.match(/:\s*(\d{3})\s/);
+      if (statusMatch) {
+        errorCode = parseInt(statusMatch[1]);
+      }
+    }
+    
+    return { 
+      teeTimes: [], 
+      error: { 
+        code: errorCode, 
+        message: errorMessage || String(error) 
+      } 
+    };
   }
 }
 
@@ -162,10 +195,22 @@ async function fetchWithRetry(courseName: string, url: string, headers: Record<s
             if (![429, 500, 503, 502].includes(response.status)) {
               console.error(`Error fetching ${courseName}: ${response.status} ${response.statusText} - ${errorBody}`);
             }
+            
+            // Don't retry on 400 and when part of the errorbody is "Sorry, you are not able to book this tee time currently"
+            if (response.status === 400 || errorBody.includes("Sorry, you are not able to book this tee time currently")) {
+              throw new Error(`Error fetching ${courseName}: ${response.status} ${response.statusText}`);
+            }
+            
             throw new Error(`Error fetching ${courseName}: ${response.status} ${response.statusText}`);
           }
           return response;
       } catch (error) {
+          // Check if it's a 400 error - don't retry "Sorry, you are not able to book this tee time currently"
+          if (error instanceof Error && error.message.includes(': 400 ')) {
+            Sentry.captureException(error);
+            throw error;
+          }
+          
           if (attempt < maxRetries) {
               const delay = Math.floor(Math.random() * maxDelay) + minDelay; // Random delay between 1000-15000ms
               await new Promise(resolve => setTimeout(resolve, delay));

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { getTeeTimeWatchlists, deleteTeeTimeWatchlist, type TeeTimeWatchlist } from "@/services/teeTimeWatchlistService";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Trash, Info } from "lucide-react";
+import { Trash, Info, CloudRain } from "lucide-react";
 import { toast } from "sonner";
 import {
   Breadcrumb,
@@ -224,6 +224,7 @@ export default function TeeTimeWatchlistPage() {
                       <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold text-gray-900 hidden md:table-cell">Holes</th>
                       <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold text-gray-900 hidden md:table-cell">Region</th>
                       <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold text-gray-900">Courses</th>
+                      <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold text-gray-900 hidden sm:table-cell">Type</th>
                       <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold text-gray-900">Tee times found</th>
                       <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold text-gray-900 hidden lg:table-cell">Created</th>
                       <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-right text-xs sm:text-sm font-semibold text-gray-900"></th>
@@ -238,6 +239,7 @@ export default function TeeTimeWatchlistPage() {
                         <td className="px-2 sm:px-3 py-2 sm:py-3 hidden md:table-cell"><Skeleton className="h-4 w-16" /></td>
                         <td className="px-2 sm:px-3 py-2 sm:py-3 hidden md:table-cell"><Skeleton className="h-4 w-28" /></td>
                         <td className="px-2 sm:px-3 py-2 sm:py-3"><Skeleton className="h-4 w-16" /></td>
+                        <td className="px-2 sm:px-3 py-2 sm:py-3 hidden sm:table-cell"><Skeleton className="h-4 w-20" /></td>
                         <td className="px-2 sm:px-3 py-2 sm:py-3"><Skeleton className="h-4 w-20" /></td>
                         <td className="px-2 sm:px-3 py-2 sm:py-3 hidden lg:table-cell"><Skeleton className="h-4 w-40" /></td>
                         <td className="px-2 sm:px-3 py-2 sm:py-3 text-right"><Skeleton className="h-8 w-8 inline-block" /></td>
@@ -264,6 +266,7 @@ export default function TeeTimeWatchlistPage() {
                       <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold text-gray-900 hidden md:table-cell">Holes</th>
                       <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold text-gray-900 hidden md:table-cell">Region</th>
                       <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold text-gray-900">Courses</th>
+                      <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold text-gray-900 hidden sm:table-cell">Type</th>
                       <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold text-gray-900">Tee Times Found</th>
                       <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold text-gray-900 hidden lg:table-cell">Created</th>
                       <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-right text-xs sm:text-sm font-semibold text-gray-900"></th>
@@ -279,6 +282,16 @@ export default function TeeTimeWatchlistPage() {
                         <td className="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm text-gray-700 leading-tight whitespace-nowrap hidden md:table-cell">{wl.region || "—"}</td>
                         <td className="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm text-gray-700 leading-tight">
                           <TruncatedCourses courses={wl.courses.map((c) => c.name).join(", ")} />
+                        </td>
+                        <td className="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm leading-tight whitespace-nowrap hidden sm:table-cell">
+                          {wl.weather_preferences?.enabled ? (
+                            <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-md">
+                              <CloudRain className="w-3.5 h-3.5 text-purple-600" />
+                              <span className="text-purple-900 font-medium text-[10px] sm:text-xs">Weather</span>
+                            </div>
+                          ) : (
+                            <span className="text-gray-500 text-xs">Standard</span>
+                          )}
                         </td>
                         <td className="px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm text-purple-500 leading-tight whitespace-nowrap font-bold">
                           {wl.processed_tee_times_count || 0}

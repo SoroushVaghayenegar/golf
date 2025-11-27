@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Listbox } from "@headlessui/react";
-import { ChevronDown, Users, Clock, School, LandPlot, MapPin, Info, Loader } from "lucide-react";
+import { ChevronDown, Users, Clock, School, LandPlot, MapPin, Info, RefreshCw } from "lucide-react";
 import { Range } from "react-range";
 import { MultiValue } from 'react-select';
 import TeeClubSelect from "./TeeClubSelect";
@@ -79,6 +79,7 @@ export default function Sidebar({
   const [coursesLoading, setCoursesLoading] = useState(false);
   const [localCourseCityMapping, setLocalCourseCityMapping] = useState<Record<string, string>>({});
   const [courseNameToIdMapping, setCourseNameToIdMapping] = useState<Record<string, number>>({});
+  const [courseNameToHolesMapping, setCourseNameToHolesMapping] = useState<Record<string, number[]>>({});
   const [showCitySelector, setShowCitySelector] = useState(false);
   const [showCourseSelector, setShowCourseSelector] = useState(false);
   const [regions, setRegions] = useState<{ value: string; label: string }[]>([]);
@@ -86,6 +87,7 @@ export default function Sidebar({
   // Track slider drag state so we only commit on release
   const [pendingTimeRange, setPendingTimeRange] = useState<number[] | null>(null);
   const teeTimesCount = useAppStore((s) => s.teeTimes.length);
+  const progress = useAppStore((s) => s.teeTimesProgress);
 
   // Respect parent instruction to show/hide course selector (once)
   useEffect(() => {
@@ -141,16 +143,20 @@ export default function Sidebar({
         const simpleCityMapping: Record<string, string> = {};
         const idToNameMapping: Record<string, string> = {};
         const nameToIdMapping: Record<string, number> = {};
+        const nameToHolesMapping: Record<string, number[]> = {};
         Object.entries(courseCityData).forEach(([courseName, courseData]) => {
-          const courseId = (courseData as { courseId: number; city: string }).courseId;
-          simpleCityMapping[courseName] = (courseData as { courseId: number; city: string }).city;
+          const data = courseData as { courseId: number; city: string; holes?: number[] };
+          const courseId = data.courseId;
+          simpleCityMapping[courseName] = data.city;
           idToNameMapping[courseId.toString()] = courseName;
           nameToIdMapping[courseName] = courseId;
+          nameToHolesMapping[courseName] = data.holes ?? [9, 18];
         });
         
         setLocalCourseCityMapping(simpleCityMapping);
         setCourseCityMapping(simpleCityMapping);
         setCourseNameToIdMapping(nameToIdMapping);
+        setCourseNameToHolesMapping(nameToHolesMapping);
         if (setCourseIdToName) {
           setCourseIdToName(idToNameMapping);
         }
@@ -188,6 +194,20 @@ export default function Sidebar({
     };
   }, [showHolesTooltip]);
 
+  // When holes changes, clear any selected courses that no longer support the new holes value
+  useEffect(() => {
+    const holesValue = holes === "any" ? 18 : parseInt(holes);
+    if (selectedCourses.length > 0 && Object.keys(courseNameToHolesMapping).length > 0) {
+      const validCourses = selectedCourses.filter(courseName => {
+        const courseHoles = courseNameToHolesMapping[courseName];
+        return !courseHoles || courseHoles.includes(holesValue);
+      });
+      if (validCourses.length !== selectedCourses.length) {
+        setSelectedCourses(validCourses);
+      }
+    }
+  }, [holes, courseNameToHolesMapping, selectedCourses, setSelectedCourses]);
+
   const formatHour = (hour: number) => {
     if (hour === 0) return '12 AM';
     if (hour < 12) return `${hour} AM`;
@@ -200,10 +220,19 @@ export default function Sidebar({
     label: city
   }));
   
+  // Parse holes value for filtering (default to 18 if "any")
+  const selectedHolesValue = holes === "any" ? 18 : parseInt(holes);
+
   const courseOptions = courses
     .filter(course => {
       const courseId = courseNameToIdMapping[course];
-      return courseId ? !removedCourseIds.includes(courseId) : true;
+      if (courseId && removedCourseIds.includes(courseId)) return false;
+      
+      // Filter by holes - only show courses that support the selected holes value
+      const courseHoles = courseNameToHolesMapping[course];
+      if (courseHoles && !courseHoles.includes(selectedHolesValue)) return false;
+      
+      return true;
     })
     .map(course => {
       const courseCity = localCourseCityMapping[course];
@@ -293,7 +322,7 @@ export default function Sidebar({
               <span className="text-sm font-semibold text-slate-800 tracking-wide uppercase">Players</span>
             </div>
             <div className="flex">
-              {["1", "2", "3", "4", "any"].map((option, idx, arr) => {
+              {["1", "2", "3", "4"].map((option, idx, arr) => {
                 const isFirst = idx === 0;
                 const isLast = idx === arr.length - 1;
                 return (
@@ -310,7 +339,7 @@ export default function Sidebar({
                         : 'bg-white hover:bg-green-200 border-slate-200 text-slate-700 hover:border-sidebar-primary'
                     }`}
                   >
-                    {option === "any" ? "Any" : option}
+                    {option}
                   </button>
                 );
               })}
@@ -328,19 +357,19 @@ export default function Sidebar({
               </button>
               {showHolesTooltip && (
                 <div className="absolute top-6 right-0 z-50 w-56 p-3 bg-slate-800 text-white text-xs rounded-lg shadow-lg">
-                  Some courses offer options beyond 9 or 18 holes. Select &quot;Any&quot; to view all available formats.
+                  Some courses offer options beyond 9 or 18 holes. Contact the course directly for more information.
                   <div className="absolute -top-1 right-4 w-2 h-2 bg-slate-800 rotate-45"></div>
                 </div>
               )}
             </div>
-            <Listbox value={holes} onChange={setHoles}>
+            <Listbox value={holes === "any" ? "18" : holes} onChange={setHoles}>
               <div className="relative">
                 <Listbox.Button className="w-full px-4 py-2 text-left bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sidebar-primary hover:border-sidebar-primary transition-colors font-medium text-sm text-slate-700">
-                  <span>{holes === "any" ? "Any" : holes}</span>
+                  <span>{holes === "any" ? "18" : holes}</span>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 </Listbox.Button>
                 <Listbox.Options className="absolute z-40 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg focus:outline-none">
-                  {[{ value: "any", label: "Any" }, { value: "18", label: "18" }, { value: "9", label: "9" }].map((option) => (
+                  {[{ value: "18", label: "18" }, { value: "9", label: "9" }].map((option) => (
                     <Listbox.Option
                       key={option.value}
                       value={option.value}
@@ -548,21 +577,48 @@ export default function Sidebar({
         </button>
       )}
       {hideSubmitButton && (
-        <div className="mt-2">
-          <p className="text-sm text-green-700 font-medium mb-8 text-center">
-            {loading ? (
-              <span className="inline-flex items-center justify-center">
-                <Loader className="w-5 h-5 animate-spin" />
-              </span>
+        <div className="mt-2 flex flex-col gap-3">
+          {/* Search Button */}
+          <button
+            onClick={onGetTeeTimes}
+            disabled={loading || !selectedDates || selectedDates.length === 0}
+            className={`w-full px-4 py-2.5 rounded-lg font-semibold text-white transition-all duration-200 flex items-center justify-center gap-2 ${
+              loading || !selectedDates || selectedDates.length === 0
+                ? 'bg-slate-300 cursor-not-allowed'
+                : 'bg-sidebar-primary hover:bg-sidebar-primary-hover shadow-md hover:shadow-lg'
+            }`}
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            {loading ? 'Searching...' : 'Search Tee Times'}
+          </button>
+          
+          {/* Progress or Results */}
+          <div className="text-center">
+            {loading && progress && progress.total > 0 ? (
+              <div className="space-y-2">
+                <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                  <div 
+                    className="bg-sidebar-primary h-2 rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${Math.round((progress.completed / progress.total) * 100)}%` }}
+                  />
+                </div>
+                <p className="text-xs text-slate-600">
+                  {progress.completed} of {progress.total} courses
+                  {progress.currentCourses && progress.currentCourses.length > 0 && (
+                    <span className="block text-slate-500 truncate">
+                      {progress.currentCourses.join(', ')}
+                    </span>
+                  )}
+                </p>
+              </div>
             ) : (
-              `${teeTimesCount} tee time${teeTimesCount === 1 ? "" : "s"}`
+              <p className="text-sm text-green-700 font-medium">
+                {teeTimesCount} tee time{teeTimesCount === 1 ? "" : "s"}
+              </p>
             )}
-          </p>
-          <p className="text-xs text-slate-500 italic">
-            * Changing filters will automatically refresh results
-          </p>
+          </div>
         </div>
       )}
     </section>
   );
-} 
+}

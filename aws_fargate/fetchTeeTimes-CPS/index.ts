@@ -19,7 +19,7 @@ export const handler = async () => {
         *,
         cities!inner(name)
       `)
-      .eq('external_api', 'CPS')
+      .eq('id', 43)
 
       if (error) {
         throw new Error(`Error fetching courses: ${error.message}`)
@@ -69,8 +69,10 @@ export const handler = async () => {
       const UPSERT_BATCH_SIZE = 50
       const results = [] as any[]
       const allErrors: Array<{batch: number, error: string}> = []
+      const errorCodeCounts: Map<number, number> = new Map()
       let totalTeeTimes = 0
       let totalUpsertBatches = 0
+      let totalFetchErrors = 0
       
       const isTTY = process.stdout.isTTY
       
@@ -128,6 +130,14 @@ export const handler = async () => {
 
           const { course, searchDate } = tasks[currentIndex] as any
           const result = await fetchCourseTeeTimes(course, searchDate)
+          
+          // Track fetch errors
+          if (result.error) {
+            totalFetchErrors++
+            const errorCode = result.error.code || 0
+            errorCodeCounts.set(errorCode, (errorCodeCounts.get(errorCode) || 0) + 1)
+          }
+          
           results.push(result)
 
           completed++
@@ -177,6 +187,17 @@ export const handler = async () => {
       console.log(`Total tee times found: ${totalTeeTimes}`)
       console.log(`Database batches processed: ${totalUpsertBatches}`)
       console.log(`Database errors: ${allErrors.length}`)
+      console.log(`Fetch errors: ${totalFetchErrors}`)
+      
+      // Display error code counts
+      if (errorCodeCounts.size > 0) {
+        console.log(`\nError Code Breakdown:`)
+        const sortedErrorCodes = Array.from(errorCodeCounts.entries()).sort((a, b) => a[0] - b[0])
+        for (const [code, count] of sortedErrorCodes) {
+          console.log(`  ${code === 0 ? 'Unknown' : code}: ${count}`)
+        }
+      }
+      
       console.log(`Status: ${hasErrors ? 'COMPLETED WITH ERRORS' : 'SUCCESS'}`)
       console.log(`========================`)
 
@@ -186,12 +207,18 @@ export const handler = async () => {
           success: !hasErrors,
           message: hasErrors 
             ? `Completed with ${allErrors.length} batch errors`
-            : "Success"
+            : "Success",
+          errorCodeCounts: Object.fromEntries(errorCodeCounts),
+          totalFetchErrors: totalFetchErrors
         }),
       };
 
-      // Send health check signal
-      await fetch('https://hc-ping.com/f1d5e07a-6beb-41ca-a0ad-0bcc6866a717');
+      // Send health check signal only if fetch error rate is <= 30%
+      const fetchErrorRate = totalFetchErrors / tasks.length
+      if (fetchErrorRate <= 0.30) {
+        await fetch('https://hc-ping.com/f1d5e07a-6beb-41ca-a0ad-0bcc6866a717');
+      } else {
+      }
 
       return response;
 };
