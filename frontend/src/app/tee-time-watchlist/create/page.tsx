@@ -19,6 +19,7 @@ import {
   BreadcrumbSeparator,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
+import MembershipOverlay from "@/components/MembershipOverlay";
 
 export default function CreateTeeTimeWatchlistPage() {
   const router = useRouter();
@@ -266,6 +267,8 @@ export default function CreateTeeTimeWatchlistPage() {
   };
 
   return (
+      <div className="relative min-h-[calc(100vh-80px)]">
+      <MembershipOverlay />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-32 mt-6">
         <div className="mb-4">
           <Breadcrumb>
@@ -351,6 +354,7 @@ export default function CreateTeeTimeWatchlistPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+      </div>
       </div>
   );
 }

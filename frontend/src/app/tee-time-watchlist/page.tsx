@@ -14,6 +14,7 @@ import {
   BreadcrumbSeparator,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
+import MembershipOverlay from "@/components/MembershipOverlay";
 
 export default function TeeTimeWatchlistPage() {
   const formatDateMonthDay = (dateStr: string | null | undefined) => {
@@ -182,6 +183,8 @@ export default function TeeTimeWatchlistPage() {
   }, []);
 
   return (
+      <div className="relative min-h-[calc(100vh-80px)]">
+      <MembershipOverlay />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
         <div className="mb-4">
           <Breadcrumb>
@@ -332,6 +335,7 @@ export default function TeeTimeWatchlistPage() {
             )}
           </div>
         </div>
+      </div>
       </div>
   );
 }

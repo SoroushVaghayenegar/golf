@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Listbox } from "@headlessui/react";
 import { ChevronDown, Users, Clock, School, LandPlot, MapPin, Info, RefreshCw } from "lucide-react";
 import { Range } from "react-range";
@@ -84,10 +84,44 @@ export default function Sidebar({
   const [showCourseSelector, setShowCourseSelector] = useState(false);
   const [regions, setRegions] = useState<{ value: string; label: string }[]>([]);
   const [showHolesTooltip, setShowHolesTooltip] = useState(false);
+  const [showCoursesTooltip, setShowCoursesTooltip] = useState(false);
   // Track slider drag state so we only commit on release
   const [pendingTimeRange, setPendingTimeRange] = useState<number[] | null>(null);
-  const teeTimesCount = useAppStore((s) => s.teeTimes.length);
+  const teeTimes = useAppStore((s) => s.teeTimes);
+  const teeTimesCount = teeTimes.length;
   const progress = useAppStore((s) => s.teeTimesProgress);
+  
+  // Parse holes value for filtering
+  const selectedHolesForTooltip = holes === "any" ? 18 : parseInt(holes);
+  
+  // Get courses filtered by holes selection
+  const coursesForSelectedHoles = useMemo(() => {
+    return courses.filter(courseName => {
+      const courseHoles = courseNameToHolesMapping[courseName];
+      return !courseHoles || courseHoles.includes(selectedHolesForTooltip);
+    });
+  }, [courses, courseNameToHolesMapping, selectedHolesForTooltip]);
+  
+  // Count unique courses that have tee times and get their names
+  const { coursesWithTeeTimes, courseNames } = useMemo(() => {
+    const courseMap = new Map<number, string>();
+    teeTimes.forEach(t => {
+      if (!courseMap.has(t.course_id)) {
+        courseMap.set(t.course_id, t.course_name);
+      }
+    });
+    return {
+      coursesWithTeeTimes: courseMap.size,
+      courseNames: Array.from(courseMap.values()).sort((a, b) => a.localeCompare(b))
+    };
+  }, [teeTimes]);
+  
+  // Courses without tee times (filtered by selected holes)
+  const coursesWithoutTeeTimes = useMemo(() => {
+    return coursesForSelectedHoles
+      .filter(c => !courseNames.includes(c))
+      .sort((a, b) => a.localeCompare(b));
+  }, [coursesForSelectedHoles, courseNames]);
 
   // Respect parent instruction to show/hide course selector (once)
   useEffect(() => {
@@ -180,11 +214,14 @@ export default function Sidebar({
     loadCitiesAndCourses();
   }, [selectedRegionId, setCourseCityMapping, setSelectedCities, setSelectedCourses]);
 
-  // Close tooltip when clicking outside
+  // Close tooltips when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (showHolesTooltip && !(event.target as Element).closest('.holes-section')) {
         setShowHolesTooltip(false);
+      }
+      if (showCoursesTooltip && !(event.target as Element).closest('.courses-tooltip-section')) {
+        setShowCoursesTooltip(false);
       }
     };
 
@@ -192,7 +229,7 @@ export default function Sidebar({
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showHolesTooltip]);
+  }, [showHolesTooltip, showCoursesTooltip]);
 
   // When holes changes, clear any selected courses that no longer support the new holes value
   useEffect(() => {
@@ -612,9 +649,85 @@ export default function Sidebar({
                 </p>
               </div>
             ) : (
-              <p className="text-sm text-green-700 font-medium">
-                {teeTimesCount} tee time{teeTimesCount === 1 ? "" : "s"}
-              </p>
+              <div className="text-sm text-green-700 font-medium courses-tooltip-section relative inline-flex items-center justify-center gap-1.5 flex-wrap">
+                <span>{teeTimesCount} tee time{teeTimesCount === 1 ? "" : "s"}</span>
+                {coursesWithTeeTimes > 0 && (
+                  <>
+                    <span className="text-slate-300">·</span>
+                    <button 
+                      className="courses-tooltip-section relative inline-flex items-center gap-1 group"
+                      onClick={() => setShowCoursesTooltip(!showCoursesTooltip)}
+                    >
+                      <span className="text-slate-600 font-medium hover:text-slate-800 transition-colors">
+                        {coursesWithTeeTimes} course{coursesWithTeeTimes === 1 ? "" : "s"}
+                      </span>
+                      <Info className={`w-3.5 h-3.5 transition-colors ${showCoursesTooltip ? 'text-sidebar-primary' : 'text-slate-400 group-hover:text-sidebar-primary'}`} />
+                      
+                      {/* Tooltip - Fixed position in viewport */}
+                      {showCoursesTooltip && (
+                        <div 
+                          className="courses-tooltip-section fixed left-4 right-4 lg:left-auto lg:right-auto lg:w-[560px] bottom-24 lg:bottom-20 pointer-events-auto animate-in fade-in zoom-in-95 duration-200"
+                          style={{ zIndex: 99999 }}
+                        >
+                          <div className="bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden">
+                            {/* Header */}
+                            <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-4 py-3 border-b border-slate-100">
+                              <p className="text-sm font-semibold text-slate-700">
+                                {selectedHolesForTooltip}-Hole Course Availability
+                              </p>
+                            </div>
+                            
+                            {/* Content - Two columns */}
+                            <div className="grid grid-cols-2 divide-x divide-slate-100">
+                              {/* Courses with tee times */}
+                              <div className="p-4 flex flex-col min-h-0">
+                                <div className="flex items-center gap-2 mb-3 flex-shrink-0">
+                                  <div className="w-2.5 h-2.5 rounded-full bg-green-500 flex-shrink-0"></div>
+                                  <p className="text-sm font-semibold text-green-700">
+                                    With tee times ({courseNames.length})
+                                  </p>
+                                </div>
+                                <div className="max-h-[40vh] overflow-y-auto overscroll-contain scrollbar-courses-green">
+                                  {courseNames.length > 0 ? (
+                                    <ul className="space-y-1.5 pr-2">
+                                      {courseNames.map((name, idx) => (
+                                        <li key={idx} className="text-sm text-slate-600">{name}</li>
+                                      ))}
+                                    </ul>
+                                  ) : (
+                                    <p className="text-sm text-slate-400 italic">No courses found</p>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              {/* Courses without tee times */}
+                              <div className="p-4 bg-slate-50/50 flex flex-col min-h-0">
+                                <div className="flex items-center gap-2 mb-3 flex-shrink-0">
+                                  <div className="w-2.5 h-2.5 rounded-full bg-slate-300 flex-shrink-0"></div>
+                                  <p className="text-sm font-semibold text-slate-500">
+                                    Without tee times ({coursesWithoutTeeTimes.length})
+                                  </p>
+                                </div>
+                                <div className="max-h-[40vh] overflow-y-auto overscroll-contain scrollbar-courses-gray">
+                                  {coursesWithoutTeeTimes.length > 0 ? (
+                                    <ul className="space-y-1.5 pr-2">
+                                      {coursesWithoutTeeTimes.map((name, idx) => (
+                                        <li key={idx} className="text-sm text-slate-400">{name}</li>
+                                      ))}
+                                    </ul>
+                                  ) : (
+                                    <p className="text-sm text-slate-400 italic">All courses have tee times!</p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </button>
+                  </>
+                )}
+              </div>
             )}
           </div>
         </div>
